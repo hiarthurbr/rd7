@@ -142,7 +142,7 @@ function ProductSameItem({
             </div>
             <div className="rounded bg-muted px-2 py-1">
               <span className="text-muted-foreground">Peso: </span>
-              <span className="font-medium">{value[2].toFixed(4)}</span>
+              <span className="font-medium">{value[2]}</span>
             </div>
           </div>
         </div>
