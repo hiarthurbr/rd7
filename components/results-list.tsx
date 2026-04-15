@@ -177,7 +177,9 @@ function ProductEqItem({
 }
 
 export function ResultsList({ results }: ResultsListProps) {
-  const same_sku = Object.keys(results.same_sku).length;
+  const same_sku = Object.values(results.same_sku).filter(
+    (v) => v.length > 1,
+  ).length;
   const [isEqOpen, setIsEqOpen] = useState(false);
   const [isDiffOpen, setIsDiffOpen] = useState(same_sku === 0);
   const [isSameOpen, setIsSameOpen] = useState(same_sku > 0);
@@ -258,11 +260,11 @@ export function ResultsList({ results }: ResultsListProps) {
             </CardHeader>
             <CollapsibleContent>
               <CardContent className="space-y-3">
-                {Object.entries(results.same_sku).map(([name, values]) =>
-                  values.length > 1 ? (
+                {Object.entries(results.same_sku)
+                  .filter((v) => v.length > 1)
+                  .map(([name, values]) => (
                     <ProductSameItem key={name} name={name} values={values} />
-                  ) : null,
-                )}
+                  ))}
               </CardContent>
             </CollapsibleContent>
           </Collapsible>
