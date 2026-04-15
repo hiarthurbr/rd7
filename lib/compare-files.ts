@@ -25,7 +25,7 @@ export async function parseXlsx(buffer: ArrayBuffer) {
         const v = {
           prod,
           qntd,
-          peso_trib: qntd * Number(peso_uni.toFixed(4)),
+          peso_trib: qntd * peso_uni,
         };
 
         if (prods[prod] != null) {
