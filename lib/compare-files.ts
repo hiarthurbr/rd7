@@ -81,8 +81,9 @@ export function compareFiles(
     const prod_pl = xlsxData[prod];
     const prod_nfe = xmlData[prod];
 
+    console.log('prod_nfe.ids', prod_nfe.ids)
     for (const id in prod_nfe?.ids) {
-      result.same_sku[id] = [prod, ...prod_nfe.ids[prod]]
+      result.same_sku[id] = [prod, prod_nfe.ids[prod][0], prod_nfe.ids[prod][1]]
     }
 
     if (prod_pl?.[0] === prod_nfe?.res[0] && prod_pl?.[1] === prod_nfe?.res[1])
