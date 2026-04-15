@@ -229,7 +229,7 @@ export function ResultsList({ results }: ResultsListProps) {
               <p className="text-3xl font-bold text-green-600">
                 {eqEntries.length}
               </p>
-              <p className="text-sm text-muted-foreground">Conferidos</p>
+              <p className="text-sm text-muted-foreground">Iguais</p>
             </div>
           </CardContent>
         </Card>

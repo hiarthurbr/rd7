@@ -16,16 +16,16 @@ export async function parseXlsx(buffer: ArrayBuffer) {
     ) {
       const prod = row.values[1],
         qntd = row.values[2],
-        peso_trib = row.values[4];
+        peso_uni = row.values[3];
       if (
         typeof prod === "string" &&
         typeof qntd === "number" &&
-        typeof peso_trib === "number"
+        typeof peso_uni === "number"
       ) {
         const v = {
           prod,
           qntd,
-          peso_trib,
+          peso_trib: qntd * Number(peso_uni.toFixed(4)),
         };
 
         if (prods[prod] != null) {
