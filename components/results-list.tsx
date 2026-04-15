@@ -128,26 +128,26 @@ function ProductSameItem({
         </Badge>
       </div>
 
-      {
-        values.map((value) => (<div className="mt-4 grid grid-cols-1 gap-4">
-        <div className="space-y-2">
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="rounded bg-muted px-2 py-1">
-              <span className="text-muted-foreground">nItem: </span>
-              <span className="font-medium">{value[0]}</span>
-            </div>
-            <div className="rounded bg-muted px-2 py-1">
-              <span className="text-muted-foreground">Qntd: </span>
-              <span className="font-medium">{value[1]}</span>
-            </div>
-            <div className="rounded bg-muted px-2 py-1">
-              <span className="text-muted-foreground">Peso: </span>
-              <span className="font-medium">{value[2]}</span>
+      {values.map((value) => (
+        <div className="mt-4 grid grid-cols-1 gap-4">
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="rounded bg-muted px-2 py-1">
+                <span className="text-muted-foreground">nItem: </span>
+                <span className="font-medium">{value[0]}</span>
+              </div>
+              <div className="rounded bg-muted px-2 py-1">
+                <span className="text-muted-foreground">Qntd: </span>
+                <span className="font-medium">{value[1]}</span>
+              </div>
+              <div className="rounded bg-muted px-2 py-1">
+                <span className="text-muted-foreground">Peso: </span>
+                <span className="font-medium">{value[2]}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>))
-      }
+      ))}
     </div>
   );
 }
@@ -202,9 +202,7 @@ export function ResultsList({ results }: ResultsListProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-3xl font-bold text-destructive">
-                {same_sku}
-              </p>
+              <p className="text-3xl font-bold text-destructive">{same_sku}</p>
               <p className="text-sm text-muted-foreground">
                 Itens repetidos na NFe
               </p>
@@ -260,9 +258,11 @@ export function ResultsList({ results }: ResultsListProps) {
             </CardHeader>
             <CollapsibleContent>
               <CardContent className="space-y-3">
-                {Object.entries(results.same_sku).map(([name, values]) => (
-                  <ProductSameItem key={name} name={name} values={values} />
-                ))}
+                {Object.entries(results.same_sku).map(([name, values]) =>
+                  values.length > 1 ? (
+                    <ProductSameItem key={name} name={name} values={values} />
+                  ) : null,
+                )}
               </CardContent>
             </CollapsibleContent>
           </Collapsible>
