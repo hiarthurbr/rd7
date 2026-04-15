@@ -26,7 +26,7 @@ export default function Dashboard() {
     try {
       // Processa o arquivo XLSX
       const xlsxBuffer = await xlsxFile.arrayBuffer()
-      const xlsxData = parseXlsx(xlsxBuffer)
+      const xlsxData = await parseXlsx(xlsxBuffer)
 
       // Processa o arquivo XML
       const xmlText = await xmlFile.text()

@@ -60,7 +60,7 @@ export function parseXml(xmlString: string) {
 }
 
 export function compareFiles(
-  xlsxData: ReturnType<typeof parseXlsx>,
+  xlsxData: Awaited<ReturnType<typeof parseXlsx>>,
   xmlData: ReturnType<typeof parseXml>,
 ): ComparisonResult {
   const result: ComparisonResult = {
@@ -69,7 +69,6 @@ export function compareFiles(
   };
 
   for (const prod in xlsxData) {
-    // @ts-expect-error
     const prod_pl = xlsxData[prod];
     const prod_nfe = xmlData[prod];
 
