@@ -178,7 +178,7 @@ function ProductEqItem({
 
 export function ResultsList({ results }: ResultsListProps) {
   const same_sku = Object.values(results.same_sku).filter(
-    (v) => v.length > 1,
+    (v) => v?.length > 1,
   ).length;
   const [isEqOpen, setIsEqOpen] = useState(false);
   const [isDiffOpen, setIsDiffOpen] = useState(same_sku === 0);
