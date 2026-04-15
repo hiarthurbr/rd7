@@ -54,7 +54,7 @@ function ProductDiffItem({
             </div>
             <div className="rounded bg-muted px-2 py-1">
               <span className="text-muted-foreground">Peso: </span>
-              <span className="font-medium">{pesoExpected.toFixed(2)}</span>
+              <span className="font-medium">{pesoExpected.toFixed(4)}</span>
             </div>
           </div>
         </div>
@@ -79,14 +79,14 @@ function ProductDiffItem({
             </div>
             <div className="rounded bg-muted px-2 py-1">
               <span className="text-muted-foreground">Peso: </span>
-              <span className="font-medium">{pesoReceived.toFixed(2)}</span>
+              <span className="font-medium">{pesoReceived.toFixed(4)}</span>
               {pesoDiff !== 0 && (
                 <span
                   className={
                     pesoDiff > 0 ? 'text-green-600 ml-1' : 'text-destructive ml-1'
                   }
                 >
-                  ({pesoDiff > 0 ? '+' : ''}{pesoDiff.toFixed(2)})
+                  ({pesoDiff > 0 ? '+' : ''}{pesoDiff.toFixed(4)})
                 </span>
               )}
             </div>
