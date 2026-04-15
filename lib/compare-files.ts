@@ -50,10 +50,18 @@ export function parseXml(xmlString: string) {
   const parser = new XMLParser();
   let jObj = parser.parse(xmlString);
 
-  const prods_nfe: { [key: string]: [number, number] } = {};
+  const prods_nfe: { [key: string]: { ids: { [id: string]: [number, number] }; res: [number, number] } } = {};
 
   for (const prod of jObj.NFe.infNFe.det) {
-    prods_nfe[prod.prod.cProd] = [prod.prod.qCom, prod.prod.qTrib];
+    if (prods_nfe[prod.prod.cProd] != null) {
+      prods_nfe[prod.prod.cProd].ids[prod.nItem] = [prod.prod.qCom, prod.prod.qTrib];
+      prods_nfe[prod.prod.cProd].res[0] += prod.prod.qCom;
+      prods_nfe[prod.prod.cProd].res[1] += prod.prod.qTrib;
+    }
+    else prods_nfe[prod.prod.cProd] = {
+      ids: { [prod.nItem]: [prod.prod.qCom, prod.prod.qTrib]},
+      res: [prod.prod.qCom, prod.prod.qTrib]
+    };
   }
 
   return prods_nfe;
@@ -66,21 +74,26 @@ export function compareFiles(
   const result: ComparisonResult = {
     eq: {},
     diff: {},
+    same_sku: {}
   };
 
   for (const prod in xlsxData) {
     const prod_pl = xlsxData[prod];
     const prod_nfe = xmlData[prod];
 
-    if (prod_pl?.[0] === prod_nfe?.[0] && prod_pl?.[1] === prod_nfe?.[1])
+    for (const id in prod_nfe.ids) {
+      result.same_sku[id] = [prod, ...prod_nfe.ids[prod]]
+    }
+
+    if (prod_pl?.[0] === prod_nfe?.res[0] && prod_pl?.[1] === prod_nfe?.res[1])
       result.eq[prod] = [
         [prod_pl?.[0] ?? 0, prod_pl?.[1] ?? 0],
-        [prod_nfe?.[0] ?? 0, prod_nfe?.[1] ?? 0],
+        [prod_nfe?.res[0] ?? 0, prod_nfe?.res[1] ?? 0],
       ];
     else
       result.diff[prod] = [
         [prod_pl?.[0] ?? 0, prod_pl?.[1] ?? 0],
-        [prod_nfe?.[0] ?? 0, prod_nfe?.[1] ?? 0],
+        [prod_nfe?.res[0] ?? 0, prod_nfe?.res[1] ?? 0],
       ];
   }
 
