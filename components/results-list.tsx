@@ -263,7 +263,7 @@ export function ResultsList({ results }: ResultsListProps) {
             <CollapsibleContent>
               <CardContent className="space-y-3">
                 {Object.entries(results.same_sku)
-                  .filter((v) => v[1].length > 1)
+                  .filter((v) => v[1] != null && v[1].length > 1)
                   ?.map(([name, values]) => (
                     <ProductSameItem key={name} name={name} values={values} />
                   ))}
