@@ -177,11 +177,10 @@ function ProductEqItem({
 }
 
 export function ResultsList({ results }: ResultsListProps) {
-  const same_sku = Object.keys(results.same_sku);
-  const same_sku_n = same_sku.length;
+  const same_sku = Object.keys(results.same_sku).length;
   const [isEqOpen, setIsEqOpen] = useState(false);
-  const [isDiffOpen, setIsDiffOpen] = useState(same_sku_n === 0);
-  const [isSameOpen, setIsSameOpen] = useState(same_sku_n > 0);
+  const [isDiffOpen, setIsDiffOpen] = useState(same_sku === 0);
+  const [isSameOpen, setIsSameOpen] = useState(same_sku > 0);
 
   const diffEntries = Object.entries(results.diff);
   const eqEntries = Object.entries(results.eq);
@@ -204,7 +203,7 @@ export function ResultsList({ results }: ResultsListProps) {
           <CardContent className="pt-6">
             <div className="text-center">
               <p className="text-3xl font-bold text-destructive">
-                {same_sku_n}
+                {same_sku}
               </p>
               <p className="text-sm text-muted-foreground">
                 Itens repetidos na NFe
@@ -235,7 +234,7 @@ export function ResultsList({ results }: ResultsListProps) {
       </div>
 
       {/* Produtos repetidos */}
-      {same_sku_n > 0 && (
+      {same_sku > 0 && (
         <Card>
           <Collapsible open={isSameOpen} onOpenChange={setIsSameOpen}>
             <CardHeader>
@@ -246,8 +245,7 @@ export function ResultsList({ results }: ResultsListProps) {
                     Produtos repetidos na NFe
                   </CardTitle>
                   <CardDescription>
-                    {same_sku_n}{" "}
-                    nota apresenta itens repetidos
+                    Nota apresenta {same_sku} itens repetidos
                   </CardDescription>
                 </div>
                 <CollapsibleTrigger asChild>
@@ -263,7 +261,7 @@ export function ResultsList({ results }: ResultsListProps) {
             <CollapsibleContent>
               <CardContent className="space-y-3">
                 {Object.entries(results.same_sku).map(([name, values]) => (
-                  <ProductDiffItem key={name} name={name} values={values} />
+                  <ProductSameItem key={name} name={name} values={values} />
                 ))}
               </CardContent>
             </CollapsibleContent>
