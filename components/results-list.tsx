@@ -114,7 +114,7 @@ function ProductSameItem({
   values,
 }: {
   name: string;
-  values: [string, number, number][];
+  values: [number, number, number][];
 }) {
   return (
     <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
@@ -188,6 +188,8 @@ export function ResultsList({ results }: ResultsListProps) {
   const eqEntries = Object.entries(results.eq);
 
   const totalItems = diffEntries.length + eqEntries.length;
+
+  console.log({ results })
 
   return (
     <div className="space-y-6">
