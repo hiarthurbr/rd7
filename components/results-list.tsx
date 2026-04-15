@@ -37,13 +37,13 @@ function ProductDiffItem({
   const pesoDiff = pesoReceived - pesoExpected;
 
   return (
-    <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+    <div className={`rounded-lg border ${Math.abs(pesoDiff) < 0.001 ? "border-warning/30 bg-warning/5" : "border-destructive/30 bg-destructive/5"} p-4`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-2">
-          <AlertCircle className="size-5 text-destructive shrink-0" />
+          <AlertCircle className={`size-5 ${Math.abs(pesoDiff) < 0.001 ? "text-warning" : "text-destructive"} shrink-0`} />
           <h4 className="font-medium text-balance">{name}</h4>
         </div>
-        <Badge variant="destructive" className="shrink-0">
+        <Badge variant={Math.abs(pesoDiff) < 0.001 ? "warning" : "destructive"} className="shrink-0">
           Divergente
         </Badge>
       </div>
@@ -114,7 +114,7 @@ function ProductSameItem({
   values,
 }: {
   name: string;
-  values: [string, number, number][];
+  values: [number, number, number][];
 }) {
   return (
     <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
@@ -128,26 +128,26 @@ function ProductSameItem({
         </Badge>
       </div>
 
-      {
-        values.map((value) => (<div className="mt-4 grid grid-cols-1 gap-4">
-        <div className="space-y-2">
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="rounded bg-muted px-2 py-1">
-              <span className="text-muted-foreground">nItem: </span>
-              <span className="font-medium">{value[0]}</span>
-            </div>
-            <div className="rounded bg-muted px-2 py-1">
-              <span className="text-muted-foreground">Qntd: </span>
-              <span className="font-medium">{value[1]}</span>
-            </div>
-            <div className="rounded bg-muted px-2 py-1">
-              <span className="text-muted-foreground">Peso: </span>
-              <span className="font-medium">{value[2].toFixed(4)}</span>
+      {values.map((value) => (
+        <div className="mt-4 grid grid-cols-1 gap-4">
+          <div className="space-y-2">
+            <div className="grid grid-cols-3 gap-2 text-sm">
+              <div className="rounded bg-muted px-2 py-1">
+                <span className="text-muted-foreground">nItem: </span>
+                <span className="font-medium">{value[0]}</span>
+              </div>
+              <div className="rounded bg-muted px-2 py-1">
+                <span className="text-muted-foreground">Qntd: </span>
+                <span className="font-medium">{value[1]}</span>
+              </div>
+              <div className="rounded bg-muted px-2 py-1">
+                <span className="text-muted-foreground">Peso: </span>
+                <span className="font-medium">{value[2]}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>))
-      }
+      ))}
     </div>
   );
 }
@@ -177,7 +177,9 @@ function ProductEqItem({
 }
 
 export function ResultsList({ results }: ResultsListProps) {
-  const same_sku = Object.keys(results.same_sku).length;
+  const same_sku = Object.values(results.same_sku).filter(
+    (v) => v?.length > 1,
+  ).length;
   const [isEqOpen, setIsEqOpen] = useState(false);
   const [isDiffOpen, setIsDiffOpen] = useState(same_sku === 0);
   const [isSameOpen, setIsSameOpen] = useState(same_sku > 0);
@@ -186,6 +188,8 @@ export function ResultsList({ results }: ResultsListProps) {
   const eqEntries = Object.entries(results.eq);
 
   const totalItems = diffEntries.length + eqEntries.length;
+
+  console.log({ results })
 
   return (
     <div className="space-y-6">
@@ -202,9 +206,7 @@ export function ResultsList({ results }: ResultsListProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-3xl font-bold text-destructive">
-                {same_sku}
-              </p>
+              <p className="text-3xl font-bold text-destructive">{same_sku}</p>
               <p className="text-sm text-muted-foreground">
                 Itens repetidos na NFe
               </p>
@@ -227,7 +229,7 @@ export function ResultsList({ results }: ResultsListProps) {
               <p className="text-3xl font-bold text-green-600">
                 {eqEntries.length}
               </p>
-              <p className="text-sm text-muted-foreground">Conferidos</p>
+              <p className="text-sm text-muted-foreground">Iguais</p>
             </div>
           </CardContent>
         </Card>
@@ -260,9 +262,11 @@ export function ResultsList({ results }: ResultsListProps) {
             </CardHeader>
             <CollapsibleContent>
               <CardContent className="space-y-3">
-                {Object.entries(results.same_sku).map(([name, values]) => (
-                  <ProductSameItem key={name} name={name} values={values} />
-                ))}
+                {Object.entries(results.same_sku)
+                  .filter((v) => v[1] != null && v[1].length > 1)
+                  ?.map(([name, values]) => (
+                    <ProductSameItem key={name} name={name} values={values} />
+                  ))}
               </CardContent>
             </CollapsibleContent>
           </Collapsible>

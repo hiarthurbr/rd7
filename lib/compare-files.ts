@@ -16,16 +16,16 @@ export async function parseXlsx(buffer: ArrayBuffer) {
     ) {
       const prod = row.values[1],
         qntd = row.values[2],
-        peso_trib = row.values[4];
+        peso_uni = row.values[3];
       if (
         typeof prod === "string" &&
         typeof qntd === "number" &&
-        typeof peso_trib === "number"
+        typeof peso_uni === "number"
       ) {
         const v = {
           prod,
           qntd,
-          peso_trib,
+          peso_trib: qntd * peso_uni,
         };
 
         if (prods[prod] != null) {
@@ -60,7 +60,7 @@ export function parseXml(xmlString: string) {
       prods_nfe[prod.prod.cProd].res[1] += prod.prod.qTrib;
     }
     else prods_nfe[prod.prod.cProd] = {
-      ids: [nItem + 1, prod.prod.qCom, prod.prod.qTrib],
+      ids: [[nItem + 1, prod.prod.qCom, prod.prod.qTrib]],
       res: [prod.prod.qCom, prod.prod.qTrib]
     };
   })
@@ -78,15 +78,17 @@ export function compareFiles(
     same_sku: {}
   };
 
-  for (const prod in xlsxData) {
+  const skus = new Set([...Object.keys(xlsxData), ...Object.keys(xmlData)])
+
+  for (const prod of skus) {
     const prod_pl = xlsxData[prod];
     const prod_nfe = xmlData[prod];
 
-    console.log('prod_nfe.ids', prod_nfe.ids)
+    console.log('prod_nfe.ids', prod_nfe?.ids)
     if (result.same_sku[prod] == null) result.same_sku[prod] = [];
     result.same_sku[prod] = prod_nfe?.ids
 
-    if (prod_pl?.[0] === prod_nfe?.res[0] && prod_pl?.[1] === prod_nfe?.res[1])
+    if (prod_pl?.[0] === prod_nfe?.res[0] && Math.abs(prod_pl?.[1] - prod_nfe?.res[1]) < 0.0001)
       result.eq[prod] = [
         [prod_pl?.[0] ?? 0, prod_pl?.[1] ?? 0],
         [prod_nfe?.res[0] ?? 0, prod_nfe?.res[1] ?? 0],
