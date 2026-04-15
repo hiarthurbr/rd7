@@ -206,16 +206,6 @@ export function ResultsList({ results }: ResultsListProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-3xl font-bold text-destructive">{same_sku}</p>
-              <p className="text-sm text-muted-foreground">
-                Itens repetidos na NFe
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
               <p className="text-3xl font-bold text-destructive">
                 {diffEntries.length}
               </p>
@@ -230,6 +220,16 @@ export function ResultsList({ results }: ResultsListProps) {
                 {eqEntries.length}
               </p>
               <p className="text-sm text-muted-foreground">Iguais</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-destructive">{same_sku}</p>
+              <p className="text-sm text-muted-foreground">
+                Itens repetidos na NFe
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -322,7 +322,7 @@ export function ResultsList({ results }: ResultsListProps) {
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <CheckCircle2 className="size-5 text-green-600" />
-                    Itens Conferidos
+                    Itens iguais
                   </CardTitle>
                   <CardDescription>
                     {eqEntries.length}{" "}
