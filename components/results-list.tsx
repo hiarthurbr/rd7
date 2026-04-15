@@ -262,7 +262,7 @@ export function ResultsList({ results }: ResultsListProps) {
               <CardContent className="space-y-3">
                 {Object.entries(results.same_sku)
                   .filter((v) => v.length > 1)
-                  .map(([name, values]) => (
+                  ?.map(([name, values]) => (
                     <ProductSameItem key={name} name={name} values={values} />
                   ))}
               </CardContent>
