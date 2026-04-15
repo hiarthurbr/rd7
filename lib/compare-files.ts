@@ -80,7 +80,7 @@ export function compareFiles(
 
   const skus = new Set([...Object.keys(xlsxData), ...Object.keys(xmlData)])
 
-  for (const prod in skus) {
+  for (const prod of skus) {
     const prod_pl = xlsxData[prod];
     const prod_nfe = xmlData[prod];
 
