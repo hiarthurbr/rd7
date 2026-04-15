@@ -179,7 +179,7 @@ function ProductEqItem({
 
 export function ResultsList({ results }: ResultsListProps) {
   const same_sku = Object.keys(results.same_sku);
-  const same_sku_n = same_sku.length === 0;
+  const same_sku_n = same_sku.length;
   const [isEqOpen, setIsEqOpen] = useState(false);
   const [isDiffOpen, setIsDiffOpen] = useState(same_sku_n === 0);
   const [isSameOpen, setIsSameOpen] = useState(same_sku_n > 0);
@@ -247,8 +247,8 @@ export function ResultsList({ results }: ResultsListProps) {
                     Produtos repetidos na NFe
                   </CardTitle>
                   <CardDescription>
-                    {diffEntries.length}{" "}
-                    {diffEntries.length === 1
+                    {same_sku_n}{" "}
+                    {same_sku_n === 1
                       ? "item apresenta"
                       : "itens apresentam"}{" "}
                     diferença entre os arquivos
@@ -266,7 +266,7 @@ export function ResultsList({ results }: ResultsListProps) {
             </CardHeader>
             <CollapsibleContent>
               <CardContent className="space-y-3">
-                {diffEntries.map(([name, values]) => (
+                {Object.entries(results.same_sku).map(([name, values]) => (
                   <ProductDiffItem key={name} name={name} values={values} />
                 ))}
               </CardContent>
