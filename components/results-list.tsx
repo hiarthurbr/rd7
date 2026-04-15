@@ -37,13 +37,13 @@ function ProductDiffItem({
   const pesoDiff = pesoReceived - pesoExpected;
 
   return (
-    <div className={`rounded-lg border ${pesoDiff < 0.001 ? "border-warning/30 bg-warning/5" : "border-destructive/30 bg-destructive/5"} p-4`}>
+    <div className={`rounded-lg border ${Math.abs(pesoDiff) < 0.001 ? "border-warning/30 bg-warning/5" : "border-destructive/30 bg-destructive/5"} p-4`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-2">
-          <AlertCircle className={`size-5 ${pesoDiff < 0.001 ? "text-warning" : "text-destructive"} shrink-0`} />
+          <AlertCircle className={`size-5 ${Math.abs(pesoDiff) < 0.001 ? "text-warning" : "text-destructive"} shrink-0`} />
           <h4 className="font-medium text-balance">{name}</h4>
         </div>
-        <Badge variant={pesoDiff < 0.001 ? "warning" : "destructive"} className="shrink-0">
+        <Badge variant={Math.abs(pesoDiff) < 0.001 ? "warning" : "destructive"} className="shrink-0">
           Divergente
         </Badge>
       </div>

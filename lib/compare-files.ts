@@ -88,7 +88,7 @@ export function compareFiles(
     if (result.same_sku[prod] == null) result.same_sku[prod] = [];
     result.same_sku[prod] = prod_nfe?.ids
 
-    if (prod_pl?.[0] === prod_nfe?.res[0] && prod_pl?.[1] === prod_nfe?.res[1])
+    if (prod_pl?.[0] === prod_nfe?.res[0] && Math.abs(prod_pl?.[1] - prod_nfe?.res[1]) < 0.0001)
       result.eq[prod] = [
         [prod_pl?.[0] ?? 0, prod_pl?.[1] ?? 0],
         [prod_nfe?.res[0] ?? 0, prod_nfe?.res[1] ?? 0],
