@@ -60,7 +60,7 @@ export function parseXml(xmlString: string) {
       prods_nfe[prod.prod.cProd].res[1] += prod.prod.qTrib;
     }
     else prods_nfe[prod.prod.cProd] = {
-      ids: [nItem + 1, prod.prod.qCom, prod.prod.qTrib],
+      ids: [[nItem + 1, prod.prod.qCom, prod.prod.qTrib]],
       res: [prod.prod.qCom, prod.prod.qTrib]
     };
   })
