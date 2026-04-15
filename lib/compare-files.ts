@@ -78,7 +78,9 @@ export function compareFiles(
     same_sku: {}
   };
 
-  for (const prod in xlsxData) {
+  const skus = new Set([...Object.keys(xlsxData), ...Object.keys(xmlData)])
+
+  for (const prod in skus) {
     const prod_pl = xlsxData[prod];
     const prod_nfe = xmlData[prod];
 
