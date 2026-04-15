@@ -82,7 +82,7 @@ export function compareFiles(
     const prod_pl = xlsxData[prod];
     const prod_nfe = xmlData[prod];
 
-    console.log('prod_nfe.ids', prod_nfe.ids)
+    console.log('prod_nfe.ids', prod_nfe?.ids)
     if (result.same_sku[prod] == null) result.same_sku[prod] = [];
     result.same_sku[prod] = prod_nfe?.ids
 
