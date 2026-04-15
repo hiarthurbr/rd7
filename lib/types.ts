@@ -1,7 +1,7 @@
 export type ComparisonResult = {
   eq: { [key: string]: [[number, number], [number, number]] }
   diff: { [key: string]: [[number, number], [number, number]] }
-  same_sku: { [id: string]: [string, number, number]}
+  same_sku: { [sku: string]: Array<[number, number, number]>}
 }
 
 export type ProductData = {

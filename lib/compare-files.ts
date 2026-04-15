@@ -50,17 +50,17 @@ export function parseXml(xmlString: string) {
   const parser = new XMLParser();
   let jObj = parser.parse(xmlString);
 
-  const prods_nfe: { [key: string]: { ids: { [id: string]: [number, number] }; res: [number, number] } } = {};
+  const prods_nfe: { [key: string]: { ids: [number, number, number]; res: [number, number] } } = {};
 
   console.log(jObj.NFe.infNFe.det)
   jObj.NFe.infNFe.det.forEach((prod, nItem) => {
     if (prods_nfe[prod.prod.cProd] != null) {
-      prods_nfe[prod.prod.cProd].ids[nItem.toString()] = [prod.prod.qCom, prod.prod.qTrib];
+      prods_nfe[prod.prod.cProd].ids.push([nItem, prod.prod.qCom, prod.prod.qTrib]);
       prods_nfe[prod.prod.cProd].res[0] += prod.prod.qCom;
       prods_nfe[prod.prod.cProd].res[1] += prod.prod.qTrib;
     }
     else prods_nfe[prod.prod.cProd] = {
-      ids: { [nItem.toString()]: [prod.prod.qCom, prod.prod.qTrib]},
+      ids: [nItem, prod.prod.qCom, prod.prod.qTrib],
       res: [prod.prod.qCom, prod.prod.qTrib]
     };
   })
@@ -84,7 +84,8 @@ export function compareFiles(
 
     console.log('prod_nfe.ids', prod_nfe.ids)
     for (const id in prod_nfe?.ids) {
-      result.same_sku[id] = [prod, prod_nfe.ids[prod][0], prod_nfe.ids[prod][1]]
+      if (result.same_sku[prod] == null) result.same_sku[prod] = [];
+      result.same_sku[prod].push([id, prod_nfe.ids[prod][0], prod_nfe.ids[prod][1]])
     }
 
     if (prod_pl?.[0] === prod_nfe?.res[0] && prod_pl?.[1] === prod_nfe?.res[1])

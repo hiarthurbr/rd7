@@ -114,41 +114,40 @@ function ProductSameItem({
   values,
 }: {
   name: string;
-  values: [string, number, number];
+  values: [string, number, number][];
 }) {
   return (
     <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-2">
           <AlertCircle className="size-5 text-destructive shrink-0" />
-          <h4 className="font-medium text-balance">nItem = {name}</h4>
+          <h4 className="font-medium text-balance">{name}</h4>
         </div>
         <Badge variant="destructive" className="shrink-0">
           Repetido
         </Badge>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-4">
+      {
+        values.map((value) => (<div className="mt-4 grid grid-cols-1 gap-4">
         <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Esperado
-          </p>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="rounded bg-muted px-2 py-1">
-              <span className="text-muted-foreground">SKU: </span>
-              <span className="font-medium">{values[0]}</span>
+              <span className="text-muted-foreground">nItem: </span>
+              <span className="font-medium">{value[0]}</span>
             </div>
             <div className="rounded bg-muted px-2 py-1">
               <span className="text-muted-foreground">Qntd: </span>
-              <span className="font-medium">{values[1]}</span>
+              <span className="font-medium">{value[1]}</span>
             </div>
             <div className="rounded bg-muted px-2 py-1">
               <span className="text-muted-foreground">Peso: </span>
-              <span className="font-medium">{values[2].toFixed(4)}</span>
+              <span className="font-medium">{value[2].toFixed(4)}</span>
             </div>
           </div>
         </div>
-      </div>
+      </div>))
+      }
     </div>
   );
 }
@@ -248,10 +247,7 @@ export function ResultsList({ results }: ResultsListProps) {
                   </CardTitle>
                   <CardDescription>
                     {same_sku_n}{" "}
-                    {same_sku_n === 1
-                      ? "item apresenta"
-                      : "itens apresentam"}{" "}
-                    diferença entre os arquivos
+                    nota apresenta itens repetidos
                   </CardDescription>
                 </div>
                 <CollapsibleTrigger asChild>
