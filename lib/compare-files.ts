@@ -55,12 +55,12 @@ export function parseXml(xmlString: string) {
   console.log(jObj.NFe.infNFe.det)
   jObj.NFe.infNFe.det.forEach((prod, nItem) => {
     if (prods_nfe[prod.prod.cProd] != null) {
-      prods_nfe[prod.prod.cProd].ids[nItem] = [prod.prod.qCom, prod.prod.qTrib];
+      prods_nfe[prod.prod.cProd].ids[nItem.toString()] = [prod.prod.qCom, prod.prod.qTrib];
       prods_nfe[prod.prod.cProd].res[0] += prod.prod.qCom;
       prods_nfe[prod.prod.cProd].res[1] += prod.prod.qTrib;
     }
     else prods_nfe[prod.prod.cProd] = {
-      ids: { [nItem]: [prod.prod.qCom, prod.prod.qTrib]},
+      ids: { [nItem.toString()]: [prod.prod.qCom, prod.prod.qTrib]},
       res: [prod.prod.qCom, prod.prod.qTrib]
     };
   })
