@@ -37,10 +37,10 @@ function ProductDiffItem({
   const pesoDiff = pesoReceived - pesoExpected;
 
   return (
-    <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+    <div className="rounded-lg border border-warning/30 bg-warning/5 p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-2">
-          <AlertCircle className="size-5 text-destructive shrink-0" />
+          <AlertCircle className="size-5 text-warning shrink-0" />
           <h4 className="font-medium text-balance">{name}</h4>
         </div>
         <Badge variant="destructive" className="shrink-0">
