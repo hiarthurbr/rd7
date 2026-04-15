@@ -131,7 +131,7 @@ function ProductSameItem({
       {values.map((value) => (
         <div className="mt-4 grid grid-cols-1 gap-4">
           <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="grid grid-cols-3 gap-2 text-sm">
               <div className="rounded bg-muted px-2 py-1">
                 <span className="text-muted-foreground">nItem: </span>
                 <span className="font-medium">{value[0]}</span>
