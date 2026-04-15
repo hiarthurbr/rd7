@@ -130,43 +130,6 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Instructions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Estrutura dos Arquivos</CardTitle>
-                <CardDescription>
-                  Os arquivos devem seguir estas estruturas para serem processados corretamente
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div>
-                    <h4 className="font-medium mb-2">Arquivo XLSX</h4>
-                    <div className="rounded-lg bg-muted p-3 text-sm font-mono">
-                      <p className="text-muted-foreground">Colunas esperadas:</p>
-                      <ul className="mt-1 space-y-1">
-                        <li>• Produto (ou Nome)</li>
-                        <li>• Quantidade (ou Qntd)</li>
-                        <li>• Peso</li>
-                      </ul>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="font-medium mb-2">Arquivo XML</h4>
-                    <div className="rounded-lg bg-muted p-3 text-sm font-mono">
-                      <p className="text-muted-foreground">Elementos esperados:</p>
-                      <ul className="mt-1 space-y-1">
-                        <li>• {'<item>'} ou {'<produto>'}</li>
-                        <li>• {'<nome>'} ou {'<xProd>'}</li>
-                        <li>• {'<quantidade>'} ou {'<qCom>'}</li>
-                        <li>• {'<peso>'} ou {'<vProd>'}</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </>
         ) : (
           <>

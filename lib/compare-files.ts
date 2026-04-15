@@ -4,7 +4,7 @@ import { XMLParser } from "fast-xml-parser";
 
 export async function parseXlsx(buffer: ArrayBuffer) {
   const workbook = new excel.Workbook();
-  await workbook.xlsx.readFile("./RDS 164-26 AGRO ELECTRICPARTS S R L .xlsx");
+  await workbook.xlsx.load(buffer);
 
   const worksheet = workbook.worksheets.pop()!;
   const prods: { [key: string]: [number, number] } = {};
@@ -70,18 +70,18 @@ export function compareFiles(
 
   for (const prod in xlsxData) {
     // @ts-expect-error
-    const prod_pl = xlsxData[prod]!;
-    const prod_nfe = xmlData[prod]!;
+    const prod_pl = xlsxData[prod];
+    const prod_nfe = xmlData[prod];
 
-    if (prod_pl[0] === prod_nfe[0] && prod_pl[1] === prod_nfe[1])
+    if (prod_pl?.[0] === prod_nfe?.[0] && prod_pl?.[1] === prod_nfe?.[1])
       result.eq[prod] = [
-        [prod_pl[0], prod_pl[1]],
-        [prod_nfe[0], prod_nfe[1]],
+        [prod_pl?.[0] ?? 0, prod_pl?.[1] ?? 0],
+        [prod_nfe?.[0] ?? 0, prod_nfe?.[1] ?? 0],
       ];
     else
       result.diff[prod] = [
-        [prod_pl[0], prod_pl[1]],
-        [prod_nfe[0], prod_nfe[1]],
+        [prod_pl?.[0] ?? 0, prod_pl?.[1] ?? 0],
+        [prod_nfe?.[0] ?? 0, prod_nfe?.[1] ?? 0],
       ];
   }
 
