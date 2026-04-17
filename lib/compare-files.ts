@@ -7,6 +7,7 @@ export async function parseXlsx(buffer: ArrayBuffer) {
   await workbook.xlsx.load(buffer);
 
   const worksheet = workbook.worksheets.pop()!;
+  console.log({ worksheet })
   const prods: { [key: string]: [number, number] } = {};
   worksheet.eachRow({ includeEmpty: true }, function (row) {
     if (
@@ -38,12 +39,16 @@ export async function parseXlsx(buffer: ArrayBuffer) {
     }
   });
 
-  return Object.fromEntries(
+  const res = Object.fromEntries(
     Object.entries(prods).map(([key, [qntd, peso_trib]]) => [
       key,
       [Number(qntd.toFixed(4)), Number(peso_trib.toFixed(4))] as const,
     ]),
-  );
+  )
+
+  console.log({ xlsx: res })
+
+  return res;
 }
 
 export function parseXml(xmlString: string) {
