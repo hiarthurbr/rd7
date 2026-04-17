@@ -6,6 +6,8 @@ export async function parseXlsx(buffer: ArrayBuffer) {
   const workbook = new excel.Workbook();
   await workbook.xlsx.load(buffer);
 
+  console.log({ worksheets: workbook.worksheets })
+
   const worksheet = workbook.worksheets.pop()!;
   console.log({ worksheet })
   const prods: { [key: string]: [number, number] } = {};
