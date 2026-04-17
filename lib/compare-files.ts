@@ -8,7 +8,7 @@ export async function parseXlsx(buffer: ArrayBuffer) {
 
   console.log({ worksheets: workbook.worksheets })
 
-  const worksheet = workbook.worksheets.pop()!;
+  const worksheet = workbook.worksheets.filter(w => w.state === "visible").pop()!;
   console.log({ worksheet })
   const prods: { [key: string]: [number, number] } = {};
   worksheet.eachRow({ includeEmpty: true }, function (row) {
