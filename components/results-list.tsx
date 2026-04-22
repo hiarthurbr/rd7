@@ -51,7 +51,7 @@ function ProductDiffItem({
       <div className="mt-4 grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Esperado
+            Planilha
           </p>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="rounded bg-muted px-2 py-1">
@@ -67,7 +67,7 @@ function ProductDiffItem({
 
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Recebido
+            NFe
           </p>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="rounded bg-muted px-2 py-1">
