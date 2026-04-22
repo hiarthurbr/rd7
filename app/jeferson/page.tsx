@@ -53,7 +53,9 @@ async function parseXlsx(buffer: ArrayBuffer) {
   const workbook = new excel.Workbook();
   await workbook.xlsx.load(buffer);
 
-  console.log({ worksheets: workbook.worksheets });
+  console.log({
+    worksheets: workbook.worksheets.filter((w) => w.state === "visible"),
+  });
 
   const dateWorksheet = workbook.worksheets.filter(
     (w) =>
@@ -250,26 +252,6 @@ export default function JefersonPage() {
                   >
                     <Trash2 className="size-4 mr-2" />
                     Limpar
-                  </Button>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleUpdateStorage}
-                    disabled={isUpdating}
-                    size="sm"
-                  >
-                    {isUpdating ? (
-                      <>
-                        <RefreshCw className="size-4 mr-2 animate-spin" />
-                        Atualizando...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="size-4 mr-2" />
-                        Confirmar atualização
-                      </>
-                    )}
                   </Button>
                 </div>
               </div>
