@@ -142,7 +142,7 @@ export default function JefersonPage() {
           method: "GET",
         },
       )
-        .then((r) => r.json())
+        .then((r) => r.json()).then(r => r.data)
         .then(z.array(NFData).parseAsync);
 
       const newData: z.infer<typeof StoredNFsData> = {
