@@ -142,7 +142,8 @@ export default function JefersonPage() {
           method: "GET",
         },
       )
-        .then((r) => r.json()).then(r => r.data)
+        .then((r) => r.json())
+        .then((r) => r.data)
         .then(z.array(NFData).parseAsync);
 
       const newData: z.infer<typeof StoredNFsData> = {
@@ -265,7 +266,7 @@ export default function JefersonPage() {
                       </>
                     ) : (
                       <>
-                        <Upload className="size-4 mr-2" />
+                        <RefreshCw className="size-4 mr-2" />
                         Confirmar atualização
                       </>
                     )}
