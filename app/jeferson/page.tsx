@@ -11,11 +11,10 @@ import {
   Database,
   RefreshCw,
   Calendar,
-  Upload,
+  Download,
   ArrowLeft,
   Trash2,
   AlertCircle,
-  CheckCircle2,
   ChevronDown,
 } from "lucide-react";
 import {
@@ -283,12 +282,10 @@ export default function JefersonPage() {
                   <p className="text-muted-foreground">
                     Nenhum dado armazenado.
                   </p>
-                </div>
-
                 <Button
                   onClick={handleUpdateStorage}
                   disabled={isUpdating}
-                  className="w-full"
+                  className="w-1/3"
                 >
                   {isUpdating ? (
                     <>
@@ -297,11 +294,13 @@ export default function JefersonPage() {
                     </>
                   ) : (
                     <>
-                      <Upload className="size-4 mr-2" />
+                      <Download className="size-4 mr-2" />
                       Criar base de referência
                     </>
                   )}
                 </Button>
+                </div>
+
               </div>
             )}
           </CardContent>
