@@ -285,25 +285,23 @@ export default function JefersonPage() {
                   </p>
                 </div>
 
-                {updateFile && (
-                  <Button
-                    onClick={handleUpdateStorage}
-                    disabled={isUpdating}
-                    className="w-full"
-                  >
-                    {isUpdating ? (
-                      <>
-                        <RefreshCw className="size-4 mr-2 animate-spin" />
-                        Salvando...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="size-4 mr-2" />
-                        Criar base de referência
-                      </>
-                    )}
-                  </Button>
-                )}
+                <Button
+                  onClick={handleUpdateStorage}
+                  disabled={isUpdating}
+                  className="w-full"
+                >
+                  {isUpdating ? (
+                    <>
+                      <RefreshCw className="size-4 mr-2 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="size-4 mr-2" />
+                      Criar base de referência
+                    </>
+                  )}
+                </Button>
               </div>
             )}
           </CardContent>
@@ -393,9 +391,7 @@ export default function JefersonPage() {
                         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex items-center gap-2">
-                              <AlertCircle
-                                className="size-5 text-destructive shrink-0"
-                              />
+                              <AlertCircle className="size-5 text-destructive shrink-0" />
                               <h4 className="font-medium text-balance">
                                 {nf.NF}
                               </h4>
