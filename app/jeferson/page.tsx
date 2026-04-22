@@ -127,7 +127,6 @@ export default function JefersonPage() {
   const handleUpdateStorage = useCallback(async () => {
     setIsUpdating(true);
     try {
-      const buffer = await updateFile.arrayBuffer();
       const nfs: Array<z.infer<typeof NFData>> = await fetch(
         "https://api-erp.rainhadassete.com.br/api/expedicao/notas-kanban",
         {
@@ -280,25 +279,32 @@ export default function JefersonPage() {
                   <p className="text-muted-foreground">
                     Nenhum dado armazenado.
                   </p>
-                <Button
-                  onClick={handleUpdateStorage}
-                  disabled={isUpdating}
-                  className="w-1/3"
-                >
-                  {isUpdating ? (
-                    <>
-                      <RefreshCw className="size-4 mr-2 animate-spin" />
-                      Salvando...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="size-4 mr-2" />
-                      Criar base de referência
-                    </>
-                  )}
-                </Button>
+                  <Button
+                    onClick={handleUpdateStorage}
+                    disabled={isUpdating}
+                    className="w-1/3"
+                  >
+                    {isUpdating ? (
+                      <>
+                        <RefreshCw className="size-4 mr-2 animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="size-4 mr-2" />
+                        Criar base de referência
+                      </>
+                    )}
+                  </Button>
                 </div>
 
+                <FileUploader
+                  label="Comparar banco de dados com planilha (.xlsx)"
+                  accept=".xlsx,.xls"
+                  file={updateFile}
+                  onFileChange={setUpdateFile}
+                  icon="xlsx"
+                />
               </div>
             )}
           </CardContent>
