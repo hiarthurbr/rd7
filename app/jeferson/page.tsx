@@ -33,8 +33,8 @@ import excel from "exceljs";
 const STORAGE_KEY = "jeferson-nfs-data";
 
 const NFData = z.object({
-  Transportador: z.string(),
-  PrevisaoSaida: z.coerce.date(),
+  Transportador: z.string().or(z.undefined()),
+  PrevisaoSaida: z.coerce.date().or(z.undefined()).or(z.date()),
 });
 
 const StoredNFsData = z.object({
