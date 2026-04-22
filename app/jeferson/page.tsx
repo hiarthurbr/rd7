@@ -125,8 +125,6 @@ export default function JefersonPage() {
   }, [xlsxFile, storedData]);
 
   const handleUpdateStorage = useCallback(async () => {
-    if (!updateFile) return;
-
     setIsUpdating(true);
     try {
       const buffer = await updateFile.arrayBuffer();
@@ -277,7 +275,7 @@ export default function JefersonPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 rounded-lg border border-dashed bg-muted/30 px-4 py-6 justify-center">
+                <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed bg-muted/30 px-4 py-6 justify-center">
                   <Database className="size-6 text-muted-foreground" />
                   <p className="text-muted-foreground">
                     Nenhum dado armazenado.
