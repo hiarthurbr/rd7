@@ -75,9 +75,9 @@ async function parseXlsx(buffer: ArrayBuffer) {
         w.state === "visible" &&
         w.findCell("A1", 0)?.value?.toString().trim().toLocaleUpperCase() ===
           "FECHAMENTO JEFFTRANSPORTE",
-    ),
-    startDate: new Date("2026-04-01T00:00"),
-    endDate: new Date("2026-04-15T23:59:59.999"),
+    ).flatMap(w => w.getColumn("A").values.filter(v => typeof v === "number")),
+    startDate: new Date(Math.min(...dateWorksheet[0].getColumn("A").values.filter(v => v instanceof Date))),
+    endDate: new Date(Math.max(...dateWorksheet[0].getColumn("A").values.filter(v => v instanceof Date))),
   };
 }
 
@@ -85,6 +85,8 @@ function compareWithStoredData(
   xlsxData: Awaited<ReturnType<typeof parseXlsx>>,
   storedData: z.infer<typeof StoredNFsData>,
 ): z.infer<typeof Result> {
+  console.log({ xlsxData, storedData })
+
   // nfes.filter(nfe => nfe.Transportador === "Jeferson" && new Date(nfe.PrevisaoSaida) >= toDateStart("01/04/2026") && new Date(nfe.PrevisaoSaida) <= toDateEnd("15/04/2026"))
   return [];
 }
@@ -157,7 +159,6 @@ export default function JefersonPage() {
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
       setStoredData(newData);
-      setUpdateFile(null);
       setResults(null);
     } catch (error) {
       console.error("Erro ao atualizar dados:", error);
