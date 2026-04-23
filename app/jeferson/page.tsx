@@ -88,13 +88,16 @@ function compareWithStoredData(
 ): z.infer<typeof Result> {
   console.log({ xlsxData, storedData })
 
-  const NFStoreJeferson = storedData.nfs.filter(nfe => nfe.PrevisaoSaida >= xlsxData.startDate && nfe.PrevisaoSaida <= xlsxData.endDate)
-  const NFStoreJeferson_map = NFStoreJeferson.map(nf => nf.CodigoNotaFiscal)
+  const NFStore = storedData.nfs.filter(nfe => nfe.PrevisaoSaida >= xlsxData.startDate && nfe.PrevisaoSaida <= xlsxData.endDate)
+  const NFStoreJeferson = NFStore.filter(nfe => nfe.Transportador === "Jeferson")
+  const NFStoreJefersonSet = new Set(NFStoreJeferson.map(nf => nf.CodigoNotaFiscal))
+  const NFPlaniSet = new Set(xlsxData.nfs)
+  const NFNome = Object.fromEntries(NFStore.map(nfe => [nfe.CodigoNotaFiscal, nfe.Transportador ?? "Nenhum especificado"]))
 
-  const Include = xlsxData.nfs.filter(nf => NFStoreJeferson_map.includes(nf))
-  const NotInclude = xlsxData.nfs.filter(nf => !NFStoreJeferson_map.includes(nf))
+  const Include = NFStoreJefersonSet.intersection(NFPlaniSet);
+  const NotInclude = NFStoreJefersonSet.symmetricDifference(NFPlaniSet);
   
-  console.log({ NFStoreJeferson, Include, NotInclude })
+  console.log({ NFStore, NFStoreJeferson, NFNome, Include, NotInclude })
 
   // nfes.filter(nfe => nfe.Transportador === "Jeferson" && new Date(nfe.PrevisaoSaida) >= toDateStart("01/04/2026") && new Date(nfe.PrevisaoSaida) <= toDateEnd("15/04/2026"))
   return [];
