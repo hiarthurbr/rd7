@@ -58,7 +58,7 @@ async function parseXlsx(buffer: ArrayBuffer) {
     worksheets: workbook.worksheets.filter((w) => w.state === "visible"),
   });
 
-  const dateWorksheet = workbook.worksheets.filter(
+  const dateWorksheet = workbook.worksheets.find(
     (w) =>
       w.state === "visible" &&
       w.findCell("A1", 0)?.value?.toString().trim().toLocaleUpperCase() ===
@@ -77,8 +77,8 @@ async function parseXlsx(buffer: ArrayBuffer) {
         w.findCell("A1", 0)?.value?.toString().trim().toLocaleUpperCase() ===
           "FECHAMENTO JEFFTRANSPORTE",
     ).flatMap(w => w.getColumn("A").values.filter(v => typeof v === "number")),
-    startDate: new Date(Math.min(...dateWorksheet[0].getColumn("A").values.filter(v => v instanceof Date))),
-    endDate: new Date(Math.max(...dateWorksheet[0].getColumn("A").values.filter(v => v instanceof Date))),
+    startDate: new Date(Math.min(...dateWorksheet.getColumn("A").values.filter(v => v instanceof Date))),
+    endDate: new Date(Math.max(...dateWorksheet.getColumn("A").values.filter(v => v instanceof Date))),
   };
 }
 
@@ -88,7 +88,13 @@ function compareWithStoredData(
 ): z.infer<typeof Result> {
   console.log({ xlsxData, storedData })
 
-  console.log(storedData.nfs.filter(nfe => nfe.PrevisaoSaida >= xlsxData.startDate && nfe.PrevisaoSaida <= xlsxData.endDate))
+  const NFStoreJeferson = storedData.nfs.filter(nfe => nfe.PrevisaoSaida >= xlsxData.startDate && nfe.PrevisaoSaida <= xlsxData.endDate)
+  const NFStoreJeferson_map = NFStoreJeferson.map(nf => nf.CodigoNotaFiscal)
+
+  const Include = xlsxData.nfs.filter(nf => NFStoreJeferson_map.includes(nf))
+  const NotInclude = xlsxData.nfs.filter(nf => !NFStoreJeferson_map.includes(nf))
+  
+  console.log({ NFStoreJeferson, Include, NotInclude })
 
   // nfes.filter(nfe => nfe.Transportador === "Jeferson" && new Date(nfe.PrevisaoSaida) >= toDateStart("01/04/2026") && new Date(nfe.PrevisaoSaida) <= toDateEnd("15/04/2026"))
   return [];
