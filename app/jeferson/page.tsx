@@ -16,8 +16,8 @@ import {
   Trash2,
   AlertCircle,
   ChevronDown,
-  Badge,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -45,11 +45,17 @@ const StoredNFsData = z.object({
 });
 
 const Result = z.object({
-  eq: z.array(z.number()),
-  ne: z.array(
+  corr: z.array(z.number()),
+  err: z.array(
     z.object({
-      NF: z.number(),
-      Transportador: z.string(),
+      nf: z.number(),
+      entregador: z.string(),
+    }),
+  ),
+  ni: z.array(
+    z.object({
+      nf: z.number(),
+      entregador: z.string(),
     }),
   ),
 });
@@ -89,11 +95,13 @@ async function parseXlsx(buffer: ArrayBuffer) {
       ),
     startDate: new Date(
       Math.min(
+        // @ts-expect-error
         ...dateWorksheet.getColumn("A").values.filter((v) => v instanceof Date),
       ),
     ),
     endDate: new Date(
       Math.max(
+        // @ts-expect-error
         ...dateWorksheet.getColumn("A").values.filter((v) => v instanceof Date),
       ),
     ),
@@ -108,8 +116,8 @@ function compareWithStoredData(
 
   const NFStore = storedData.nfs.filter(
     (nfe) =>
-      nfe.PrevisaoSaida >= xlsxData.startDate &&
-      nfe.PrevisaoSaida <= xlsxData.endDate,
+      nfe.PrevisaoSaida! >= xlsxData.startDate &&
+      nfe.PrevisaoSaida! <= xlsxData.endDate,
   );
   const NFStoreJeferson = NFStore.filter(
     (nfe) => nfe.Transportador === "Jeferson",
@@ -225,9 +233,9 @@ function NIList({ results }: { results: z.infer<typeof Result> }) {
                 Notas não incluidas
               </CardTitle>
               <CardDescription>
-                {results.err.length}
+                {results.ni.length}
                 {" nota"}
-                {results.err.length === 1 ? "" : "s"}
+                {results.ni.length === 1 ? " " : "s "}
                 não incluidas
               </CardDescription>
             </div>
@@ -243,7 +251,7 @@ function NIList({ results }: { results: z.infer<typeof Result> }) {
         </CardHeader>
         <CollapsibleContent>
           <CardContent className="space-y-2">
-            {results.err.map((nf) => (
+            {results.ni.map((nf) => (
               <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-2">
