@@ -126,7 +126,9 @@ function compareWithStoredData(
 
   const Correct = NFStoreJefersonSet.intersection(NFPlaniSet);
   const NotIncluded = NFStoreJefersonSet.difference(NFPlaniSet);
-  const NotCorrect = NFPlaniSet.intersection(NFStoreJefersonSet.symmetricDifference(NFPlaniSet));
+  const NotCorrect = NFPlaniSet.intersection(
+    NFStoreJefersonSet.symmetricDifference(NFPlaniSet),
+  );
 
   console.log({
     NFStore,
@@ -136,13 +138,14 @@ function compareWithStoredData(
     NotCorrect,
     NFStoreJefersonSet,
     NFPlaniSet,
-    NotIncluded
+    NotIncluded,
   });
 
   // nfes.filter(nfe => nfe.Transportador === "Jeferson" && new Date(nfe.PrevisaoSaida) >= toDateStart("01/04/2026") && new Date(nfe.PrevisaoSaida) <= toDateEnd("15/04/2026"))
   return {
-    eq: Array.from(Include),
-    ne: Array.from(NotInclude).map(nf => ({ nf, entregador: NFNome[nf] }))
+    corr: Array.from(Correct),
+    err: Array.from(NotCorrect).map((nf) => ({ nf, entregador: NFNome[nf] })),
+    ni: Array.from(NotIncluded).map((nf) => ({ nf, entregador: NFNome[nf] })),
   };
 }
 
@@ -177,7 +180,7 @@ export default function JefersonPage() {
       const xlsxBuffer = await xlsxFile.arrayBuffer();
       const xlsxData = await parseXlsx(xlsxBuffer);
       const comparison = compareWithStoredData(xlsxData, storedData);
-      console.log({ comparison })
+      console.log({ comparison });
       setResults(comparison);
     } catch (error) {
       console.error("Erro ao processar arquivo:", error);
@@ -406,60 +409,39 @@ export default function JefersonPage() {
                 Nova comparação
               </Button>
             </div>
-            {results.length > 0 && (
+
+            <div className="grid grid-cols-3 gap-4">
               <Card>
-                <Collapsible open={isDiffOpen} onOpenChange={setIsDiffOpen}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          <AlertCircle className="size-5 text-destructive" />
-                          Itens Divergentes
-                        </CardTitle>
-                        <CardDescription>
-                          {results.length} não pertencem ao Jeferson
-                        </CardDescription>
-                      </div>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <ChevronDown
-                            className={`size-4 transition-transform ${isDiffOpen ? "rotate-180" : ""}`}
-                          />
-                          {isDiffOpen ? "Recolher" : "Expandir"}
-                        </Button>
-                      </CollapsibleTrigger>
-                    </div>
-                  </CardHeader>
-                  <CollapsibleContent>
-                    <CardContent className="space-y-3">
-                      {results.map((nf) => (
-                        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-center gap-2">
-                              <AlertCircle className="size-5 text-destructive shrink-0" />
-                              <h4 className="font-medium text-balance">
-                                {nf.NF}
-                              </h4>
-                              <div className="rounded bg-muted px-2 py-1">
-                                <span className="text-muted-foreground">
-                                  Entregador:{" "}
-                                </span>
-                                <span className="font-medium">
-                                  {nf.Transportador}
-                                </span>
-                              </div>
-                            </div>
-                            <Badge variant="destructive" className="shrink-0">
-                              Outro Transportador
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </CardContent>
-                  </CollapsibleContent>
-                </Collapsible>
+                <CardContent className="pt-6">
+                  <div className="text-center">
+                    <p className="text-3xl font-bold">{results.corr.length}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Notas corretas
+                    </p>
+                  </div>
+                </CardContent>
               </Card>
-            )}
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-destructive">
+                      {results.err.length}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Divergentes</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-green-600">
+                      {results.ni.length}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Não incluidas</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         )}
       </div>
