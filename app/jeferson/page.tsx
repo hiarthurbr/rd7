@@ -87,6 +87,8 @@ function compareWithStoredData(
 ): z.infer<typeof Result> {
   console.log({ xlsxData, storedData })
 
+  console.log(storedData.nfs.filter(nfe => nfe.PrevisaoSaida >= xlsxData.startDate && nfe.PrevisaoSaida <= xlsxData.endDate))
+
   // nfes.filter(nfe => nfe.Transportador === "Jeferson" && new Date(nfe.PrevisaoSaida) >= toDateStart("01/04/2026") && new Date(nfe.PrevisaoSaida) <= toDateEnd("15/04/2026"))
   return [];
 }
