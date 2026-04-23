@@ -154,7 +154,7 @@ function compareWithStoredData(
   };
 }
 
-function CorrList({ results }: { results: z.infer<typeof Result> }) {
+function ErrList({ results }: { results: z.infer<typeof Result> }) {
   const [isOpen, setIsOpen] = useState(true);
   return (
     <Card>
@@ -163,7 +163,7 @@ function CorrList({ results }: { results: z.infer<typeof Result> }) {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <CheckCircle2 className="size-5 text-green-600" />
+                <AlertCircle className="size-5 text-green-600" />
                 Notas incorretas
               </CardTitle>
               <CardDescription>
@@ -220,7 +220,7 @@ function NIList({ results }: { results: z.infer<typeof Result> }) {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <CheckCircle2 className="size-5 text-green-600" />
+                <AlertCircle className="size-5 text-green-600" />
                 Notas não incluidas
               </CardTitle>
               <CardDescription>
@@ -277,9 +277,6 @@ export default function JefersonPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateFile, setUpdateFile] = useState<File | null>(null);
-
-  const [isFirstOpen, setIsFirstOpen] = useState(true);
-  const [isSecondOpen, setIsSecondOpen] = useState(true);
 
   // Carrega dados do localStorage
   useEffect(() => {
@@ -569,11 +566,11 @@ export default function JefersonPage() {
             </div>
             {results.err.length > 0 && results.ni.length > 0 ? (
               <div className="grid grid-cols-2 gap-4">
-                <CorrList results={results} />
+                <ErrList results={results} />
                 <NIList results={results} />
               </div>
             ) : results.err.length > 0 ? (
-              <CorrList results={results} />
+              <ErrList results={results} />
             ) : (
               <NIList results={results} />
             )}
