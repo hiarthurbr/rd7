@@ -60,18 +60,20 @@ async function parseXlsx(buffer: ArrayBuffer) {
   const dateWorksheet = workbook.worksheets.filter(
     (w) =>
       w.state === "visible" &&
-      w.findCell("A", 1)?.value?.toString().trim().toLocaleUpperCase() ===
+      w.findCell("A1", 0)?.value?.toString().trim().toLocaleUpperCase() ===
         "Fechamento Geral".toLocaleUpperCase(),
   );
 
   // @ts-expect-error
   globalThis.worksheets = workbook.worksheets.filter((w) => w.state === "visible");
+  // @ts-expect-error
+  globalThis.dateWorksheet = dateWorksheet;
 
   return {
     nfs: workbook.worksheets.filter(
       (w) =>
         w.state === "visible" &&
-        w.findCell("A", 1)?.value?.toString().trim().toLocaleUpperCase() ===
+        w.findCell("A1", 0)?.value?.toString().trim().toLocaleUpperCase() ===
           "FECHAMENTO JEFFTRANSPORTE",
     ),
     startDate: new Date("2026-04-01T00:00"),
@@ -103,7 +105,7 @@ export default function JefersonPage() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
-        setStoredData(StoredNFsData.parse(saved));
+        setStoredData(StoredNFsData.parse(JSON.parse(saved)));
       } catch (e) {
         console.error("Erro ao carregar dados salvos", e);
       }
