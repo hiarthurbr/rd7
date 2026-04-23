@@ -65,7 +65,7 @@ async function parseXlsx(buffer: ArrayBuffer) {
   );
 
   // @ts-expect-error
-  globalThis.dateWorksheet = dateWorksheet;
+  globalThis.worksheets = workbook.worksheets.filter((w) => w.state === "visible");
 
   return {
     nfs: workbook.worksheets.filter(
@@ -104,8 +104,8 @@ export default function JefersonPage() {
     if (saved) {
       try {
         setStoredData(StoredNFsData.parse(saved));
-      } catch {
-        console.error("Erro ao carregar dados salvos");
+      } catch (e) {
+        console.error("Erro ao carregar dados salvos", e);
       }
     }
   }, []);
