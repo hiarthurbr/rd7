@@ -35,7 +35,7 @@ const STORAGE_KEY = "jeferson-nfs-data";
 const NFData = z.object({
   Transportador: z.string().or(z.undefined()),
   PrevisaoSaida: z.coerce.date().or(z.undefined()).or(z.date()),
-  CodigoNotaFiscal: z.number(),
+  NumeroNotaFiscal: z.coerce.number(),
 });
 
 const StoredNFsData = z.object({
@@ -90,9 +90,9 @@ function compareWithStoredData(
 
   const NFStore = storedData.nfs.filter(nfe => nfe.PrevisaoSaida >= xlsxData.startDate && nfe.PrevisaoSaida <= xlsxData.endDate)
   const NFStoreJeferson = NFStore.filter(nfe => nfe.Transportador === "Jeferson")
-  const NFStoreJefersonSet = new Set(NFStoreJeferson.map(nf => nf.CodigoNotaFiscal))
+  const NFStoreJefersonSet = new Set(NFStoreJeferson.map(nf => nf.NumeroNotaFiscal))
   const NFPlaniSet = new Set(xlsxData.nfs)
-  const NFNome = Object.fromEntries(NFStore.map(nfe => [nfe.CodigoNotaFiscal, nfe.Transportador ?? "Nenhum especificado"]))
+  const NFNome = Object.fromEntries(NFStore.map(nfe => [nfe.NumeroNotaFiscal, nfe.Transportador ?? "Nenhum especificado"]))
 
   const Include = NFStoreJefersonSet.intersection(NFPlaniSet);
   const NotInclude = NFStoreJefersonSet.symmetricDifference(NFPlaniSet);
