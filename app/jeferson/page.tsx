@@ -140,7 +140,7 @@ function compareWithStoredData(
   // nfes.filter(nfe => nfe.Transportador === "Jeferson" && new Date(nfe.PrevisaoSaida) >= toDateStart("01/04/2026") && new Date(nfe.PrevisaoSaida) <= toDateEnd("15/04/2026"))
   return {
     eq: Array.from(Include),
-    ne: Array.from(NotInclude).map(nf => { nf, entregador: NFNome[nf] })
+    ne: Array.from(NotInclude).map(nf => ({ nf, entregador: NFNome[nf] }))
   };
 }
 
