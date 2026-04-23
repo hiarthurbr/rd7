@@ -43,12 +43,15 @@ const StoredNFsData = z.object({
   lastUpdated: z.coerce.date(),
 });
 
-const Result = z.array(
-  z.object({
-    NF: z.number(),
-    Transportador: z.string(),
-  }),
-);
+const Result = z.object({
+  eq: z.array(z.number()),
+  ne: z.array(
+    z.object({
+      NF: z.number(),
+      Transportador: z.string(),
+    }),
+  ),
+});
 
 async function parseXlsx(buffer: ArrayBuffer) {
   const workbook = new excel.Workbook();
@@ -66,19 +69,33 @@ async function parseXlsx(buffer: ArrayBuffer) {
   );
 
   // @ts-expect-error
-  globalThis.worksheets = workbook.worksheets.filter((w) => w.state === "visible");
+  globalThis.worksheets = workbook.worksheets.filter(
+    (w) => w.state === "visible",
+  );
   // @ts-expect-error
   globalThis.dateWorksheet = dateWorksheet;
 
   return {
-    nfs: workbook.worksheets.filter(
-      (w) =>
-        w.state === "visible" &&
-        w.findCell("A1", 0)?.value?.toString().trim().toLocaleUpperCase() ===
-          "FECHAMENTO JEFFTRANSPORTE",
-    ).flatMap(w => w.getColumn("A").values.filter(v => typeof v === "number")),
-    startDate: new Date(Math.min(...dateWorksheet.getColumn("A").values.filter(v => v instanceof Date))),
-    endDate: new Date(Math.max(...dateWorksheet.getColumn("A").values.filter(v => v instanceof Date))),
+    nfs: workbook.worksheets
+      .filter(
+        (w) =>
+          w.state === "visible" &&
+          w.findCell("A1", 0)?.value?.toString().trim().toLocaleUpperCase() ===
+            "FECHAMENTO JEFFTRANSPORTE",
+      )
+      .flatMap((w) =>
+        w.getColumn("A").values.filter((v) => typeof v === "number"),
+      ),
+    startDate: new Date(
+      Math.min(
+        ...dateWorksheet.getColumn("A").values.filter((v) => v instanceof Date),
+      ),
+    ),
+    endDate: new Date(
+      Math.max(
+        ...dateWorksheet.getColumn("A").values.filter((v) => v instanceof Date),
+      ),
+    ),
   };
 }
 
@@ -86,21 +103,45 @@ function compareWithStoredData(
   xlsxData: Awaited<ReturnType<typeof parseXlsx>>,
   storedData: z.infer<typeof StoredNFsData>,
 ): z.infer<typeof Result> {
-  console.log({ xlsxData, storedData })
+  console.log({ xlsxData, storedData });
 
-  const NFStore = storedData.nfs.filter(nfe => nfe.PrevisaoSaida >= xlsxData.startDate && nfe.PrevisaoSaida <= xlsxData.endDate)
-  const NFStoreJeferson = NFStore.filter(nfe => nfe.Transportador === "Jeferson")
-  const NFStoreJefersonSet = new Set(NFStoreJeferson.map(nf => nf.NumeroNotaFiscal))
-  const NFPlaniSet = new Set(xlsxData.nfs)
-  const NFNome = Object.fromEntries(NFStore.map(nfe => [nfe.NumeroNotaFiscal, nfe.Transportador ?? "Nenhum especificado"]))
+  const NFStore = storedData.nfs.filter(
+    (nfe) =>
+      nfe.PrevisaoSaida >= xlsxData.startDate &&
+      nfe.PrevisaoSaida <= xlsxData.endDate,
+  );
+  const NFStoreJeferson = NFStore.filter(
+    (nfe) => nfe.Transportador === "Jeferson",
+  );
+  const NFStoreJefersonSet = new Set(
+    NFStoreJeferson.map((nf) => nf.NumeroNotaFiscal),
+  );
+  const NFPlaniSet = new Set(xlsxData.nfs);
+  const NFNome = Object.fromEntries(
+    NFStore.map((nfe) => [
+      nfe.NumeroNotaFiscal,
+      nfe.Transportador ?? "Nenhum especificado",
+    ]),
+  );
 
   const Include = NFStoreJefersonSet.intersection(NFPlaniSet);
   const NotInclude = NFStoreJefersonSet.symmetricDifference(NFPlaniSet);
-  
-  console.log({ NFStore, NFStoreJeferson, NFNome, Include, NotInclude, NFStoreJefersonSet, NFPlaniSet })
+
+  console.log({
+    NFStore,
+    NFStoreJeferson,
+    NFNome,
+    Include,
+    NotInclude,
+    NFStoreJefersonSet,
+    NFPlaniSet,
+  });
 
   // nfes.filter(nfe => nfe.Transportador === "Jeferson" && new Date(nfe.PrevisaoSaida) >= toDateStart("01/04/2026") && new Date(nfe.PrevisaoSaida) <= toDateEnd("15/04/2026"))
-  return [];
+  return {
+    eq: Array.from(Include),
+    ne: Array.from(NotInclude).map(nf => { nf, entregador: NFNome[nf] })
+  };
 }
 
 export default function JefersonPage() {
@@ -134,6 +175,7 @@ export default function JefersonPage() {
       const xlsxBuffer = await xlsxFile.arrayBuffer();
       const xlsxData = await parseXlsx(xlsxBuffer);
       const comparison = compareWithStoredData(xlsxData, storedData);
+      console.log({ comparison })
       setResults(comparison);
     } catch (error) {
       console.error("Erro ao processar arquivo:", error);
