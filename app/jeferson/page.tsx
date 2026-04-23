@@ -35,6 +35,7 @@ const STORAGE_KEY = "jeferson-nfs-data";
 const NFData = z.object({
   Transportador: z.string().or(z.undefined()),
   PrevisaoSaida: z.coerce.date().or(z.undefined()).or(z.date()),
+  CodigoNotaFiscal: z.number(),
 });
 
 const StoredNFsData = z.object({
