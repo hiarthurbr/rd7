@@ -97,7 +97,7 @@ function compareWithStoredData(
   const Include = NFStoreJefersonSet.intersection(NFPlaniSet);
   const NotInclude = NFStoreJefersonSet.symmetricDifference(NFPlaniSet);
   
-  console.log({ NFStore, NFStoreJeferson, NFNome, Include, NotInclude })
+  console.log({ NFStore, NFStoreJeferson, NFNome, Include, NotInclude, NFStoreJefersonSet, NFPlaniSet })
 
   // nfes.filter(nfe => nfe.Transportador === "Jeferson" && new Date(nfe.PrevisaoSaida) >= toDateStart("01/04/2026") && new Date(nfe.PrevisaoSaida) <= toDateEnd("15/04/2026"))
   return [];
