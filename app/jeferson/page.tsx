@@ -252,10 +252,10 @@ function NIList({ results }: { results: z.infer<typeof Result> }) {
         <CollapsibleContent>
           <CardContent className="space-y-2">
             {results.ni.sort((a, b) => a.nf - b.nf).map((nf) => (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+              <div className="rounded-lg border border-warning/30 bg-warning/5 p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-2">
-                    <AlertCircle className="size-5 text-destructive shrink-0" />
+                    <AlertCircle className="size-5 text-warning shrink-0" />
                     <h4 className="font-medium text-balance">{nf.nf}</h4>
                     <div className="rounded bg-muted px-2 py-1">
                       <span className="text-muted-foreground">
@@ -264,7 +264,7 @@ function NIList({ results }: { results: z.infer<typeof Result> }) {
                       <span className="font-medium">{nf.entregador}</span>
                     </div>
                   </div>
-                  <Badge variant="destructive" className="shrink-0">
+                  <Badge variant="warning" className="shrink-0">
                     Não incluida
                   </Badge>
                 </div>
