@@ -126,7 +126,7 @@ function compareWithStoredData(
 
   const Correct = NFStoreJefersonSet.intersection(NFPlaniSet);
   const NotIncluded = NFStoreJefersonSet.difference(NFPlaniSet);
-  const NotCorrect = NFPlaniSet.symmetricDifference(NFStoreJefersonSet.symmetricDifference(NFPlaniSet));
+  const NotCorrect = NFPlaniSet.intersection(NFStoreJefersonSet.symmetricDifference(NFPlaniSet));
 
   console.log({
     NFStore,
