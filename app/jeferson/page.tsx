@@ -16,6 +16,7 @@ import {
   Trash2,
   AlertCircle,
   ChevronDown,
+  Badge,
 } from "lucide-react";
 import {
   Card,
