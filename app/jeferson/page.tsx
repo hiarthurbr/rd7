@@ -141,12 +141,131 @@ function compareWithStoredData(
     NotIncluded,
   });
 
-  // nfes.filter(nfe => nfe.Transportador === "Jeferson" && new Date(nfe.PrevisaoSaida) >= toDateStart("01/04/2026") && new Date(nfe.PrevisaoSaida) <= toDateEnd("15/04/2026"))
   return {
     corr: Array.from(Correct),
-    err: Array.from(NotCorrect).map((nf) => ({ nf, entregador: NFNome[nf] })),
-    ni: Array.from(NotIncluded).map((nf) => ({ nf, entregador: NFNome[nf] })),
+    err: Array.from(NotCorrect).map((nf) => ({
+      nf,
+      entregador: NFNome[nf] ?? "Não definido",
+    })),
+    ni: Array.from(NotIncluded).map((nf) => ({
+      nf,
+      entregador: NFNome[nf] ?? "Não definido",
+    })),
   };
+}
+
+function CorrList({ results }: { results: z.infer<typeof Result> }) {
+  const [isOpen, setIsOpen] = useState(true);
+  return (
+    <Card>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle2 className="size-5 text-green-600" />
+                Notas incorretas
+              </CardTitle>
+              <CardDescription>
+                {result.err.length}
+                {" nota"}
+                {result.err.length === 1 ? "" : "s"}
+                com entregador errado
+              </CardDescription>
+            </div>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <ChevronDown
+                  className={`size-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                />
+                {isOpen ? "Recolher" : "Expandir"}
+              </Button>
+            </CollapsibleTrigger>
+          </div>
+        </CardHeader>
+        <CollapsibleContent>
+          <CardContent className="space-y-2">
+            {result.err.map((nf) => (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="size-5 text-destructive shrink-0" />
+                    <h4 className="font-medium text-balance">{nf.nf}</h4>
+                    <div className="rounded bg-muted px-2 py-1">
+                      <span className="text-muted-foreground">
+                        Entregador:{" "}
+                      </span>
+                      <span className="font-medium">{nf.entregador}</span>
+                    </div>
+                  </div>
+                  <Badge variant="destructive" className="shrink-0">
+                    Entregador errado
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
+  );
+}
+
+function NIList({ results }: { results: z.infer<typeof Result> }) {
+  const [isOpen, setIsOpen] = useState(true);
+  return (
+    <Card>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle2 className="size-5 text-green-600" />
+                Notas não incluidas
+              </CardTitle>
+              <CardDescription>
+                {result.err.length}
+                {" nota"}
+                {result.err.length === 1 ? "" : "s"}
+                não incluidas
+              </CardDescription>
+            </div>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <ChevronDown
+                  className={`size-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                />
+                {isOpen ? "Recolher" : "Expandir"}
+              </Button>
+            </CollapsibleTrigger>
+          </div>
+        </CardHeader>
+        <CollapsibleContent>
+          <CardContent className="space-y-2">
+            {result.err.map((nf) => (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="size-5 text-destructive shrink-0" />
+                    <h4 className="font-medium text-balance">{nf.nf}</h4>
+                    <div className="rounded bg-muted px-2 py-1">
+                      <span className="text-muted-foreground">
+                        Entregador:{" "}
+                      </span>
+                      <span className="font-medium">{nf.entregador}</span>
+                    </div>
+                  </div>
+                  <Badge variant="destructive" className="shrink-0">
+                    Não incluida
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
+  );
 }
 
 export default function JefersonPage() {
@@ -158,7 +277,9 @@ export default function JefersonPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateFile, setUpdateFile] = useState<File | null>(null);
-  const [isDiffOpen, setIsDiffOpen] = useState(true);
+
+  const [isFirstOpen, setIsFirstOpen] = useState(true);
+  const [isSecondOpen, setIsSecondOpen] = useState(true);
 
   // Carrega dados do localStorage
   useEffect(() => {
@@ -414,7 +535,9 @@ export default function JefersonPage() {
               <Card>
                 <CardContent className="pt-6">
                   <div className="text-center">
-                    <p className="text-3xl font-bold">{results.corr.length}</p>
+                    <p className="text-3xl font-bold text-green-600">
+                      {results.corr.length}
+                    </p>
                     <p className="text-sm text-muted-foreground">
                       Notas corretas
                     </p>
@@ -427,21 +550,33 @@ export default function JefersonPage() {
                     <p className="text-3xl font-bold text-destructive">
                       {results.err.length}
                     </p>
-                    <p className="text-sm text-muted-foreground">Divergentes</p>
+                    <p className="text-sm text-muted-foreground">
+                      Notas divergentes
+                    </p>
                   </div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="pt-6">
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-green-600">
-                      {results.ni.length}
+                    <p className="text-3xl font-bold">{results.ni.length}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Notas não incluidas
                     </p>
-                    <p className="text-sm text-muted-foreground">Não incluidas</p>
                   </div>
                 </CardContent>
               </Card>
             </div>
+            {results.err.length > 0 && results.ni.length > 0 ? (
+              <div className="grid grid-cols-2 gap-4">
+                <CorrList results={results} />
+                <NIList results={results} />
+              </div>
+            ) : results.err.length > 0 ? (
+              <CorrList results={results} />
+            ) : (
+              <NIList results={results} />
+            )}
           </div>
         )}
       </div>
