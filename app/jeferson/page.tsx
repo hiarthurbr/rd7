@@ -124,17 +124,19 @@ function compareWithStoredData(
     ]),
   );
 
-  const Include = NFStoreJefersonSet.intersection(NFPlaniSet);
-  const NotInclude = NFStoreJefersonSet.symmetricDifference(NFPlaniSet);
+  const Correct = NFStoreJefersonSet.intersection(NFPlaniSet);
+  const NotIncluded = NFStoreJefersonSet.difference(NFPlaniSet);
+  const NotCorrect = NFPlaniSet.symmetricDifference(NFStoreJefersonSet.symmetricDifference(NFPlaniSet));
 
   console.log({
     NFStore,
     NFStoreJeferson,
     NFNome,
-    Include,
-    NotInclude,
+    Correct,
+    NotCorrect,
     NFStoreJefersonSet,
     NFPlaniSet,
+    NotIncluded
   });
 
   // nfes.filter(nfe => nfe.Transportador === "Jeferson" && new Date(nfe.PrevisaoSaida) >= toDateStart("01/04/2026") && new Date(nfe.PrevisaoSaida) <= toDateEnd("15/04/2026"))
