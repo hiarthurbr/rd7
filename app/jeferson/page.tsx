@@ -178,7 +178,7 @@ function ErrList({ results }: { results: z.infer<typeof Result> }) {
               <CardDescription>
                 {results.err.length}
                 {" nota"}
-                {results.err.length === 1 ? "" : "s"}
+                {results.err.length === 1 ? " " : "s "}
                 com entregador errado
               </CardDescription>
             </div>
@@ -194,7 +194,7 @@ function ErrList({ results }: { results: z.infer<typeof Result> }) {
         </CardHeader>
         <CollapsibleContent>
           <CardContent className="space-y-2">
-            {results.err.map((nf) => (
+            {results.err.sort((a, b) => a.nf - b.nf).map((nf) => (
               <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-2">
@@ -251,7 +251,7 @@ function NIList({ results }: { results: z.infer<typeof Result> }) {
         </CardHeader>
         <CollapsibleContent>
           <CardContent className="space-y-2">
-            {results.ni.map((nf) => (
+            {results.ni.sort((a, b) => a.nf - b.nf).map((nf) => (
               <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-2">
