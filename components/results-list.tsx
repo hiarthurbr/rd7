@@ -1,20 +1,7 @@
 "use client";
 
 import { AlertCircle, CheckCircle2, ChevronDown } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Button } from "@/components/ui/button";
+import { Badge, Button, Card, Disclosure } from "@heroui/react";
 import type { ComparisonResult } from "@/lib/types";
 import { useState } from "react";
 
@@ -37,15 +24,24 @@ function ProductDiffItem({
   const pesoDiff = pesoReceived - pesoExpected;
 
   return (
-    <div className={`rounded-lg border ${Math.abs(pesoDiff) < 0.001 ? "border-warning/30 bg-warning/5" : "border-destructive/30 bg-destructive/5"} p-4`}>
+    <div
+      className={`rounded-lg border ${Math.abs(pesoDiff) < 0.001 ? "border-warning/30 bg-warning/5" : "border-danger/30 bg-danger/5"} p-4`}
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-2">
-          <AlertCircle className={`size-5 ${Math.abs(pesoDiff) < 0.001 ? "text-warning" : "text-destructive"} shrink-0`} />
+          <AlertCircle
+            className={`size-5 ${Math.abs(pesoDiff) < 0.001 ? "text-warning" : "text-danger"} shrink-0`}
+          />
           <h4 className="font-medium text-balance">{name}</h4>
         </div>
-        <Badge variant={Math.abs(pesoDiff) < 0.001 ? "warning" : "destructive"} className="shrink-0">
-          Divergente
-        </Badge>
+        <Badge.Anchor className="mx-2">
+          <Badge
+            color={Math.abs(pesoDiff) < 0.001 ? "warning" : "danger"}
+            className="shrink-0 px-1"
+          >
+            Divergente
+          </Badge>
+        </Badge.Anchor>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-4">
@@ -54,11 +50,11 @@ function ProductDiffItem({
             Planilha
           </p>
           <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="rounded bg-muted px-2 py-1">
+            <div className="rounded bg-muted/25 px-2 py-1">
               <span className="text-muted-foreground">Qntd: </span>
               <span className="font-medium">{qntdExpected}</span>
             </div>
-            <div className="rounded bg-muted px-2 py-1">
+            <div className="rounded bg-muted/25 px-2 py-1">
               <span className="text-muted-foreground">Peso: </span>
               <span className="font-medium">{pesoExpected.toFixed(4)}</span>
             </div>
@@ -70,15 +66,13 @@ function ProductDiffItem({
             NFe
           </p>
           <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="rounded bg-muted px-2 py-1">
+            <div className="rounded bg-muted/25 px-2 py-1">
               <span className="text-muted-foreground">Qntd: </span>
               <span className="font-medium">{qntdReceived}</span>
               {qntdDiff !== 0 && (
                 <span
                   className={
-                    qntdDiff > 0
-                      ? "text-green-600 ml-1"
-                      : "text-destructive ml-1"
+                    qntdDiff > 0 ? "text-green-600 ml-1" : "text-danger ml-1"
                   }
                 >
                   ({qntdDiff > 0 ? "+" : ""}
@@ -86,15 +80,13 @@ function ProductDiffItem({
                 </span>
               )}
             </div>
-            <div className="rounded bg-muted px-2 py-1">
+            <div className="rounded bg-muted/25 px-2 py-1">
               <span className="text-muted-foreground">Peso: </span>
               <span className="font-medium">{pesoReceived.toFixed(4)}</span>
               {pesoDiff !== 0 && (
                 <span
                   className={
-                    pesoDiff > 0
-                      ? "text-green-600 ml-1"
-                      : "text-destructive ml-1"
+                    pesoDiff > 0 ? "text-green-600 ml-1" : "text-danger ml-1"
                   }
                 >
                   ({pesoDiff > 0 ? "+" : ""}
@@ -117,30 +109,32 @@ function ProductSameItem({
   values: [number, number, number][];
 }) {
   return (
-    <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+    <div className="rounded-lg border border-accent/30 bg-accent/5 p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-2">
-          <AlertCircle className="size-5 text-destructive shrink-0" />
+          <AlertCircle className="size-5 text-accent shrink-0" />
           <h4 className="font-medium text-balance">{name}</h4>
         </div>
-        <Badge variant="destructive" className="shrink-0">
-          Repetido
-        </Badge>
+        <Badge.Anchor className="mx-2">
+          <Badge color="accent" className="shrink-0 px-1">
+            Repetido
+          </Badge>
+        </Badge.Anchor>
       </div>
 
       {values.map((value) => (
         <div className="mt-4 grid grid-cols-1 gap-4">
           <div className="space-y-2">
             <div className="grid grid-cols-3 gap-2 text-sm">
-              <div className="rounded bg-muted px-2 py-1">
+              <div className="rounded bg-muted/25 px-2 py-1">
                 <span className="text-muted-foreground">nItem: </span>
                 <span className="font-medium">{value[0]}</span>
               </div>
-              <div className="rounded bg-muted px-2 py-1">
+              <div className="rounded bg-muted/25 px-2 py-1">
                 <span className="text-muted-foreground">Qntd: </span>
                 <span className="font-medium">{value[1]}</span>
               </div>
-              <div className="rounded bg-muted px-2 py-1">
+              <div className="rounded bg-muted/25 px-2 py-1">
                 <span className="text-muted-foreground">Peso: </span>
                 <span className="font-medium">{value[2]}</span>
               </div>
@@ -189,165 +183,165 @@ export function ResultsList({ results }: ResultsListProps) {
 
   const totalItems = diffEntries.length + eqEntries.length;
 
-  console.log({ results })
+  console.log({ results });
 
   return (
     <div className="space-y-6">
       {/* Summary */}
       <div className="grid grid-cols-3 gap-4">
         <Card>
-          <CardContent className="pt-6">
+          <Card.Content className="pt-6">
             <div className="text-center">
               <p className="text-3xl font-bold">{totalItems}</p>
               <p className="text-sm text-muted-foreground">Total de Itens</p>
             </div>
-          </CardContent>
+          </Card.Content>
         </Card>
         <Card>
-          <CardContent className="pt-6">
+          <Card.Content className="pt-6">
             <div className="text-center">
-              <p className="text-3xl font-bold text-destructive">
+              <p className="text-3xl font-bold text-danger">
                 {diffEntries.length}
               </p>
               <p className="text-sm text-muted-foreground">Divergentes</p>
             </div>
-          </CardContent>
+          </Card.Content>
         </Card>
         <Card>
-          <CardContent className="pt-6">
+          <Card.Content className="pt-6">
             <div className="text-center">
               <p className="text-3xl font-bold text-green-600">
                 {eqEntries.length}
               </p>
               <p className="text-sm text-muted-foreground">Iguais</p>
             </div>
-          </CardContent>
+          </Card.Content>
         </Card>
         <Card>
-          <CardContent className="pt-6">
+          <Card.Content className="pt-6">
             <div className="text-center">
-              <p className="text-3xl font-bold text-destructive">{same_sku}</p>
+              <p className="text-3xl font-bold text-accent">{same_sku}</p>
               <p className="text-sm text-muted-foreground">
                 Itens repetidos na NFe
               </p>
             </div>
-          </CardContent>
+          </Card.Content>
         </Card>
       </div>
 
       {/* Produtos repetidos */}
       {same_sku > 0 && (
         <Card>
-          <Collapsible open={isSameOpen} onOpenChange={setIsSameOpen}>
-            <CardHeader>
+          <Disclosure isExpanded={isSameOpen} onExpandedChange={setIsSameOpen}>
+            <Card.Header>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertCircle className="size-5 text-destructive" />
+                  <Card.Title className="flex items-center gap-2">
+                    <AlertCircle className="size-5 text-accent" />
                     Produtos repetidos na NFe
-                  </CardTitle>
-                  <CardDescription>
+                  </Card.Title>
+                  <Card.Description>
                     Nota apresenta {same_sku} itens repetidos
-                  </CardDescription>
+                  </Card.Description>
                 </div>
-                <CollapsibleTrigger asChild>
+                <Disclosure.Trigger>
                   <Button variant="ghost" size="sm">
                     <ChevronDown
                       className={`size-4 transition-transform ${isSameOpen ? "rotate-180" : ""}`}
                     />
                     {isSameOpen ? "Recolher" : "Expandir"}
                   </Button>
-                </CollapsibleTrigger>
+                </Disclosure.Trigger>
               </div>
-            </CardHeader>
-            <CollapsibleContent>
-              <CardContent className="space-y-3">
+            </Card.Header>
+            <Disclosure.Content>
+              <Card.Content className="space-y-3">
                 {Object.entries(results.same_sku)
                   .filter((v) => v[1] != null && v[1].length > 1)
                   ?.map(([name, values]) => (
                     <ProductSameItem key={name} name={name} values={values} />
                   ))}
-              </CardContent>
-            </CollapsibleContent>
-          </Collapsible>
+              </Card.Content>
+            </Disclosure.Content>
+          </Disclosure>
         </Card>
       )}
 
       {/* Divergences */}
       {diffEntries.length > 0 && (
         <Card>
-          <Collapsible open={isDiffOpen} onOpenChange={setIsDiffOpen}>
-            <CardHeader>
+          <Disclosure isExpanded={isDiffOpen} onExpandedChange={setIsDiffOpen}>
+            <Card.Header>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertCircle className="size-5 text-destructive" />
+                  <Card.Title className="flex items-center gap-2">
+                    <AlertCircle className="size-5 text-danger" />
                     Itens Divergentes
-                  </CardTitle>
-                  <CardDescription>
+                  </Card.Title>
+                  <Card.Description>
                     {diffEntries.length}{" "}
                     {diffEntries.length === 1
                       ? "item apresenta"
                       : "itens apresentam"}{" "}
                     diferença entre os arquivos
-                  </CardDescription>
+                  </Card.Description>
                 </div>
-                <CollapsibleTrigger asChild>
+                <Disclosure.Trigger>
                   <Button variant="ghost" size="sm">
                     <ChevronDown
                       className={`size-4 transition-transform ${isDiffOpen ? "rotate-180" : ""}`}
                     />
                     {isSameOpen ? "Recolher" : "Expandir"}
                   </Button>
-                </CollapsibleTrigger>
+                </Disclosure.Trigger>
               </div>
-            </CardHeader>
-            <CollapsibleContent>
-              <CardContent className="space-y-3">
+            </Card.Header>
+            <Disclosure.Content>
+              <Card.Content className="space-y-3">
                 {diffEntries.map(([name, values]) => (
                   <ProductDiffItem key={name} name={name} values={values} />
                 ))}
-              </CardContent>
-            </CollapsibleContent>
-          </Collapsible>
+              </Card.Content>
+            </Disclosure.Content>
+          </Disclosure>
         </Card>
       )}
 
-      {/* Equal items (collapsible) */}
+      {/* Equal items (Disclosure) */}
       {eqEntries.length > 0 && (
         <Card>
-          <Collapsible open={isEqOpen} onOpenChange={setIsEqOpen}>
-            <CardHeader>
+          <Disclosure isExpanded={isEqOpen} onExpandedChange={setIsEqOpen}>
+            <Card.Header>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
+                  <Card.Title className="flex items-center gap-2">
                     <CheckCircle2 className="size-5 text-green-600" />
                     Itens iguais
-                  </CardTitle>
-                  <CardDescription>
+                  </Card.Title>
+                  <Card.Description>
                     {eqEntries.length}{" "}
                     {eqEntries.length === 1 ? "item está" : "itens estão"} em
                     conformidade
-                  </CardDescription>
+                  </Card.Description>
                 </div>
-                <CollapsibleTrigger asChild>
+                <Disclosure.Trigger>
                   <Button variant="ghost" size="sm">
                     <ChevronDown
                       className={`size-4 transition-transform ${isEqOpen ? "rotate-180" : ""}`}
                     />
                     {isEqOpen ? "Recolher" : "Expandir"}
                   </Button>
-                </CollapsibleTrigger>
+                </Disclosure.Trigger>
               </div>
-            </CardHeader>
-            <CollapsibleContent>
-              <CardContent className="space-y-2">
+            </Card.Header>
+            <Disclosure.Content>
+              <Card.Content className="space-y-2">
                 {eqEntries.map(([name, values]) => (
                   <ProductEqItem key={name} name={name} values={values} />
                 ))}
-              </CardContent>
-            </CollapsibleContent>
-          </Collapsible>
+              </Card.Content>
+            </Disclosure.Content>
+          </Disclosure>
         </Card>
       )}
     </div>

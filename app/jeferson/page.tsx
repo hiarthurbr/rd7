@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Disclosure, Card, Badge, Button } from "@heroui/react";
 import { useState, useEffect, useCallback } from "react";
 import {
   FileSpreadsheet,
@@ -17,15 +13,6 @@ import {
   AlertCircle,
   ChevronDown,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { FileUploader } from "@/components/file-uploader";
 import Link from "next/link";
 import { z } from "zod";
@@ -166,39 +153,40 @@ function compareWithStoredData(
 function ErrList({ results }: { results: z.infer<typeof Result> }) {
   const [isOpen, setIsOpen] = useState(true);
   return (
-    <Card>
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="size-5 text-green-600" />
-                Notas incorretas
-              </CardTitle>
-              <CardDescription>
-                {results.err.length}
-                {" nota"}
-                {results.err.length === 1 ? " " : "s "}
-                com entregador errado
-              </CardDescription>
-            </div>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <ChevronDown
-                  className={`size-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
-                />
-                {isOpen ? "Recolher" : "Expandir"}
-              </Button>
-            </CollapsibleTrigger>
+    <Disclosure isExpanded={isOpen} onExpandedChange={setIsOpen}>
+      <Disclosure.Heading>
+        <div className="flex items-center justify-between">
+          <div>
+            <Card.Title className="flex items-center gap-2">
+              <AlertCircle className="size-5 text-green-600" />
+              Notas incorretas
+            </Card.Title>
+            <Card.Description>
+              {results.err.length}
+              {" nota"}
+              {results.err.length === 1 ? " " : "s "}
+              com entregador errado
+            </Card.Description>
           </div>
-        </CardHeader>
-        <CollapsibleContent>
-          <CardContent className="space-y-2">
-            {results.err.sort((a, b) => a.nf - b.nf).map((nf) => (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+          <Disclosure.Trigger>
+            <Button variant="ghost" size="sm">
+              <ChevronDown
+                className={`size-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+              />
+              {isOpen ? "Recolher" : "Expandir"}
+            </Button>
+          </Disclosure.Trigger>
+        </div>
+      </Disclosure.Heading>
+      <Disclosure.Content>
+        <Disclosure.Body className="space-y-2">
+          {results.err
+            .sort((a, b) => a.nf - b.nf)
+            .map((nf) => (
+              <div className="rounded-lg border border-danger/30 bg-danger/5 p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-2">
-                    <AlertCircle className="size-5 text-destructive shrink-0" />
+                    <AlertCircle className="size-5 text-danger shrink-0" />
                     <h4 className="font-medium text-balance">{nf.nf}</h4>
                     <div className="rounded bg-muted px-2 py-1">
                       <span className="text-muted-foreground">
@@ -207,51 +195,39 @@ function ErrList({ results }: { results: z.infer<typeof Result> }) {
                       <span className="font-medium">{nf.entregador}</span>
                     </div>
                   </div>
-                  <Badge variant="destructive" className="shrink-0">
+                  <Badge color="danger" className="shrink-0">
                     Entregador errado
                   </Badge>
                 </div>
               </div>
             ))}
-          </CardContent>
-        </CollapsibleContent>
-      </Collapsible>
-    </Card>
+        </Disclosure.Body>
+      </Disclosure.Content>
+    </Disclosure>
   );
 }
 
 function NIList({ results }: { results: z.infer<typeof Result> }) {
   const [isOpen, setIsOpen] = useState(true);
   return (
-    <Card>
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="size-5 text-green-600" />
-                Notas não incluidas
-              </CardTitle>
-              <CardDescription>
-                {results.ni.length}
-                {" nota"}
-                {results.ni.length === 1 ? " " : "s "}
-                não incluidas
-              </CardDescription>
-            </div>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <ChevronDown
-                  className={`size-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
-                />
-                {isOpen ? "Recolher" : "Expandir"}
-              </Button>
-            </CollapsibleTrigger>
-          </div>
-        </CardHeader>
-        <CollapsibleContent>
-          <CardContent className="space-y-2">
-            {results.ni.sort((a, b) => a.nf - b.nf).map((nf) => (
+    <Disclosure isExpanded={isOpen} onExpandedChange={setIsOpen}>
+      <Disclosure.Heading>
+        <Button variant="ghost" size="sm">
+          <AlertCircle className="size-5 text-green-600" />
+          Notas não incluidas
+          {results.ni.length}
+          {" nota"}
+          {results.ni.length === 1 ? " " : "s "}
+          não incluidas
+          <Disclosure.Indicator />
+          {isOpen ? "Recolher" : "Expandir"}
+        </Button>
+      </Disclosure.Heading>
+      <Disclosure.Content>
+        <Disclosure.Body className="space-y-2">
+          {results.ni
+            .sort((a, b) => a.nf - b.nf)
+            .map((nf) => (
               <div className="rounded-lg border border-warning/30 bg-warning/5 p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-2">
@@ -264,16 +240,15 @@ function NIList({ results }: { results: z.infer<typeof Result> }) {
                       <span className="font-medium">{nf.entregador}</span>
                     </div>
                   </div>
-                  <Badge variant="warning" className="shrink-0">
+                  <Badge color="warning" className="shrink-0">
                     Não incluida
                   </Badge>
                 </div>
               </div>
             ))}
-          </CardContent>
-        </CollapsibleContent>
-      </Collapsible>
-    </Card>
+        </Disclosure.Body>
+      </Disclosure.Content>
+    </Disclosure>
   );
 }
 
@@ -394,19 +369,19 @@ export default function JefersonPage() {
 
         {/* Stored Data Status */}
         <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
+          <Card.Header>
+            <Card.Title className="flex items-center gap-2 text-lg">
               <Database className="size-5" />
               Dados Armazenados
-            </CardTitle>
-            <CardDescription>
+            </Card.Title>
+            <Card.Description>
               Base de dados local para comparação
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+            </Card.Description>
+          </Card.Header>
+          <Card.Content>
             {storedData ? (
               <div className="space-y-4">
-                <div className="flex items-center justify-between rounded-lg border bg-muted/50 px-4 py-3">
+                <div className="flex items-center justify-between rounded-lg border bg-muted/20 px-4 py-3">
                   <div className="flex items-center gap-3">
                     <Calendar className="size-5 text-muted-foreground" />
                     <div>
@@ -430,14 +405,23 @@ export default function JefersonPage() {
                     size="sm"
                     onClick={handleUpdateStorage}
                   >
-                    <RefreshCw className="size-4 mr-2" />
-                    Atualizar dados
+                    {isUpdating ? (
+                      <>
+                        <RefreshCw className="size-4 mr-2 animate-spin" />
+                        Atualizando...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="size-4 mr-2" />
+                        Atualizar dados
+                      </>
+                    )}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleClearStorage}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    className="text-danger hover:text-danger hover:bg-danger/10"
                   >
                     <Trash2 className="size-4 mr-2" />
                     Limpar
@@ -453,7 +437,7 @@ export default function JefersonPage() {
                   </p>
                   <Button
                     onClick={handleUpdateStorage}
-                    disabled={isUpdating}
+                    isDisabled={isUpdating}
                     className="w-1/3"
                   >
                     {isUpdating ? (
@@ -479,23 +463,23 @@ export default function JefersonPage() {
                 />
               </div>
             )}
-          </CardContent>
+          </Card.Content>
         </Card>
 
         {/* Comparison Section */}
         {storedData && !results && (
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
+            <Card.Header>
+              <Card.Title className="flex items-center gap-2 text-lg">
                 <FileSpreadsheet className="size-5" />
                 Comparar Arquivo
-              </CardTitle>
-              <CardDescription>
+              </Card.Title>
+              <Card.Description>
                 Selecione um arquivo .xlsx para comparar com os dados
                 armazenados
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </Card.Description>
+            </Card.Header>
+            <Card.Content className="space-y-4">
               <FileUploader
                 label="Arquivo para comparação (.xlsx)"
                 accept=".xlsx,.xls"
@@ -507,7 +491,7 @@ export default function JefersonPage() {
               {xlsxFile && (
                 <Button
                   onClick={handleCompare}
-                  disabled={isProcessing}
+                  isDisabled={isProcessing}
                   className="w-full"
                   size="lg"
                 >
@@ -521,7 +505,7 @@ export default function JefersonPage() {
                   )}
                 </Button>
               )}
-            </CardContent>
+            </Card.Content>
           </Card>
         )}
 
@@ -539,7 +523,7 @@ export default function JefersonPage() {
 
             <div className="grid grid-cols-3 gap-4">
               <Card>
-                <CardContent className="pt-6">
+                <Card.Content className="pt-6">
                   <div className="text-center">
                     <p className="text-3xl font-bold text-green-600">
                       {results.corr.length}
@@ -548,29 +532,29 @@ export default function JefersonPage() {
                       Notas corretas
                     </p>
                   </div>
-                </CardContent>
+                </Card.Content>
               </Card>
               <Card>
-                <CardContent className="pt-6">
+                <Card.Content className="pt-6">
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-destructive">
+                    <p className="text-3xl font-bold text-danger">
                       {results.err.length}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Notas divergentes
                     </p>
                   </div>
-                </CardContent>
+                </Card.Content>
               </Card>
               <Card>
-                <CardContent className="pt-6">
+                <Card.Content className="pt-6">
                   <div className="text-center">
                     <p className="text-3xl font-bold">{results.ni.length}</p>
                     <p className="text-sm text-muted-foreground">
                       Notas não incluidas
                     </p>
                   </div>
-                </CardContent>
+                </Card.Content>
               </Card>
             </div>
             {results.err.length > 0 && results.ni.length > 0 ? (

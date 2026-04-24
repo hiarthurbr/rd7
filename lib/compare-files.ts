@@ -60,6 +60,7 @@ export function parseXml(xmlString: string) {
   const prods_nfe: { [key: string]: { ids: Array<[number, number, number]>; res: [number, number] } } = {};
 
   console.log(jObj.NFe.infNFe.det)
+  // @ts-ignore
   jObj.NFe.infNFe.det.forEach((prod, nItem) => {
     if (prods_nfe[prod.prod.cProd] != null) {
       prods_nfe[prod.prod.cProd].ids.push([nItem + 1, prod.prod.qCom, prod.prod.qTrib]);

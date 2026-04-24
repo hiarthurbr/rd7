@@ -3,9 +3,7 @@
 import { useState, useCallback } from 'react'
 import { FileUploader } from '@/components/file-uploader'
 import { ResultsList } from '@/components/results-list'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Spinner } from '@/components/ui/spinner'
+import { Card, Spinner, Button } from '@heroui/react'
 import { parseXlsx, parseXml, compareFiles } from '@/lib/compare-files'
 import type { ComparisonResult } from '@/lib/types'
 import { ArrowRight, FileSearch, RotateCcw } from 'lucide-react'
@@ -69,16 +67,16 @@ export default function Dashboard() {
           <>
             {/* Upload Section */}
             <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <Card.Header>
+                <Card.Title className="flex items-center gap-2">
                   <FileSearch className="size-5" />
                   Upload de Arquivos
-                </CardTitle>
-                <CardDescription>
+                </Card.Title>
+                <Card.Description>
                   Selecione um arquivo Excel (.xlsx) com os dados esperados e um arquivo XML com os dados recebidos
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+                </Card.Description>
+              </Card.Header>
+              <Card.Content>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <p className="mb-2 text-sm font-medium">Dados Esperados (XLSX)</p>
@@ -103,7 +101,7 @@ export default function Dashboard() {
                 </div>
 
                 {error && (
-                  <div className="mt-4 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                  <div className="mt-4 rounded-lg border border-danger/50 bg-danger/10 p-3 text-sm text-danger">
                     {error}
                   </div>
                 )}
@@ -112,7 +110,7 @@ export default function Dashboard() {
                   <Button
                     size="lg"
                     onClick={handleCompare}
-                    disabled={!canCompare}
+                    isDisabled={!canCompare}
                     className="min-w-[200px]"
                   >
                     {isProcessing ? (
@@ -128,7 +126,7 @@ export default function Dashboard() {
                     )}
                   </Button>
                 </div>
-              </CardContent>
+              </Card.Content>
             </Card>
           </>
         ) : (
