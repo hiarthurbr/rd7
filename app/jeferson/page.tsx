@@ -9,6 +9,7 @@ import {
   SuccessIcon,
   WarningIcon,
   Table,
+  Modal,
 } from "@heroui/react";
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -33,6 +34,28 @@ const NFData = z.object({
   Transportador: z.string().or(z.undefined()),
   PrevisaoSaida: z.coerce.date().or(z.undefined()).or(z.date()),
   NumeroNotaFiscal: z.coerce.number(),
+  Origem: z.string(),
+  CodigoNotaFiscal: z.int(),
+  IdEntrega: z.int(),
+  Destinatario: z.string(),
+  EnderecoDestinatario: z.string().or(z.undefined()),
+  BairroDestinatario: z.string().or(z.undefined()),
+  ValorLiquido: z.number(),
+  PesoLiquido: z.number(),
+  Volumes: z.int(),
+  DataAutorizacao: z.coerce.date().or(z.date()),
+  Tipo: z.coerce.number(),
+  Transportadora: z.string().or(z.undefined()),
+  EnderecoTransportadora: z.string().or(z.undefined()),
+  BairroTransportadora: z.string().or(z.undefined()),
+  Status: z.string(),
+  DataEntrega: z.coerce.date().or(z.date()).or(z.undefined()),
+  DataColeta: z.coerce.date().or(z.date()).or(z.undefined()),
+  UsuarioColeta: z.string().or(z.undefined()),
+  UsuarioEntrega: z.string().or(z.undefined()),
+  Latitude: z.number().or(z.undefined()),
+  Longitude: z.number().or(z.undefined()),
+  NumeroColeta: z.string().or(z.undefined()),
 });
 
 const StoredNFsData = z.object({
@@ -41,24 +64,9 @@ const StoredNFsData = z.object({
 });
 
 const Result = z.object({
-  corr: z.array(
-    z.object({
-      nf: z.number(),
-      entregador: z.string(),
-    }),
-  ),
-  err: z.array(
-    z.object({
-      nf: z.number(),
-      entregador: z.string(),
-    }),
-  ),
-  ni: z.array(
-    z.object({
-      nf: z.number(),
-      entregador: z.string(),
-    }),
-  ),
+  corr: z.array(NFData),
+  err: z.array(NFData),
+  ni: z.array(NFData),
 });
 
 async function parseXlsx(buffer: ArrayBuffer) {
@@ -141,7 +149,7 @@ function compareWithStoredData(
       nfe.PrevisaoSaida! <= xlsxData.endDate,
   );
   const NFStoreJeferson = NFStore.filter(
-    (nfe) => nfe.Transportador === "Jeferson",
+    (nfe) => nfe.Transportador?.trim() === "Jeferson",
   );
   const NFStoreJefersonSet = new Set(
     NFStoreJeferson.map((nf) => nf.NumeroNotaFiscal),
@@ -157,7 +165,7 @@ function compareWithStoredData(
   const Correct = NFStoreJefersonSet.intersection(NFPlaniSet);
   const NotIncluded = NFStoreJefersonSet.difference(NFPlaniSet);
   const NotCorrect = NFPlaniSet.intersection(
-    NFStoreJefersonSet.symmetricDifference(NFPlaniSet),
+    NFStoreJefersonSet.difference(NFPlaniSet),
   );
 
   console.log({
@@ -172,101 +180,96 @@ function compareWithStoredData(
   });
 
   return {
-    corr: Array.from(Correct).map((nf) => ({
-      nf,
-      entregador: NFNome[nf] ?? "Não definido",
-    })),
-    err: Array.from(NotCorrect).map((nf) => ({
-      nf,
-      entregador: NFNome[nf] ?? "Não definido",
-    })),
-    ni: Array.from(NotIncluded).map((nf) => ({
-      nf,
-      entregador: NFNome[nf] ?? "Não definido",
-    })),
+    corr: Array.from(Correct)
+      .map((nf) => storedData.nfs.find((nfe) => nfe.NumeroNotaFiscal === nf))
+      .filter((nf) => nf != null),
+    err: Array.from(NotCorrect)
+      .map((nf) => storedData.nfs.find((nfe) => nfe.NumeroNotaFiscal === nf))
+      .filter((nf) => nf != null),
+    ni: Array.from(NotIncluded)
+      .map((nf) => storedData.nfs.find((nfe) => nfe.NumeroNotaFiscal === nf))
+      .filter((nf) => nf != null),
   };
 }
 
-function CorrList({ results }: { results: z.infer<typeof Result> }) {
+function List({ nfs }: { nfs: Array<z.infer<typeof NFData>> }) {
   return (
     <Table>
-      <Table.ScrollContainer >
+      <Table.ScrollContainer>
         <Table.Content aria-label="Example table">
           <Table.Header>
-            <Table.Column allowsSorting isRowHeader>NF</Table.Column>
-            <Table.Column allowsSorting isRowHeader>Entregador</Table.Column>
+            <Table.Column allowsSorting isRowHeader>
+              NF
+            </Table.Column>
+            <Table.Column allowsSorting isRowHeader>
+              Transportador
+            </Table.Column>
             <Table.Column isRowHeader>Expandir</Table.Column>
           </Table.Header>
           <Table.Body>
-            {results.corr
-              .sort((a, b) => a.nf - b.nf)
+            {nfs
+              .sort((a, b) => a.NumeroNotaFiscal - b.NumeroNotaFiscal)
               .map((nf) => (
-                <Table.Row key={nf.nf}>
-                  <Table.Cell>{nf.nf}</Table.Cell>
-                  <Table.Cell>Entregador: {nf.entregador}</Table.Cell>
-                  <Table.Cell></Table.Cell>
+                <Table.Row key={nf.NumeroNotaFiscal}>
+                  <Table.Cell>{nf.NumeroNotaFiscal}</Table.Cell>
+                  <Table.Cell>{nf.Transportador}</Table.Cell>
+                  <Table.Cell>
+                    <Modal
+                      onOpenChange={(open) => {
+                        open && console.log(nf);
+                      }}
+                      
+                    >
+                      <Button variant="secondary" size="sm">Detalhes</Button>
+                      <Modal.Backdrop>
+                        <Modal.Container size="cover">
+                          <Modal.Dialog>
+                            <Modal.CloseTrigger />
+                            <Modal.Header>
+                              <AlertCircle className="size-5" />
+                              <Modal.Heading>Detalhes da NFe</Modal.Heading>
+                            </Modal.Header>
+                            <Modal.Body>
+                              <Table>
+                                <Table.ScrollContainer>
+                                  <Table.Content aria-label="Example table">
+                                    <Table.Header>
+                                      <Table.Column allowsSorting isRowHeader>
+                                        Chave
+                                      </Table.Column>
+                                      <Table.Column allowsSorting isRowHeader>
+                                        Valor
+                                      </Table.Column>
+                                    </Table.Header>
+                                    <Table.Body>
+                                      {Object.entries(nf).map(
+                                        ([key, value]) => (
+                                          <Table.Row key={key}>
+                                            <Table.Cell>{key}</Table.Cell>
+                                            <Table.Cell>{value?.toString()}</Table.Cell>
+                                          </Table.Row>
+                                        ),
+                                      )}
+                                    </Table.Body>
+                                  </Table.Content>
+                                </Table.ScrollContainer>
+                              </Table>
+                            </Modal.Body>
+                            <Modal.Footer>
+                              <Button className="w-full" slot="close">
+                                Fechar
+                              </Button>
+                            </Modal.Footer>
+                          </Modal.Dialog>
+                        </Modal.Container>
+                      </Modal.Backdrop>
+                    </Modal>
+                  </Table.Cell>
                 </Table.Row>
               ))}
           </Table.Body>
         </Table.Content>
       </Table.ScrollContainer>
-      <Table.Footer>{/* Optional footer content */}</Table.Footer>
-    </Table>
-  );
-}
-
-function ErrList({ results }: { results: z.infer<typeof Result> }) {
-  return (
-    <Table>
-      <Table.ScrollContainer >
-        <Table.Content aria-label="Example table">
-          <Table.Header>
-            <Table.Column allowsSorting isRowHeader>NF</Table.Column>
-            <Table.Column allowsSorting isRowHeader>Entregador</Table.Column>
-            <Table.Column isRowHeader>Expandir</Table.Column>
-          </Table.Header>
-          <Table.Body>
-            {results.err
-              .sort((a, b) => a.nf - b.nf)
-              .map((nf) => (
-                <Table.Row key={nf.nf}>
-                  <Table.Cell>{nf.nf}</Table.Cell>
-                  <Table.Cell>Entregador: {nf.entregador}</Table.Cell>
-                  <Table.Cell></Table.Cell>
-                </Table.Row>
-              ))}
-          </Table.Body>
-        </Table.Content>
-      </Table.ScrollContainer>
-      <Table.Footer>{/* Optional footer content */}</Table.Footer>
-    </Table>
-  );
-}
-
-function NIList({ results }: { results: z.infer<typeof Result> }) {
-  return (
-    <Table>
-      <Table.ScrollContainer >
-        <Table.Content aria-label="Example table">
-          <Table.Header>
-            <Table.Column allowsSorting isRowHeader>NF</Table.Column>
-            <Table.Column allowsSorting isRowHeader>Entregador</Table.Column>
-            <Table.Column isRowHeader>Expandir</Table.Column>
-          </Table.Header>
-          <Table.Body>
-            {results.ni
-              .sort((a, b) => a.nf - b.nf)
-              .map((nf) => (
-                <Table.Row key={nf.nf}>
-                  <Table.Cell>{nf.nf}</Table.Cell>
-                  <Table.Cell>Entregador: {nf.entregador}</Table.Cell>
-                  <Table.Cell></Table.Cell>
-                </Table.Row>
-              ))}
-          </Table.Body>
-        </Table.Content>
-      </Table.ScrollContainer>
-      <Table.Footer>{/* Optional footer content */}</Table.Footer>
     </Table>
   );
 }
@@ -594,13 +597,13 @@ export default function JefersonPage() {
                 </Tabs.List>
               </Tabs.ListContainer>
               <Tabs.Panel className="pt-4" id="err">
-                <ErrList results={results} />
+                <List nfs={results.err} />
               </Tabs.Panel>
               <Tabs.Panel className="pt-4" id="ni">
-                <NIList results={results} />
+                <List nfs={results.ni} />
               </Tabs.Panel>
               <Tabs.Panel className="pt-4" id="corr">
-                <CorrList results={results} />
+                <List nfs={results.corr} />
               </Tabs.Panel>
             </Tabs>
           </div>
