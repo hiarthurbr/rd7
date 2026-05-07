@@ -164,9 +164,10 @@ function compareWithStoredData(
 
   const Correct = NFStoreJefersonSet.intersection(NFPlaniSet);
   const NotIncluded = NFStoreJefersonSet.difference(NFPlaniSet);
-  const NotCorrect = NFPlaniSet.intersection(
-    NFStoreJefersonSet.difference(NFPlaniSet),
-  );
+  const NotCorrect =
+    NFStoreJefersonSet.symmetricDifference(NFPlaniSet).intersection(
+      NFPlaniSet,
+    );
 
   console.log({
     NFStore,
@@ -218,9 +219,10 @@ function List({ nfs }: { nfs: Array<z.infer<typeof NFData>> }) {
                       onOpenChange={(open) => {
                         open && console.log(nf);
                       }}
-                      
                     >
-                      <Button variant="secondary" size="sm">Detalhes</Button>
+                      <Button variant="secondary" size="sm">
+                        Detalhes
+                      </Button>
                       <Modal.Backdrop>
                         <Modal.Container size="cover">
                           <Modal.Dialog>
@@ -246,7 +248,9 @@ function List({ nfs }: { nfs: Array<z.infer<typeof NFData>> }) {
                                         ([key, value]) => (
                                           <Table.Row key={key}>
                                             <Table.Cell>{key}</Table.Cell>
-                                            <Table.Cell>{value?.toString()}</Table.Cell>
+                                            <Table.Cell>
+                                              {value?.toString()}
+                                            </Table.Cell>
                                           </Table.Row>
                                         ),
                                       )}
