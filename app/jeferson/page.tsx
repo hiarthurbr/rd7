@@ -1,6 +1,15 @@
 "use client";
 
-import { Disclosure, Card, Badge, Button } from "@heroui/react";
+import {
+  Disclosure,
+  Card,
+  Chip,
+  Button,
+  Tabs,
+  SuccessIcon,
+  WarningIcon,
+  Table,
+} from "@heroui/react";
 import { useState, useEffect, useCallback } from "react";
 import {
   FileSpreadsheet,
@@ -32,7 +41,12 @@ const StoredNFsData = z.object({
 });
 
 const Result = z.object({
-  corr: z.array(z.number()),
+  corr: z.array(
+    z.object({
+      nf: z.number(),
+      entregador: z.string(),
+    }),
+  ),
   err: z.array(
     z.object({
       nf: z.number(),
@@ -83,13 +97,33 @@ async function parseXlsx(buffer: ArrayBuffer) {
     startDate: new Date(
       Math.min(
         // @ts-expect-error
-        ...dateWorksheet.getColumn("A").values.filter((v) => v instanceof Date),
+        ...dateWorksheet
+          .getColumn("A")
+          .values.map((v) => {
+            try {
+              // @ts-expect-error
+              return new Date(v.toString().split("/").reverse().join("-"));
+            } catch {
+              return null;
+            }
+          })
+          .filter((v) => v != null && !Number.isNaN(v.getTime())),
       ),
     ),
     endDate: new Date(
       Math.max(
         // @ts-expect-error
-        ...dateWorksheet.getColumn("A").values.filter((v) => v instanceof Date),
+        ...dateWorksheet
+          .getColumn("A")
+          .values.map((v) => {
+            try {
+              // @ts-expect-error
+              return new Date(v.toString().split("/").reverse().join("-"));
+            } catch {
+              return null;
+            }
+          })
+          .filter((v) => v != null && !Number.isNaN(v.getTime())),
       ),
     ),
   };
@@ -138,7 +172,10 @@ function compareWithStoredData(
   });
 
   return {
-    corr: Array.from(Correct),
+    corr: Array.from(Correct).map((nf) => ({
+      nf,
+      entregador: NFNome[nf] ?? "Não definido",
+    })),
     err: Array.from(NotCorrect).map((nf) => ({
       nf,
       entregador: NFNome[nf] ?? "Não definido",
@@ -150,105 +187,87 @@ function compareWithStoredData(
   };
 }
 
-function ErrList({ results }: { results: z.infer<typeof Result> }) {
-  const [isOpen, setIsOpen] = useState(true);
+function CorrList({ results }: { results: z.infer<typeof Result> }) {
   return (
-    <Disclosure isExpanded={isOpen} onExpandedChange={setIsOpen}>
-      <Disclosure.Heading>
-        <div className="flex items-center justify-between">
-          <div>
-            <Card.Title className="flex items-center gap-2">
-              <AlertCircle className="size-5 text-green-600" />
-              Notas incorretas
-            </Card.Title>
-            <Card.Description>
-              {results.err.length}
-              {" nota"}
-              {results.err.length === 1 ? " " : "s "}
-              com entregador errado
-            </Card.Description>
-          </div>
-          <Disclosure.Trigger>
-            <Button variant="ghost" size="sm">
-              <ChevronDown
-                className={`size-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
-              />
-              {isOpen ? "Recolher" : "Expandir"}
-            </Button>
-          </Disclosure.Trigger>
-        </div>
-      </Disclosure.Heading>
-      <Disclosure.Content>
-        <Disclosure.Body className="space-y-2">
-          {results.err
-            .sort((a, b) => a.nf - b.nf)
-            .map((nf) => (
-              <div className="rounded-lg border border-danger/30 bg-danger/5 p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="size-5 text-danger shrink-0" />
-                    <h4 className="font-medium text-balance">{nf.nf}</h4>
-                    <div className="rounded bg-muted px-2 py-1">
-                      <span className="text-muted-foreground">
-                        Entregador:{" "}
-                      </span>
-                      <span className="font-medium">{nf.entregador}</span>
-                    </div>
-                  </div>
-                  <Badge color="danger" className="shrink-0">
-                    Entregador errado
-                  </Badge>
-                </div>
-              </div>
-            ))}
-        </Disclosure.Body>
-      </Disclosure.Content>
-    </Disclosure>
+    <Table>
+      <Table.ScrollContainer >
+        <Table.Content aria-label="Example table">
+          <Table.Header>
+            <Table.Column allowsSorting isRowHeader>NF</Table.Column>
+            <Table.Column allowsSorting isRowHeader>Entregador</Table.Column>
+            <Table.Column isRowHeader>Expandir</Table.Column>
+          </Table.Header>
+          <Table.Body>
+            {results.corr
+              .sort((a, b) => a.nf - b.nf)
+              .map((nf) => (
+                <Table.Row key={nf.nf}>
+                  <Table.Cell>{nf.nf}</Table.Cell>
+                  <Table.Cell>Entregador: {nf.entregador}</Table.Cell>
+                  <Table.Cell></Table.Cell>
+                </Table.Row>
+              ))}
+          </Table.Body>
+        </Table.Content>
+      </Table.ScrollContainer>
+      <Table.Footer>{/* Optional footer content */}</Table.Footer>
+    </Table>
+  );
+}
+
+function ErrList({ results }: { results: z.infer<typeof Result> }) {
+  return (
+    <Table>
+      <Table.ScrollContainer >
+        <Table.Content aria-label="Example table">
+          <Table.Header>
+            <Table.Column allowsSorting isRowHeader>NF</Table.Column>
+            <Table.Column allowsSorting isRowHeader>Entregador</Table.Column>
+            <Table.Column isRowHeader>Expandir</Table.Column>
+          </Table.Header>
+          <Table.Body>
+            {results.err
+              .sort((a, b) => a.nf - b.nf)
+              .map((nf) => (
+                <Table.Row key={nf.nf}>
+                  <Table.Cell>{nf.nf}</Table.Cell>
+                  <Table.Cell>Entregador: {nf.entregador}</Table.Cell>
+                  <Table.Cell></Table.Cell>
+                </Table.Row>
+              ))}
+          </Table.Body>
+        </Table.Content>
+      </Table.ScrollContainer>
+      <Table.Footer>{/* Optional footer content */}</Table.Footer>
+    </Table>
   );
 }
 
 function NIList({ results }: { results: z.infer<typeof Result> }) {
-  const [isOpen, setIsOpen] = useState(true);
   return (
-    <Disclosure isExpanded={isOpen} onExpandedChange={setIsOpen}>
-      <Disclosure.Heading>
-        <Button variant="ghost" size="sm">
-          <AlertCircle className="size-5 text-green-600" />
-          Notas não incluidas
-          {results.ni.length}
-          {" nota"}
-          {results.ni.length === 1 ? " " : "s "}
-          não incluidas
-          <Disclosure.Indicator />
-          {isOpen ? "Recolher" : "Expandir"}
-        </Button>
-      </Disclosure.Heading>
-      <Disclosure.Content>
-        <Disclosure.Body className="space-y-2">
-          {results.ni
-            .sort((a, b) => a.nf - b.nf)
-            .map((nf) => (
-              <div className="rounded-lg border border-warning/30 bg-warning/5 p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="size-5 text-warning shrink-0" />
-                    <h4 className="font-medium text-balance">{nf.nf}</h4>
-                    <div className="rounded bg-muted px-2 py-1">
-                      <span className="text-muted-foreground">
-                        Entregador:{" "}
-                      </span>
-                      <span className="font-medium">{nf.entregador}</span>
-                    </div>
-                  </div>
-                  <Badge color="warning" className="shrink-0">
-                    Não incluida
-                  </Badge>
-                </div>
-              </div>
-            ))}
-        </Disclosure.Body>
-      </Disclosure.Content>
-    </Disclosure>
+    <Table>
+      <Table.ScrollContainer >
+        <Table.Content aria-label="Example table">
+          <Table.Header>
+            <Table.Column allowsSorting isRowHeader>NF</Table.Column>
+            <Table.Column allowsSorting isRowHeader>Entregador</Table.Column>
+            <Table.Column isRowHeader>Expandir</Table.Column>
+          </Table.Header>
+          <Table.Body>
+            {results.ni
+              .sort((a, b) => a.nf - b.nf)
+              .map((nf) => (
+                <Table.Row key={nf.nf}>
+                  <Table.Cell>{nf.nf}</Table.Cell>
+                  <Table.Cell>Entregador: {nf.entregador}</Table.Cell>
+                  <Table.Cell></Table.Cell>
+                </Table.Row>
+              ))}
+          </Table.Body>
+        </Table.Content>
+      </Table.ScrollContainer>
+      <Table.Footer>{/* Optional footer content */}</Table.Footer>
+    </Table>
   );
 }
 
@@ -557,16 +576,33 @@ export default function JefersonPage() {
                 </Card.Content>
               </Card>
             </div>
-            {results.err.length > 0 && results.ni.length > 0 ? (
-              <div className="grid grid-cols-2 gap-4">
+            <Tabs className="w-full">
+              <Tabs.ListContainer>
+                <Tabs.List aria-label="Notas">
+                  <Tabs.Tab id="err">
+                    Notas divergentes
+                    <Tabs.Indicator />
+                  </Tabs.Tab>
+                  <Tabs.Tab id="ni">
+                    Notas não incluidas
+                    <Tabs.Indicator />
+                  </Tabs.Tab>
+                  <Tabs.Tab id="corr">
+                    Notas corretas
+                    <Tabs.Indicator />
+                  </Tabs.Tab>
+                </Tabs.List>
+              </Tabs.ListContainer>
+              <Tabs.Panel className="pt-4" id="err">
                 <ErrList results={results} />
+              </Tabs.Panel>
+              <Tabs.Panel className="pt-4" id="ni">
                 <NIList results={results} />
-              </div>
-            ) : results.err.length > 0 ? (
-              <ErrList results={results} />
-            ) : (
-              <NIList results={results} />
-            )}
+              </Tabs.Panel>
+              <Tabs.Panel className="pt-4" id="corr">
+                <CorrList results={results} />
+              </Tabs.Panel>
+            </Tabs>
           </div>
         )}
       </div>
