@@ -1,37 +1,44 @@
 "use client";
 
 import {
-  Disclosure,
   Card,
   Chip,
   Button,
   Tabs,
-  SuccessIcon,
-  WarningIcon,
   Table,
+  Virtualizer,
   Modal,
+  TableLayout,
+  Link,
+  Calendar,
+  Label,
+  TimeField,
+  Separator,
+  Disclosure,
+  Text,
 } from "@heroui/react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   FileSpreadsheet,
   Database,
   RefreshCw,
-  Calendar,
   Download,
   ArrowLeft,
   Trash2,
   AlertCircle,
-  ChevronDown,
+  ArrowUpRightFromSquareIcon,
+  CalendarIcon,
+  ClockIcon,
 } from "lucide-react";
 import { FileUploader } from "@/components/file-uploader";
-import Link from "next/link";
 import { z } from "zod";
 import excel from "exceljs";
+import { parseAbsoluteToLocal, parseDate } from "@internationalized/date";
 
 const STORAGE_KEY = "jeferson-nfs-data";
 
 const NFData = z.object({
-  Transportador: z.string().or(z.undefined()),
+  Transportador: z.string().default("Entregador não definido"),
   PrevisaoSaida: z.coerce.date().or(z.undefined()).or(z.date()),
   NumeroNotaFiscal: z.coerce.number(),
   Origem: z.string(),
@@ -48,7 +55,7 @@ const NFData = z.object({
   Transportadora: z.string().or(z.undefined()),
   EnderecoTransportadora: z.string().or(z.undefined()),
   BairroTransportadora: z.string().or(z.undefined()),
-  Status: z.string(),
+  Status: z.enum(["Entregue", "Pendente"]),
   DataEntrega: z.coerce.date().or(z.date()).or(z.undefined()),
   DataColeta: z.coerce.date().or(z.date()).or(z.undefined()),
   UsuarioColeta: z.string().or(z.undefined()),
@@ -162,12 +169,14 @@ function compareWithStoredData(
     ]),
   );
 
-  const Correct = NFStoreJefersonSet.intersection(NFPlaniSet);
+  const Correct = NFStoreJeferson.filter((nf) =>
+    xlsxData.nfs.includes(nf.NumeroNotaFiscal),
+  );
   const NotIncluded = NFStoreJefersonSet.difference(NFPlaniSet);
-  const NotCorrect =
-    NFStoreJefersonSet.symmetricDifference(NFPlaniSet).intersection(
-      NFPlaniSet,
-    );
+  const NotCorrect = xlsxData.nfs
+    .map((nf) => NFStore.find((nfe) => nfe.NumeroNotaFiscal === nf))
+    .filter((nf) => nf != null)
+    .filter((nf) => nf.Transportador !== "Jeferson")
 
   console.log({
     NFStore,
@@ -181,37 +190,42 @@ function compareWithStoredData(
   });
 
   return {
-    corr: Array.from(Correct)
-      .map((nf) => storedData.nfs.find((nfe) => nfe.NumeroNotaFiscal === nf))
-      .filter((nf) => nf != null),
-    err: Array.from(NotCorrect)
-      .map((nf) => storedData.nfs.find((nfe) => nfe.NumeroNotaFiscal === nf))
-      .filter((nf) => nf != null),
+    corr: Correct.map((nf) => ({ id: nf.NumeroNotaFiscal, ...nf })),
+    err: NotCorrect.map((nf) => ({ id: nf.NumeroNotaFiscal, ...nf })),
     ni: Array.from(NotIncluded)
       .map((nf) => storedData.nfs.find((nfe) => nfe.NumeroNotaFiscal === nf))
-      .filter((nf) => nf != null),
+      .filter((nf) => nf != null)
+      .map((nf) => ({ id: nf.NumeroNotaFiscal, ...nf })),
   };
 }
 
 function List({ nfs }: { nfs: Array<z.infer<typeof NFData>> }) {
   return (
-    <Table>
-      <Table.ScrollContainer>
-        <Table.Content aria-label="Example table">
-          <Table.Header>
-            <Table.Column allowsSorting isRowHeader>
-              NF
-            </Table.Column>
-            <Table.Column allowsSorting isRowHeader>
-              Transportador
-            </Table.Column>
-            <Table.Column isRowHeader>Expandir</Table.Column>
-          </Table.Header>
-          <Table.Body>
-            {nfs
-              .sort((a, b) => a.NumeroNotaFiscal - b.NumeroNotaFiscal)
-              .map((nf) => (
-                <Table.Row key={nf.NumeroNotaFiscal}>
+    <Virtualizer
+      layout={TableLayout}
+      layoutOptions={{
+        headingHeight: 48,
+        rowHeight: 48,
+      }}
+    >
+      <Table>
+        <Table.ScrollContainer>
+          <Table.Content
+            aria-label="Example table"
+            className="h-75 min-w-175 overflow-auto"
+          >
+            <Table.Header>
+              <Table.Column allowsSorting isRowHeader>
+                NF
+              </Table.Column>
+              <Table.Column allowsSorting isRowHeader>
+                Transportador
+              </Table.Column>
+              <Table.Column isRowHeader>Expandir</Table.Column>
+            </Table.Header>
+            <Table.Body items={nfs}>
+              {(nf) => (
+                <Table.Row>
                   <Table.Cell>{nf.NumeroNotaFiscal}</Table.Cell>
                   <Table.Cell>{nf.Transportador}</Table.Cell>
                   <Table.Cell>
@@ -232,32 +246,158 @@ function List({ nfs }: { nfs: Array<z.infer<typeof NFData>> }) {
                               <Modal.Heading>Detalhes da NFe</Modal.Heading>
                             </Modal.Header>
                             <Modal.Body>
-                              <Table>
-                                <Table.ScrollContainer>
-                                  <Table.Content aria-label="Example table">
-                                    <Table.Header>
-                                      <Table.Column allowsSorting isRowHeader>
-                                        Chave
-                                      </Table.Column>
-                                      <Table.Column allowsSorting isRowHeader>
-                                        Valor
-                                      </Table.Column>
-                                    </Table.Header>
-                                    <Table.Body>
-                                      {Object.entries(nf).map(
-                                        ([key, value]) => (
-                                          <Table.Row key={key}>
-                                            <Table.Cell>{key}</Table.Cell>
-                                            <Table.Cell>
-                                              {value?.toString()}
-                                            </Table.Cell>
-                                          </Table.Row>
-                                        ),
+                              <div className="flex flex-col space-y-2">
+                                <div className="flex flex-row space-x-2">
+                                  <Chip variant="soft">
+                                    {nf.NumeroNotaFiscal}
+                                  </Chip>
+                                  <Chip
+                                    variant="primary"
+                                    color={
+                                      nf.Status === "Entregue"
+                                        ? "success"
+                                        : "warning"
+                                    }
+                                  >
+                                    {nf.Status}
+                                  </Chip>
+                                  <Chip
+                                    variant="primary"
+                                    color={
+                                      nf.Transportador === "Jeferson"
+                                        ? "success"
+                                        : "danger"
+                                    }
+                                  >
+                                    {nf.Transportador}
+                                  </Chip>
+                                </div>
+                                <Separator className="my-4" />
+                                <div className="space-x-2">
+                                  <h3 className="text-lg font-bold">Local de entrega</h3>
+                                  <span>
+                                    Endereço:{" "}
+                                    {nf.EnderecoTransportadora ??
+                                      "Endereço não informado"}
+                                  </span>
+                                  {nf.Latitude && nf.Longitude && (
+                                    <Link
+                                      href={`https://www.google.com/maps/search/${nf.Latitude},${nf.Longitude}`}
+                                      target="_blank"
+                                      referrerPolicy="no-referrer"
+                                    >
+                                      Abrir no Maps
+                                      <Link.Icon className="ml-1.5 size-3">
+                                        <ArrowUpRightFromSquareIcon />
+                                      </Link.Icon>
+                                    </Link>
+                                  )}
+                                </div>
+                                {nf.DataEntrega && (
+                                  <Separator className="my-4" />
+                                )}
+                                {nf.DataEntrega && (
+                                  <div className="flex flex-col space-x-2">
+                                    <h3 className="text-lg font-bold">Data da entrega</h3>
+                                    <Label>Data</Label>
+                                    <Calendar
+                                      isReadOnly
+                                      aria-label="Data de entrega"
+                                      defaultValue={parseAbsoluteToLocal(
+                                        nf.DataEntrega.toISOString(),
                                       )}
-                                    </Table.Body>
-                                  </Table.Content>
-                                </Table.ScrollContainer>
-                              </Table>
+                                    >
+                                      <Calendar.Header>
+                                        <Calendar.Heading />
+                                        <Calendar.NavButton slot="previous" />
+                                        <Calendar.NavButton slot="next" />
+                                      </Calendar.Header>
+                                      <Calendar.Grid>
+                                        <Calendar.GridHeader>
+                                          {(day) => (
+                                            <Calendar.HeaderCell>
+                                              {day}
+                                            </Calendar.HeaderCell>
+                                          )}
+                                        </Calendar.GridHeader>
+                                        <Calendar.GridBody>
+                                          {(date) => (
+                                            <Calendar.Cell date={date} />
+                                          )}
+                                        </Calendar.GridBody>
+                                      </Calendar.Grid>
+                                    </Calendar>
+                                    <TimeField
+                                      className="w-[256px]"
+                                      name="time"
+                                      value={parseAbsoluteToLocal(
+                                        nf.DataEntrega.toISOString(),
+                                      )}
+                                    >
+                                      <Label>Hora</Label>
+                                      <TimeField.Group>
+                                        <TimeField.Prefix>
+                                          <ClockIcon className="size-4 text-muted" />
+                                        </TimeField.Prefix>
+                                        <TimeField.Input>
+                                          {(segment) => (
+                                            <TimeField.Segment
+                                              segment={segment}
+                                            />
+                                          )}
+                                        </TimeField.Input>
+                                      </TimeField.Group>
+                                    </TimeField>
+                                  </div>
+                                )}
+                                <Separator className="my-4" />
+                                <Disclosure>
+                                  <Disclosure.Heading>
+                                    <Button slot="trigger" variant="secondary">
+                                      Detalhes da nota
+                                      <Disclosure.Indicator />
+                                    </Button>
+                                  </Disclosure.Heading>
+                                  <Disclosure.Content>
+                                    <Disclosure.Body>
+                                      <Table>
+                                        <Table.ScrollContainer>
+                                          <Table.Content aria-label="Detalhes da nota">
+                                            <Table.Header>
+                                              <Table.Column
+                                                allowsSorting
+                                                isRowHeader
+                                              >
+                                                Chave
+                                              </Table.Column>
+                                              <Table.Column
+                                                allowsSorting
+                                                isRowHeader
+                                              >
+                                                Valor
+                                              </Table.Column>
+                                            </Table.Header>
+                                            <Table.Body>
+                                              {Object.entries(nf).map(
+                                                ([key, value]) => (
+                                                  <Table.Row key={key}>
+                                                    <Table.Cell>
+                                                      {key}
+                                                    </Table.Cell>
+                                                    <Table.Cell>
+                                                      {value?.toString()}
+                                                    </Table.Cell>
+                                                  </Table.Row>
+                                                ),
+                                              )}
+                                            </Table.Body>
+                                          </Table.Content>
+                                        </Table.ScrollContainer>
+                                      </Table>
+                                    </Disclosure.Body>
+                                  </Disclosure.Content>
+                                </Disclosure>
+                              </div>
                             </Modal.Body>
                             <Modal.Footer>
                               <Button className="w-full" slot="close">
@@ -270,11 +410,12 @@ function List({ nfs }: { nfs: Array<z.infer<typeof NFData>> }) {
                     </Modal>
                   </Table.Cell>
                 </Table.Row>
-              ))}
-          </Table.Body>
-        </Table.Content>
-      </Table.ScrollContainer>
-    </Table>
+              )}
+            </Table.Body>
+          </Table.Content>
+        </Table.ScrollContainer>
+      </Table>
+    </Virtualizer>
   );
 }
 
@@ -409,7 +550,7 @@ export default function JefersonPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between rounded-lg border bg-muted/20 px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <Calendar className="size-5 text-muted-foreground" />
+                    <CalendarIcon className="size-5 text-muted-foreground" />
                     <div>
                       <p className="text-sm font-medium">Ultima atualização</p>
                       <p className="text-sm text-muted-foreground">
