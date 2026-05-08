@@ -57,9 +57,9 @@ export function parseXml(xmlString: string) {
   const parser = new XMLParser();
   let jObj = parser.parse(xmlString);
 
-  const prods_nfe: { [key: string]: { ids: Array<[number, number, number]>; res: [number, number] } } = {};
+  const prods_nfe: { [key: string]: { ids: Array<[number, number, number]>; res: [number, number]; } } = {};
 
-  console.log(jObj.NFe.infNFe.det)
+  console.log()
   // @ts-ignore
   jObj.NFe.infNFe.det.forEach((prod, nItem) => {
     if (prods_nfe[prod.prod.cProd] != null) {
@@ -69,21 +69,22 @@ export function parseXml(xmlString: string) {
     }
     else prods_nfe[prod.prod.cProd] = {
       ids: [[nItem + 1, prod.prod.qCom, prod.prod.qTrib]],
-      res: [prod.prod.qCom, prod.prod.qTrib]
+      res: [prod.prod.qCom, prod.prod.qTrib],
     };
   })
 
-  return prods_nfe;
+  return { xmlData: prods_nfe, raw: jObj.NFe.infNFe.det };
 }
 
 export function compareFiles(
   xlsxData: Awaited<ReturnType<typeof parseXlsx>>,
-  xmlData: ReturnType<typeof parseXml>,
+  { xmlData, raw }: ReturnType<typeof parseXml>,
 ): ComparisonResult {
   const result: ComparisonResult = {
     eq: {},
     diff: {},
-    same_sku: {}
+    same_sku: {},
+    raw
   };
 
   const skus = new Set([...Object.keys(xlsxData), ...Object.keys(xmlData)])

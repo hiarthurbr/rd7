@@ -111,7 +111,7 @@ export default function Dashboard() {
                     size="lg"
                     onClick={handleCompare}
                     isDisabled={!canCompare}
-                    className="min-w-[200px]"
+                    className="min-w-50"
                   >
                     {isProcessing ? (
                       <>

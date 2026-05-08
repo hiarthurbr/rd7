@@ -1,7 +1,7 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, ChevronDown } from "lucide-react";
-import { Badge, Button, Card, Disclosure } from "@heroui/react";
+import { AlertCircle, ArrowUpRightFromSquareIcon, CheckCircle2 } from "lucide-react";
+import { Badge, Button, Card, Chip, Disclosure } from "@heroui/react";
 import type { ComparisonResult } from "@/lib/types";
 import { useState } from "react";
 
@@ -12,9 +12,11 @@ type ResultsListProps = {
 function ProductDiffItem({
   name,
   values,
+  raw
 }: {
   name: string;
   values: [[number, number], [number, number]];
+  raw: any
 }) {
   const [expected, received] = values;
   const [qntdExpected, pesoExpected] = expected;
@@ -34,14 +36,19 @@ function ProductDiffItem({
           />
           <h4 className="font-medium text-balance">{name}</h4>
         </div>
-        <Badge.Anchor className="mx-2">
-          <Badge
-            color={Math.abs(pesoDiff) < 0.001 ? "warning" : "danger"}
-            className="shrink-0 px-1"
-          >
-            Divergente
-          </Badge>
-        </Badge.Anchor>
+        <Button
+          size="sm"
+          variant="ghost"
+        >
+          Abrir NF
+          <ArrowUpRightFromSquareIcon />
+        </Button>
+        <Chip
+          color={Math.abs(pesoDiff) < 0.001 ? "warning" : "danger"}
+          className="shrink-0 px-1"
+        >
+          Divergente
+        </Chip>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-4">
@@ -244,14 +251,12 @@ export function ResultsList({ results }: ResultsListProps) {
                     Nota apresenta {same_sku} itens repetidos
                   </Card.Description>
                 </div>
-                <Disclosure.Trigger>
-                  <Button variant="ghost" size="sm">
-                    <ChevronDown
-                      className={`size-4 transition-transform ${isSameOpen ? "rotate-180" : ""}`}
-                    />
+                <Disclosure.Heading>
+                  <Button slot="trigger" variant="ghost" size="sm">
+                    <Disclosure.Indicator />
                     {isSameOpen ? "Recolher" : "Expandir"}
                   </Button>
-                </Disclosure.Trigger>
+                </Disclosure.Heading>
               </div>
             </Card.Header>
             <Disclosure.Content>
@@ -259,7 +264,11 @@ export function ResultsList({ results }: ResultsListProps) {
                 {Object.entries(results.same_sku)
                   .filter((v) => v[1] != null && v[1].length > 1)
                   ?.map(([name, values]) => (
-                    <ProductSameItem key={name} name={name} values={values} />
+                    <ProductSameItem
+                      key={`${name}/${values.toString()}`}
+                      name={name}
+                      values={values}
+                    />
                   ))}
               </Card.Content>
             </Disclosure.Content>
@@ -286,20 +295,23 @@ export function ResultsList({ results }: ResultsListProps) {
                     diferença entre os arquivos
                   </Card.Description>
                 </div>
-                <Disclosure.Trigger>
-                  <Button variant="ghost" size="sm">
-                    <ChevronDown
-                      className={`size-4 transition-transform ${isDiffOpen ? "rotate-180" : ""}`}
-                    />
+                <Disclosure.Heading>
+                  <Button slot="trigger" variant="ghost" size="sm">
+                    <Disclosure.Indicator />
                     {isSameOpen ? "Recolher" : "Expandir"}
                   </Button>
-                </Disclosure.Trigger>
+                </Disclosure.Heading>
               </div>
             </Card.Header>
             <Disclosure.Content>
               <Card.Content className="space-y-3">
                 {diffEntries.map(([name, values]) => (
-                  <ProductDiffItem key={name} name={name} values={values} />
+                  <ProductDiffItem
+                    key={`${name}/${values.toString()}`}
+                    name={name}
+                    values={values}
+                    raw={results.raw}
+                  />
                 ))}
               </Card.Content>
             </Disclosure.Content>
@@ -324,20 +336,22 @@ export function ResultsList({ results }: ResultsListProps) {
                     conformidade
                   </Card.Description>
                 </div>
-                <Disclosure.Trigger>
-                  <Button variant="ghost" size="sm">
-                    <ChevronDown
-                      className={`size-4 transition-transform ${isEqOpen ? "rotate-180" : ""}`}
-                    />
+                <Disclosure.Heading>
+                  <Button slot="trigger" variant="ghost" size="sm">
+                    <Disclosure.Indicator />
                     {isEqOpen ? "Recolher" : "Expandir"}
                   </Button>
-                </Disclosure.Trigger>
+                </Disclosure.Heading>
               </div>
             </Card.Header>
             <Disclosure.Content>
               <Card.Content className="space-y-2">
                 {eqEntries.map(([name, values]) => (
-                  <ProductEqItem key={name} name={name} values={values} />
+                  <ProductEqItem
+                    key={`${name}/${values.toString()}`}
+                    name={name}
+                    values={values}
+                  />
                 ))}
               </Card.Content>
             </Disclosure.Content>
