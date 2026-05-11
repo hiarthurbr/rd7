@@ -1,6 +1,7 @@
 import type { ComparisonResult, ProductData } from "./types";
 import excel from "exceljs";
 import { XMLParser } from "fast-xml-parser";
+import z from "zod";
 
 export async function parseXlsx(buffer: ArrayBuffer) {
   const workbook = new excel.Workbook();
@@ -18,23 +19,23 @@ export async function parseXlsx(buffer: ArrayBuffer) {
       row.values[1] != null
     ) {
       const prod = row.values[1],
-        qntd = row.values[2],
-        peso_uni = row.values[3];
+        qntd = z.coerce.number().safeParse(row.values[2]),
+        peso_uni = z.coerce.number().safeParse(row.values[3]);
       if (
         typeof prod === "string" &&
-        typeof qntd === "number" &&
-        typeof peso_uni === "number"
+        qntd.success &&
+        peso_uni.success
       ) {
         const v = {
           prod,
           qntd,
-          peso_trib: qntd * peso_uni,
+          peso_trib: qntd.data * peso_uni.data,
         };
 
         if (prods[prod] != null) {
-          prods[prod][0] += v.qntd;
+          prods[prod][0] += v.qntd.data;
           prods[prod][1] += v.peso_trib;
-        } else prods[prod] = [v.qntd, v.peso_trib];
+        } else prods[prod] = [v.qntd.data, v.peso_trib];
 
         console.log(prod, prods[prod]);
       }
