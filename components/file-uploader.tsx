@@ -1,18 +1,17 @@
-'use client'
+"use client";
 
-import { useCallback } from 'react'
-import { Upload, FileSpreadsheet, FileCode2, X } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { useCallback, useRef } from "react";
+import { Upload, FileSpreadsheet, FileCode2, X } from "lucide-react";
+import { Button, Card } from "@heroui/react";
+import { cn } from "@/lib/utils";
 
 type FileUploaderProps = {
-  label: string
-  accept: string
-  file: File | null
-  onFileChange: (file: File | null) => void
-  icon: 'xlsx' | 'xml'
-}
+  label: string;
+  accept: string;
+  file: File | null;
+  onFileChange: (file: File | null) => void;
+  icon: "xlsx" | "xml";
+};
 
 export function FileUploader({
   label,
@@ -21,39 +20,42 @@ export function FileUploader({
   onFileChange,
   icon,
 }: FileUploaderProps) {
+  const inputRef = useRef(null);
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault()
-      const droppedFile = e.dataTransfer.files[0]
+      e.preventDefault();
+      const droppedFile = e.dataTransfer.files[0];
       if (droppedFile) {
-        onFileChange(droppedFile)
+        onFileChange(droppedFile);
       }
     },
-    [onFileChange]
-  )
+    [onFileChange],
+  );
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const selectedFile = e.target.files?.[0]
+      const selectedFile = e.target.files?.[0];
       if (selectedFile) {
-        onFileChange(selectedFile)
+        onFileChange(selectedFile);
       }
     },
-    [onFileChange]
-  )
+    [onFileChange],
+  );
 
-  const IconComponent = icon === 'xlsx' ? FileSpreadsheet : FileCode2
+  const IconComponent = icon === "xlsx" ? FileSpreadsheet : FileCode2;
 
   return (
     <Card
       className={cn(
-        'relative border-2 border-dashed transition-colors',
-        file ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-muted-foreground/50'
+        "relative border-2 border-dashed transition-colors",
+        file
+          ? "border-primary bg-primary/5"
+          : "border-muted-foreground/25 hover:border-muted-foreground/50",
       )}
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >
-      <CardContent className="flex flex-col items-center justify-center gap-3 py-8">
+      <Card.Content className="flex flex-col items-center justify-center gap-3 py-8">
         {file ? (
           <>
             <div className="flex items-center gap-3">
@@ -69,7 +71,7 @@ export function FileUploader({
               variant="ghost"
               size="sm"
               onClick={() => onFileChange(null)}
-              className="text-muted-foreground hover:text-destructive"
+              className="text-muted-foreground hover:text-danger"
             >
               <X className="size-4 mr-1" />
               Remover
@@ -77,7 +79,7 @@ export function FileUploader({
           </>
         ) : (
           <>
-            <div className="rounded-full bg-muted p-4">
+            <div className="rounded-full bg-muted/30 p-4">
               <Upload className="size-6 text-muted-foreground" />
             </div>
             <div className="text-center">
@@ -88,18 +90,28 @@ export function FileUploader({
             </div>
             <label className="cursor-pointer">
               <input
+                ref={inputRef}
                 type="file"
                 accept={accept}
                 onChange={handleChange}
                 className="sr-only"
               />
-              <Button variant="outline" size="sm" asChild>
-                <span>Selecionar arquivo</span>
-              </Button>
+              <span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // @ts-expect-error
+                    inputRef.current?.click();
+                  }}
+                >
+                  <span>Selecionar arquivo</span>
+                </Button>
+              </span>
             </label>
           </>
         )}
-      </CardContent>
+      </Card.Content>
     </Card>
-  )
+  );
 }

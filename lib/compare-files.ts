@@ -1,6 +1,7 @@
 import type { ComparisonResult, ProductData } from "./types";
 import excel from "exceljs";
 import { XMLParser } from "fast-xml-parser";
+import z from "zod";
 
 export async function parseXlsx(buffer: ArrayBuffer) {
   const workbook = new excel.Workbook();
@@ -18,23 +19,23 @@ export async function parseXlsx(buffer: ArrayBuffer) {
       row.values[1] != null
     ) {
       const prod = row.values[1],
-        qntd = row.values[2],
-        peso_uni = row.values[3];
+        qntd = z.coerce.number().safeParse(row.values[2]),
+        peso_uni = z.coerce.number().safeParse(row.values[3]);
       if (
         typeof prod === "string" &&
-        typeof qntd === "number" &&
-        typeof peso_uni === "number"
+        qntd.success &&
+        peso_uni.success
       ) {
         const v = {
           prod,
           qntd,
-          peso_trib: qntd * peso_uni,
+          peso_trib: qntd.data * peso_uni.data,
         };
 
         if (prods[prod] != null) {
-          prods[prod][0] += v.qntd;
+          prods[prod][0] += v.qntd.data;
           prods[prod][1] += v.peso_trib;
-        } else prods[prod] = [v.qntd, v.peso_trib];
+        } else prods[prod] = [v.qntd.data, v.peso_trib];
 
         console.log(prod, prods[prod]);
       }
@@ -57,9 +58,10 @@ export function parseXml(xmlString: string) {
   const parser = new XMLParser();
   let jObj = parser.parse(xmlString);
 
-  const prods_nfe: { [key: string]: { ids: Array<[number, number, number]>; res: [number, number] } } = {};
+  const prods_nfe: { [key: string]: { ids: Array<[number, number, number]>; res: [number, number]; } } = {};
 
-  console.log(jObj.NFe.infNFe.det)
+  console.log()
+  // @ts-ignore
   jObj.NFe.infNFe.det.forEach((prod, nItem) => {
     if (prods_nfe[prod.prod.cProd] != null) {
       prods_nfe[prod.prod.cProd].ids.push([nItem + 1, prod.prod.qCom, prod.prod.qTrib]);
@@ -68,21 +70,22 @@ export function parseXml(xmlString: string) {
     }
     else prods_nfe[prod.prod.cProd] = {
       ids: [[nItem + 1, prod.prod.qCom, prod.prod.qTrib]],
-      res: [prod.prod.qCom, prod.prod.qTrib]
+      res: [prod.prod.qCom, prod.prod.qTrib],
     };
   })
 
-  return prods_nfe;
+  return { xmlData: prods_nfe, raw: jObj.NFe.infNFe.det };
 }
 
 export function compareFiles(
   xlsxData: Awaited<ReturnType<typeof parseXlsx>>,
-  xmlData: ReturnType<typeof parseXml>,
+  { xmlData, raw }: ReturnType<typeof parseXml>,
 ): ComparisonResult {
   const result: ComparisonResult = {
     eq: {},
     diff: {},
-    same_sku: {}
+    same_sku: {},
+    raw
   };
 
   const skus = new Set([...Object.keys(xlsxData), ...Object.keys(xmlData)])
