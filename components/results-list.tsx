@@ -1,7 +1,19 @@
 "use client";
 
-import { AlertCircle, ArrowUpRightFromSquareIcon, CheckCircle2 } from "lucide-react";
-import { Badge, Button, Card, Chip, Disclosure } from "@heroui/react";
+import {
+  AlertCircle,
+  ArrowUpRightFromSquareIcon,
+  CheckCircle2,
+} from "lucide-react";
+import {
+  Badge,
+  Button,
+  Card,
+  Chip,
+  Disclosure,
+  Modal,
+  Separator,
+} from "@heroui/react";
 import type { ComparisonResult } from "@/lib/types";
 import { useState } from "react";
 
@@ -12,11 +24,11 @@ type ResultsListProps = {
 function ProductDiffItem({
   name,
   values,
-  raw
+  raw,
 }: {
   name: string;
   values: [[number, number], [number, number]];
-  raw: any
+  raw: any;
 }) {
   const [expected, received] = values;
   const [qntdExpected, pesoExpected] = expected;
@@ -36,14 +48,155 @@ function ProductDiffItem({
           />
           <h4 className="font-medium text-balance">{name}</h4>
         </div>
-        <Button
-          size="sm"
-          variant="ghost"
-        >
-          Abrir NF
-          <ArrowUpRightFromSquareIcon />
-        </Button>
+        <Modal>
+          <Button size="sm" variant="ghost" onClick={() => console.log()}>
+            Abrir NF
+            <ArrowUpRightFromSquareIcon />
+          </Button>
+          <Modal.Backdrop>
+            <Modal.Container size="cover">
+              <Modal.Dialog className="max-w-165">
+                <Modal.CloseTrigger />
+                <Modal.Header>
+                  <Modal.Heading>Welcome to HeroUI</Modal.Heading>
+                </Modal.Header>
+                <Modal.Body className="space-y-3">
+                  {raw
+                    // @ts-expect-error
+                    .map((nfeData, i) => ({ nItem: i + 1, ...nfeData }))
+                    // @ts-expect-error
+                    .filter((prod) => prod.prod.cProd === name)
+                    // @ts-expect-error
+                    .map((nfeData, i) => (
+                      <Card key={i} variant="secondary">
+                        <Card.Content>
+                          {/* Produto */}
+                          <section>
+                            <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+                              nItem #{nfeData.nItem}
+                            </h3>
+                            <div className="space-y-2">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="flex justify-between">
+                                  <pre className="text-sm text-muted-foreground">
+                                    cProd
+                                  </pre>
+                                  <span className="text-sm font-medium">
+                                    {nfeData.prod.cProd}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <pre className="text-sm text-muted-foreground">
+                                    cEANTrib
+                                  </pre>
+                                  <span className="text-sm font-medium">
+                                    {nfeData.prod.cEANTrib}
+                                  </span>
+                                </div>
+                              </div>
+                              <div>
+                                <pre className="text-sm text-muted-foreground">
+                                  xProd
+                                </pre>
+                                <p className="text-sm font-medium mt-1">
+                                  {nfeData.prod.xProd}
+                                </p>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4 pt-2">
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-muted-foreground">
+                                    NCM
+                                  </span>
+                                  <span className="text-sm font-medium">
+                                    {nfeData.prod.NCM}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-muted-foreground">
+                                    CFOP
+                                  </span>
+                                  <span className="text-sm font-medium">
+                                    {nfeData.prod.CFOP}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </section>
+
+                          <Separator className="mx-12" />
+
+                          {/* Quantidades e Valores */}
+                          <section>
+                            <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+                              Quantidades e Valores
+                            </h3>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="flex justify-between">
+                                <pre className="text-sm text-muted-foreground">
+                                  nItemPed
+                                </pre>
+                                <span className="text-sm font-medium">
+                                  {nfeData.prod.nItemPed}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <pre className="text-sm text-muted-foreground">
+                                  uCom
+                                </pre>
+                                <span className="text-sm font-medium">
+                                  {nfeData.prod.uCom}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <pre className="text-sm text-muted-foreground">
+                                  vUnCom
+                                </pre>
+                                <span className="text-sm font-medium">
+                                  {nfeData.prod.vUnCom.toFixed(4)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <pre className="text-sm text-muted-foreground">
+                                  qTrib
+                                </pre>
+                                <span className="text-sm font-medium">
+                                  {nfeData.prod.qTrib}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <pre className="text-sm text-muted-foreground">
+                                  uTrib
+                                </pre>
+                                <span className="text-sm font-medium">
+                                  {nfeData.prod.uTrib}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <pre className="text-sm text-muted-foreground">
+                                  vProd
+                                </pre>
+                                <span className="text-sm font-medium">
+                                  {nfeData.prod.vProd.toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                          </section>
+                        </Card.Content>
+                      </Card>
+                    ))}
+                </Modal.Body>
+                <Modal.Footer>
+                  <Button className="w-full" slot="close">
+                    Continue
+                  </Button>
+                </Modal.Footer>
+              </Modal.Dialog>
+            </Modal.Container>
+          </Modal.Backdrop>
+        </Modal>
+
         <Chip
+          variant={Math.abs(pesoDiff) < 0.001 ? "soft" : "primary"}
           color={Math.abs(pesoDiff) < 0.001 ? "warning" : "danger"}
           className="shrink-0 px-1"
         >
@@ -111,9 +264,11 @@ function ProductDiffItem({
 function ProductSameItem({
   name,
   values,
+  raw
 }: {
   name: string;
   values: [number, number, number][];
+  raw: any;
 }) {
   return (
     <div className="rounded-lg border border-accent/30 bg-accent/5 p-4">
@@ -122,6 +277,153 @@ function ProductSameItem({
           <AlertCircle className="size-5 text-accent shrink-0" />
           <h4 className="font-medium text-balance">{name}</h4>
         </div>
+        
+        <Modal>
+          <Button size="sm" variant="ghost" onClick={() => console.log()}>
+            Abrir NF
+            <ArrowUpRightFromSquareIcon />
+          </Button>
+          <Modal.Backdrop>
+            <Modal.Container size="cover">
+              <Modal.Dialog className="max-w-165">
+                <Modal.CloseTrigger />
+                <Modal.Header>
+                  <Modal.Heading>Welcome to HeroUI</Modal.Heading>
+                </Modal.Header>
+                <Modal.Body className="space-y-3">
+                  {raw
+                    // @ts-expect-error
+                    .map((nfeData, i) => ({ nItem: i + 1, ...nfeData }))
+                    // @ts-expect-error
+                    .filter((prod) => prod.prod.cProd === name)
+                    // @ts-expect-error
+                    .map((nfeData, i) => (
+                      <Card key={i} variant="secondary">
+                        <Card.Content>
+                          {/* Produto */}
+                          <section>
+                            <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+                              nItem #{nfeData.nItem}
+                            </h3>
+                            <div className="space-y-2">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="flex justify-between">
+                                  <pre className="text-sm text-muted-foreground">
+                                    cProd
+                                  </pre>
+                                  <span className="text-sm font-medium">
+                                    {nfeData.prod.cProd}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <pre className="text-sm text-muted-foreground">
+                                    cEANTrib
+                                  </pre>
+                                  <span className="text-sm font-medium">
+                                    {nfeData.prod.cEANTrib}
+                                  </span>
+                                </div>
+                              </div>
+                              <div>
+                                <pre className="text-sm text-muted-foreground">
+                                  xProd
+                                </pre>
+                                <p className="text-sm font-medium mt-1">
+                                  {nfeData.prod.xProd}
+                                </p>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4 pt-2">
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-muted-foreground">
+                                    NCM
+                                  </span>
+                                  <span className="text-sm font-medium">
+                                    {nfeData.prod.NCM}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-muted-foreground">
+                                    CFOP
+                                  </span>
+                                  <span className="text-sm font-medium">
+                                    {nfeData.prod.CFOP}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </section>
+
+                          <Separator className="mx-12" />
+
+                          {/* Quantidades e Valores */}
+                          <section>
+                            <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+                              Quantidades e Valores
+                            </h3>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="flex justify-between">
+                                <pre className="text-sm text-muted-foreground">
+                                  nItemPed
+                                </pre>
+                                <span className="text-sm font-medium">
+                                  {nfeData.prod.nItemPed}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <pre className="text-sm text-muted-foreground">
+                                  uCom
+                                </pre>
+                                <span className="text-sm font-medium">
+                                  {nfeData.prod.uCom}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <pre className="text-sm text-muted-foreground">
+                                  vUnCom
+                                </pre>
+                                <span className="text-sm font-medium">
+                                  {nfeData.prod.vUnCom.toFixed(4)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <pre className="text-sm text-muted-foreground">
+                                  qTrib
+                                </pre>
+                                <span className="text-sm font-medium">
+                                  {nfeData.prod.qTrib}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <pre className="text-sm text-muted-foreground">
+                                  uTrib
+                                </pre>
+                                <span className="text-sm font-medium">
+                                  {nfeData.prod.uTrib}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <pre className="text-sm text-muted-foreground">
+                                  vProd
+                                </pre>
+                                <span className="text-sm font-medium">
+                                  {nfeData.prod.vProd.toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                          </section>
+                        </Card.Content>
+                      </Card>
+                    ))}
+                </Modal.Body>
+                <Modal.Footer>
+                  <Button className="w-full" slot="close">
+                    Continue
+                  </Button>
+                </Modal.Footer>
+              </Modal.Dialog>
+            </Modal.Container>
+          </Modal.Backdrop>
+        </Modal>
         <Badge.Anchor className="mx-2">
           <Badge color="accent" className="shrink-0 px-1">
             Repetido
@@ -130,7 +432,7 @@ function ProductSameItem({
       </div>
 
       {values.map((value) => (
-        <div className="mt-4 grid grid-cols-1 gap-4">
+        <div className="mt-4 grid grid-cols-1 gap-4" key={value.toString()}>
           <div className="space-y-2">
             <div className="grid grid-cols-3 gap-2 text-sm">
               <div className="rounded bg-muted/25 px-2 py-1">
@@ -268,6 +570,7 @@ export function ResultsList({ results }: ResultsListProps) {
                       key={`${name}/${values.toString()}`}
                       name={name}
                       values={values}
+                      raw={results.raw}
                     />
                   ))}
               </Card.Content>
