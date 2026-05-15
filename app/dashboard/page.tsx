@@ -1,6 +1,11 @@
 "use client";
 
-import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import {
   RefreshCw,
@@ -8,10 +13,7 @@ import {
   ClipboardList,
   CheckCircle2,
   Truck,
-  Clock,
   AlertTriangle,
-  TrendingUp,
-  Activity,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@heroui/react";
 import { AnimatedCounter } from "./animated-counter";
@@ -98,21 +100,11 @@ const etapaIcons: Record<string, React.ReactNode> = {
 };
 
 const etapaColors: Record<string, { bg: string; chart: string }> = {
-  Pedido: { bg: "bg-chart-2", chart: "hsl(var(--chart-2))" },
-  Picking: { bg: "bg-chart-3", chart: "hsl(var(--chart-3))" },
-  Conferência: { bg: "bg-chart-1", chart: "hsl(var(--chart-1))" },
-  Expedição: { bg: "bg-primary", chart: "hsl(var(--primary))" },
+  Pedido: { bg: "bg-slate-400", chart: "slate-400" },
+  Picking: { bg: "bg-purple-500", chart: "purple-500" },
+  Conferência: { bg: "bg-yellow-500", chart: "yellow-500" },
+  Expedição: { bg: "bg-lime-500", chart: "lime-500" },
 };
-
-function formatDate(date: Date): string {
-  return date.toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -136,35 +128,6 @@ const itemVariants: Variants = {
   },
 };
 
-function StatCard({
-  label,
-  value,
-  icon,
-  delay = 0,
-}: {
-  label: string;
-  value: number;
-  icon: React.ReactNode;
-  delay?: number;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.4, delay }}
-      className="flex items-center gap-3 rounded-xl bg-secondary/50 p-4"
-    >
-      <div className="rounded-lg bg-primary/10 p-2 text-primary">{icon}</div>
-      <div>
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="text-xl font-bold text-foreground">
-          <AnimatedCounter value={value} />
-        </p>
-      </div>
-    </motion.div>
-  );
-}
-
 function EtapaCard({
   etapa,
   index,
@@ -173,18 +136,14 @@ function EtapaCard({
   index: number;
 }) {
   const icon = etapaIcons[etapa.etapa] || <Package className="h-5 w-5" />;
-  const colors = etapaColors[etapa.etapa] || {
-    bg: "bg-primary",
-    chart: "hsl(var(--primary))",
-  };
-  const progressValue = etapa.progressoGeralEtapa;
+  const colors = etapaColors[etapa.etapa]!;
 
   return (
     <motion.div
       variants={itemVariants}
       whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
     >
-      <Card className="h-full border-border backdrop-blur-sm transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5" variant="transparent">
+      <Card className="h-full border-border backdrop-blur-sm transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 bg-slate-600/25">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -199,9 +158,6 @@ function EtapaCard({
                 <CardTitle className="text-lg font-semibold">
                   {etapa.etapa}
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  <AnimatedCounter value={etapa.valorTotal} /> itens
-                </p>
               </div>
             </div>
             <div className="text-right">
@@ -211,9 +167,14 @@ function EtapaCard({
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 + index * 0.1 }}
               >
-                {etapa.progressoGeralEtapa}
+                <AnimatedCounter value={etapa.valorTotal} /> (
+                <AnimatedCounter
+                  value={etapa.progressoGeralEtapa >> 0}
+                  suffix="%"
+                />
+                )
               </motion.p>
-              <p className="text-xs text-muted-foreground">do total</p>
+              <p className="text-xs text-muted">do total</p>
             </div>
           </div>
         </CardHeader>
@@ -325,7 +286,7 @@ function Dashboard() {
   const progressoGeralValue = geral.progressoGeral.porcentagem;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background dark">
       {/* Dynamic animated background based on etapa proportions */}
       <DynamicBackground etapas={geral.etapas} />
 
@@ -336,64 +297,18 @@ function Dashboard() {
           initial="hidden"
           animate="visible"
         >
-          {/* Header */}
-          <motion.header
-            className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-            variants={itemVariants}
-          >
-            <div className="flex items-center gap-4">
-              <motion.div
-                className="rounded-2xl bg-primary/10 p-3"
-                whileHover={{ rotate: 360 }}
-                transition={{ duration: 0.6 }}
-              >
-                <Activity className="h-8 w-8 text-primary" />
-              </motion.div>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground md:text-3xl">
-                  Dashboard Logistica
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Monitoramento de pedidos e expedicao
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <motion.div
-                className="flex items-center gap-2 rounded-xl bg-card/80 px-4 py-2 backdrop-blur-sm"
-                whileHover={{ scale: 1.02 }}
-              >
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">
-                  {formatDate(geral.atualizacao)}
-                </span>
-              </motion.div>
-              <motion.button
-                onClick={handleRefresh}
-                disabled={isFetching}
-                className="rounded-xl bg-card/80 p-3 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-card hover:text-foreground disabled:opacity-50"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                title="Atualizar dados"
-              >
-                <RefreshCw
-                  className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
-                />
-              </motion.button>
-            </div>
-          </motion.header>
-
           {/* Main Stats Row */}
           <motion.div variants={itemVariants}>
-            <Card className="border-border backdrop-blur-sm" variant="transparent">
+            <Card className="border-border backdrop-blur-sm bg-slate-600/25 text-foreground">
               <CardContent className="p-6">
-                <div className="flex flex-col items-center gap-8 lg:flex-row lg:justify-between">
+                <div className="flex items-center gap-8 flex-row justify-evenly">
                   {/* Circular Progress */}
                   <div className="flex flex-col items-center gap-4">
                     <CircularProgress
                       value={progressoGeralValue}
                       size={160}
                       strokeWidth={12}
+                      className="stroke-neutral-600"
                     >
                       <div className="text-center">
                         <motion.p
@@ -402,20 +317,21 @@ function Dashboard() {
                           animate={{ opacity: 1 }}
                           transition={{ delay: 0.5 }}
                         >
-                          {geral.progressoGeral.porcentagem}
+                          <AnimatedCounter value={geral.progressoGeral.valor} />
+                          /
+                          <AnimatedCounter
+                            value={
+                              ((1 / (geral.progressoGeral.porcentagem / 100)) *
+                                geral.progressoGeral.valor) >>
+                              0
+                            }
+                          />
                         </motion.p>
                         <p className="text-xs text-muted-foreground">
                           concluido
                         </p>
                       </div>
                     </CircularProgress>
-                    <div className="flex items-center gap-2 text-center">
-                      <TrendingUp className="h-4 w-4 text-primary" />
-                      <p className="text-sm text-muted-foreground">
-                        <AnimatedCounter value={geral.progressoGeral.valor} />{" "}
-                        pedidos nos ultimos {geral.periodo} dias
-                      </p>
-                    </div>
                   </div>
 
                   {/* Pie Chart */}
@@ -423,51 +339,43 @@ function Dashboard() {
                     <h3 className="mb-2 text-center text-sm font-medium text-muted-foreground">
                       Distribuicao por Etapa
                     </h3>
-                    <OverviewChart data={geral.etapas} />
-                  </div>
-
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-2 gap-4">
-                    {geral.etapas.map((etapa, index) => (
-                      <StatCard
-                        key={etapa.etapa}
-                        label={etapa.etapa}
-                        value={etapa.valorTotal}
-                        icon={etapaIcons[etapa.etapa]}
-                        delay={index * 0.1}
-                      />
-                    ))}
+                    <div className="flex">
+                      <OverviewChart data={geral.etapas} />
+                      {/* Legend */}
+                      <motion.div
+                        className="flex flex-col flex-wrap justify-center gap-6"
+                        variants={itemVariants}
+                      >
+                        {geral.etapas.map((etapa, index) => {
+                          const colors = etapaColors[etapa.etapa] || {
+                            bg: "bg-primary",
+                          };
+                          return (
+                            <motion.div
+                              key={etapa.etapa}
+                              className="flex items-center gap-2"
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.5 + index * 0.1 }}
+                            >
+                              <div
+                                className={`h-3 w-3 rounded-full ${colors.bg}`}
+                              />
+                              <span className="text-sm text-muted-foreground">
+                                {etapa.etapa}
+                              </span>
+                              <span className="text-sm font-extrabold text-foreground">
+                                {etapa.valorTotal}
+                              </span>
+                            </motion.div>
+                          );
+                        })}
+                      </motion.div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
-
-          {/* Legend */}
-          <motion.div
-            className="flex flex-wrap justify-center gap-6"
-            variants={itemVariants}
-          >
-            {geral.etapas.map((etapa, index) => {
-              const colors = etapaColors[etapa.etapa] || { bg: "bg-primary" };
-              return (
-                <motion.div
-                  key={etapa.etapa}
-                  className="flex items-center gap-2"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 + index * 0.1 }}
-                >
-                  <div className={`h-3 w-3 rounded-full ${colors.bg}`} />
-                  <span className="text-sm text-muted-foreground">
-                    {etapa.etapa}
-                  </span>
-                  <span className="text-sm font-medium text-foreground">
-                    {etapa.progressoGeralEtapa}
-                  </span>
-                </motion.div>
-              );
-            })}
           </motion.div>
 
           {/* Etapas Grid */}
@@ -481,14 +389,6 @@ function Dashboard() {
               ))}
             </AnimatePresence>
           </motion.div>
-
-          {/* Footer */}
-          <motion.footer className="pt-4 text-center" variants={itemVariants}>
-            <p className="text-xs text-muted-foreground">
-              Atualizacao automatica a cada hora - Periodo: ultimos{" "}
-              {geral.periodo} dias
-            </p>
-          </motion.footer>
         </motion.div>
       </div>
     </div>

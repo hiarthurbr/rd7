@@ -22,10 +22,10 @@ export function CircularProgress({
   const circumference = radius * 2 * Math.PI
 
   // Use spring animation for smooth transitions between values
-  const springValue = useSpring(0, { 
-    stiffness: 50, 
+  const springValue = useSpring(0, {
+    stiffness: 50,
     damping: 20,
-    mass: 1
+    duration: 2000
   })
   
   const strokeDashoffset = useTransform(
@@ -49,7 +49,7 @@ export function CircularProgress({
           fill="none"
           stroke="currentColor"
           strokeWidth={strokeWidth}
-          className="text-secondary"
+          className="text-success-foreground"
         />
         {/* Progress circle */}
         <motion.circle
@@ -60,7 +60,7 @@ export function CircularProgress({
           stroke="currentColor"
           strokeWidth={strokeWidth}
           strokeLinecap="round"
-          className="text-primary"
+          className="text-success"
           style={{
             strokeDasharray: circumference,
             strokeDashoffset,

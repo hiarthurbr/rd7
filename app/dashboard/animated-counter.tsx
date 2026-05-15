@@ -11,7 +11,7 @@ interface AnimatedCounterProps {
 }
 
 export function AnimatedCounter({ value, duration = 1.5, className, suffix = "" }: AnimatedCounterProps) {
-  const spring = useSpring(0, { duration: duration * 1000 })
+  const spring = useSpring(0, { duration: duration * 2000, bounce: 0 })
   const display = useTransform(spring, (current) => Math.round(current))
   const [displayValue, setDisplayValue] = useState(0)
 

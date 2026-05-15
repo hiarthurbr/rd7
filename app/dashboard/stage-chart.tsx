@@ -11,14 +11,14 @@ interface StageChartProps {
 }
 
 const colorMap: Record<string, string> = {
-  "hsl(var(--chart-1))": "oklch(0.65 0.18 165)",
-  "hsl(var(--chart-2))": "oklch(0.65 0.18 250)",
-  "hsl(var(--chart-3))": "oklch(0.75 0.15 80)",
-  "hsl(var(--primary))": "oklch(0.65 0.18 165)",
+  "slate-400": "oklch(.704 .04 256.788)",
+  "purple-500": "oklch(.627 .265 303.9)",
+  "yellow-500": "oklch(.795 .184 86.047)",
+  "lime-500": "oklch(.768 .233 130.85)",
 }
 
 export function StageChart({ data, color }: StageChartProps) {
-  const chartColor = colorMap[color] || "oklch(0.65 0.18 165)"
+  const chartColor = colorMap[color] || "oklch(.708 0 0)"
   
   const chartData = data.map((item) => ({
     name: item.nome.length > 12 ? item.nome.substring(0, 12) + "..." : item.nome,

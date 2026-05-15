@@ -5,19 +5,11 @@ import { motion } from "framer-motion"
 import z from "zod"
 import { Etapa } from "./page"
 
-interface OverviewChartProps {
-  data: Array<{
-    etapa: string
-    valorTotal: number
-    progressoGeralEtapa: string
-  }>
-}
-
 const COLORS = [
-  "oklch(0.65 0.18 250)",
-  "oklch(0.75 0.15 80)",
-  "oklch(0.65 0.18 165)",
-  "oklch(0.55 0.22 25)",
+  "oklch(.704 .04 256.788)",
+  "oklch(.627 .265 303.9)",
+  "oklch(.795 .184 86.047)",
+  "oklch(.768 .233 130.85)",
 ]
 
 export function OverviewChart({ data }: { data: Array<z.infer<typeof Etapa>>}) {
