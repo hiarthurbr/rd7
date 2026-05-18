@@ -1,9 +1,5 @@
 import { z } from "zod";
-
-const _debug = false;
-function debug(...data: any[]): void {
-  if (_debug) console.debug(...data);
-}
+import { DashboardData } from "./types";
 
 const TOKEN_KEY = "PDA:TOKEN";
 
@@ -16,10 +12,10 @@ const token_schema = z.object({
 });
 
 export async function getToken() {
-  const curr_token = token_schema.parse(localStorage.getItem(TOKEN_KEY));
-  if (new Date() > new Date(curr_token.expiration)) {
+  const curr_token = token_schema.safeParse(localStorage.getItem(TOKEN_KEY));
+  if (!curr_token.success || new Date() > new Date(curr_token.data.expiration)) {
     console.log("Refreshing token...");
-    await fetch("https://api.pdahub.com.br/api/Autenticacao", {
+    return await fetch("https://api.pdahub.com.br/api/Autenticacao", {
       headers: {
         accept: "application/json, text/plain, */*",
         "content-type": "application/json",
@@ -28,9 +24,36 @@ export async function getToken() {
       method: "POST",
     })
       .then((r) => r.json())
+      .then(token_schema.parseAsync)
       .then((token) => {
         localStorage.setItem(TOKEN_KEY, JSON.stringify(token));
+        return `Bearer ${token.accessToken}` as const;
       });
   }
-  return `Bearer ${curr_token.accessToken}`;
+  console.log("Current token expires on:", curr_token.data.expiration)
+  return `Bearer ${curr_token.data.accessToken}` as const;
+}
+
+export async function get_dashboard_data() {
+  const token = await getToken();
+
+  const data = await fetch(
+    "https://prd-apidash-wms.pdacloud.com.br/Dash/Progresso",
+    {
+      headers: {
+        accept: "application/json, text/plain, */*",
+        "accept-language": "pt-BR,pt;q=0.9",
+        authorization: token,
+      },
+      referrer: "https://bi.pdahub.com.br/",
+      body: null,
+      method: "GET",
+    },
+  )
+    .then((res) => res.json())
+    .then(DashboardData.parseAsync);
+
+  console.log(data);
+
+  return data;
 }

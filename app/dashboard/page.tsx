@@ -22,75 +22,9 @@ import { StageChart } from "./stage-chart";
 import { OverviewChart } from "./overview-chart";
 import { DynamicBackground } from "./dynamic-background";
 import z from "zod";
-import { NumberParser } from "@internationalized/number";
 import { useState } from "react";
-
-const NumParser = new NumberParser("pt-BR", { style: "decimal" });
-const Porcentagem = z
-  .string()
-  .transform((str) => NumParser.parse(str.replace("%", "")));
-
-export const DadoEtapa = z.object({
-  nome: z.string(),
-  valor: z.int(),
-  ordem: z.int(),
-  progresso: Porcentagem,
-});
-
-export const Etapa = z.object({
-  etapa: z.enum(["Pedido", "Picking", "Conferência", "Expedição"]),
-  progressoGeralEtapa: Porcentagem,
-  valorTotal: z.int(),
-  ordem: z.int(),
-  dados: z.array(DadoEtapa),
-});
-
-export const DashboardData = z.object({
-  geral: z.object({
-    atualizacao: z.coerce.date().or(z.date()),
-    periodo: z.int(),
-    progressoGeral: z.object({
-      porcentagem: Porcentagem,
-      valor: z.int(),
-      cor: z.string().startsWith("#").length(7),
-    }),
-    cor: z.null(),
-    etapas: z.array(Etapa),
-  }),
-});
-
-async function get_data() {
-  const token = await fetch("https://api.pdahub.com.br/api/Autenticacao", {
-    headers: {
-      accept: "application/json, text/plain, */*",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({ Login: "arthur.bufalo" }),
-    method: "POST",
-  })
-    .then((r) => r.json())
-    .then((token) => `Bearer ${token.accessToken}`);
-
-  const data = await fetch(
-    "https://prd-apidash-wms.pdacloud.com.br/Dash/Progresso",
-    {
-      headers: {
-        accept: "application/json, text/plain, */*",
-        "accept-language": "pt-BR,pt;q=0.9",
-        authorization: token,
-      },
-      referrer: "https://bi.pdahub.com.br/",
-      body: null,
-      method: "GET",
-    },
-  )
-    .then((res) => res.json())
-    .then(DashboardData.parseAsync);
-
-  console.log(data);
-
-  return data;
-}
+import { Etapa } from "@/lib/types";
+import { get_dashboard_data } from "@/lib/pda";
 
 const etapaIcons: Record<string, React.ReactNode> = {
   Pedido: <Package className="h-5 w-5" />,
@@ -265,7 +199,7 @@ function Dashboard() {
 
   const { data, error, isLoading, isFetching } = useQuery({
     queryKey: ["dashboard"],
-    queryFn: get_data,
+    queryFn: get_dashboard_data,
     refetchInterval: 1000 * 60 * 10,
     refetchOnWindowFocus: false,
   });
