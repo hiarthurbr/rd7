@@ -1,11 +1,25 @@
-import { StatusMonitor } from "@/components/status"
+"use client"
 
-export default function Home() {
+import { Status } from "@/components/status";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useState } from "react";
+
+export default function Page() {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 60 * 1000, // 1 minuto
+            refetchOnWindowFocus: false,
+          },
+        },
+      }),
+  );
+
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
-        <StatusMonitor />
-      </div>
-    </main>
-  )
+    <QueryClientProvider client={queryClient}> 
+      <Status />
+    </QueryClientProvider>
+  );
 }

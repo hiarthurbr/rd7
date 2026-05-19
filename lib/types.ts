@@ -47,3 +47,11 @@ export const DashboardData = z.object({
     etapas: z.array(Etapa),
   }),
 });
+
+export const token_schema = z.object({
+  authenticated: z.boolean(),
+  created: z.coerce.date(),
+  expiration: z.coerce.date(),
+  accessToken: z.string(),
+  refreshToken: z.uuidv4(),
+});

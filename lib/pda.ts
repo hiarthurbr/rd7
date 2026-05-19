@@ -1,15 +1,6 @@
-import { z } from "zod";
-import { DashboardData } from "./types";
+import { DashboardData, token_schema } from "./types";
 
 const TOKEN_KEY = "PDA:TOKEN";
-
-const token_schema = z.object({
-  authenticated: z.boolean(),
-  created: z.coerce.date(),
-  expiration: z.coerce.date(),
-  accessToken: z.string(),
-  refreshToken: z.uuidv4(),
-});
 
 export async function getToken() {
   const curr_token = token_schema.safeParse(localStorage.getItem(TOKEN_KEY));

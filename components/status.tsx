@@ -1,309 +1,285 @@
-"use client";
+import { token_schema } from "@/lib/types";
+import { Button, ColorSwatch, Label, ProgressCircle } from "@heroui/react";
+import { useQuery } from "@tanstack/react-query";
+import { HeartPulseIcon } from "lucide-react";
+import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
+import { useCountdown, useSafeState } from "@shined/react-use";
+import z from "zod";
+import { useSpring, useTransform, motion } from "framer-motion";
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import { Card, Chip, Button } from "@heroui/react";
-import {
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  RefreshCw,
-  Clock,
-  Loader2,
-} from "lucide-react";
+const COLORS = {
+  "0": "#a1a1a1",
+  "1": "#e7000b",
+  "2": "#ff6900",
+  "3": "#ffb900",
+  "4": "#ffdf20",
+  "5": "#9ae600",
+};
 
-interface DomainStatus {
-  url: string;
+type Domain = {
+  check: () => Promise<"online" | "offline" | "error">;
   name: string;
-  status: "online" | "offline" | "error" | "checking" | "pending";
-  currentDelay: number;
-  lastChecked: Date | null;
-  retryCount: number;
-  error?: string;
-}
+  delay: number;
+  key: string;
+};
 
-const DOMAINS = [
-  { url: "https://wms.pdahub.com.br/", name: "WMS PDA Hub" },
-  { url: "https://admin.pdahub.com.br/", name: "Admin PDA Hub" },
+const DOMAINS: Array<Domain> = [
   {
-    url: "https://pdawmspickingfuncprd.azurewebsites.net/",
-    name: "PDA WMS Picking (Azure)",
+    check: () =>
+      fetch("https://admin.pdahub.com.br/", {
+        method: "HEAD",
+        signal: AbortSignal.timeout(5000),
+        cache: "no-store",
+        mode: "no-cors",
+      })
+        .then(() => "online" as const)
+        .catch(() => "offline"),
+    name: "Admin PDA Hub",
+    delay: 1,
+    key: "admin_pda_hub",
   },
   {
-    url: "https://rainhaerp.rainhadassete.com.br/",
+    check: () =>
+      fetch("https://api.pdahub.com.br/api/Autenticacao", {
+        headers: {
+          accept: "application/json, text/plain, */*",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ Login: "arthur.bufalo" }),
+        signal: AbortSignal.timeout(5000),
+        method: "POST",
+      })
+        .then((r) => r.json())
+        .then(token_schema.safeParseAsync)
+        .then((token) => (token.success ? "online" : "error"))
+        .catch(() => "offline"),
+    name: "PDA API",
+    delay: 5,
+    key: "pda_api",
+  },
+  {
+    check: () =>
+      fetch(
+        "https://pdawmspickingfuncprd.azurewebsites.net/api/Picking/Conferencia",
+        {
+          method: "HEAD",
+          signal: AbortSignal.timeout(5000),
+          cache: "no-store",
+          mode: "no-cors",
+        },
+      )
+        .then(() => "online" as const)
+        .catch(() => "offline"),
+    name: "PDA Picking API",
+    delay: 1,
+    key: "pda_pickin_api",
+  },
+  {
+    check: () =>
+      fetch("https://api-erp.rainhadassete.com.br/api/Usuarios/login", {
+        headers: {
+          accept: "application/json, text/plain, */*",
+          "content-type": "application/json",
+        },
+        referrer: "https://rainhaerp.rainhadassete.com.br/",
+        body: atob(
+          "eyJVc3VhcmlvIjoiYXJ0aHVyLnJvZHJpZ3VleiIsIlNlbmhhIjoiJCRSUjc3aGgifQ==",
+        ),
+        method: "POST",
+      })
+        .then((r) => r.json())
+        .then((r) => ("token" in r ? "online" : "error"))
+        .catch(() => "offline"),
+    name: "Rainha ERP API",
+    delay: 5,
+    key: "rainha_erp_api",
+  },
+  {
+    check: () =>
+      fetch("https://rainhaerp.rainhadassete.com.br/", {
+        method: "HEAD",
+        signal: AbortSignal.timeout(5000),
+        cache: "no-store",
+        mode: "no-cors",
+      })
+        .then(() => "online" as const)
+        .catch(() => "offline"),
     name: "Rainha ERP",
+    delay: 1,
+    key: "rainha_erp",
   },
-  { url: "http://192.168.80.5:3002/", name: "Servidor Local (192.168.80.5)" },
+  {
+    check: () =>
+      fetch("http://192.168.80.5:3002/", {
+        method: "HEAD",
+        signal: AbortSignal.timeout(5000),
+        cache: "no-store",
+        mode: "no-cors",
+      })
+        .then(() => "online" as const)
+        .catch(() => "offline"),
+    name: "Rainha ERP (Local)",
+    delay: 1,
+    key: "rainha_erp_local",
+  },
 ];
 
-const CHECK_INTERVAL = 60000; // 1 minuto
-const BASE_RETRY_DELAY = 5000; // 5 segundos
+const history_schema = z
+  .array(z.enum(["online", "offline", "error", "pending"]))
+  .default(() => new Array());
 
-export function StatusMonitor() {
-  const [domains, setDomains] = useState<DomainStatus[]>(
-    DOMAINS.map((d) => ({
-      ...d,
-      status: "pending",
-      currentDelay: 0,
-      lastChecked: null,
-      retryCount: 0,
-    })),
-  );
-  const [isChecking, setIsChecking] = useState(false);
-  const [nextCheck, setNextCheck] = useState<Date | null>(null);
-  const [countdown, setCountdown] = useState<number>(0);
-  const retryTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
+function Domain({
+  domain,
+  expanded,
+}: {
+  domain: Domain;
+  expanded: boolean;
+  shouldExpand: Dispatch<SetStateAction<boolean>>;
+}) {
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: [domain.key],
+    queryFn: domain.check,
+    refetchInterval: 1000 * 60 * domain.delay,
+    staleTime: 1000 * 60 * domain.delay,
+    refetchOnWindowFocus: false,
+  });
 
-  const checkDomain = useCallback(
-    async (domain: DomainStatus, isRetry = false): Promise<DomainStatus> => {
-      // Atualiza status para "checking"
-      setDomains((prev) =>
-        prev.map((d) =>
-          d.url === domain.url ? { ...d, status: "checking" as const } : d,
-        ),
-      );
-
-      try {
-        const result = await (async () => {
-          try {
-            await fetch(domain.url, {
-              method: "HEAD",
-              signal: AbortSignal.timeout(5000),
-              cache: "no-store",
-              mode: "no-cors",
-            });
-
-            return {
-              url: domain.url,
-              status: "online" as const,
-              timestamp: new Date().toISOString(),
-            };
-          } catch (error) {
-            return {
-              url: domain.url,
-              status: "offline" as const,
-              statusCode: null,
-              error: error instanceof Error ? error.message : "Unknown error",
-              timestamp: new Date().toISOString(),
-            };
-          }
-        })();
-
-        const newStatus: DomainStatus = {
-          ...domain,
-          status: result.status === "online" && domain.retryCount > 0 ? "error" : result.status,
-          lastChecked: new Date(),
-          retryCount: isRetry ? domain.retryCount + 1 : 0,
-          error: result.error,
-        };
-
-        // Se falhou e ainda tem retries disponíveis, agenda retry
-        if (result.status === "offline") {
-          const delay = BASE_RETRY_DELAY * (Math.log(Math.pow(10, Math.max(3, newStatus.retryCount))) >> 0);
-
-            newStatus.currentDelay = delay;
-
-          // Limpa timeout anterior se existir
-          const existingTimeout = retryTimeouts.current.get(domain.url);
-          if (existingTimeout) {
-            clearTimeout(existingTimeout);
-          }
-
-          const timeoutId = setTimeout(() => {
-            checkDomain(newStatus, true).then((updatedDomain) => {
-              setDomains((prev) =>
-                prev.map((d) =>
-                  d.url === updatedDomain.url ? updatedDomain : d,
-                ),
-              );
-            });
-          }, delay);
-
-          retryTimeouts.current.set(domain.url, timeoutId);
-        }
-
-        return newStatus;
-      } catch {
-        return {
-          ...domain,
-          status: "error",
-          lastChecked: new Date(),
-          retryCount: isRetry ? domain.retryCount + 1 : 0,
-          error: "Erro ao verificar",
-        };
-      }
-    },
-    [],
+  const [date, setDate] = useSafeState(() => Date.now());
+  const countdown = useCountdown(date, {
+    controls: true,
+    interval: 500,
+  });
+  const [history, setHistory] = useState<z.infer<typeof history_schema>>(
+    Array.from<z.infer<typeof history_schema>[number]>({ length: 60 }).fill(
+      "pending",
+    ),
   );
 
-  const checkAllDomains = useCallback(async () => {
-    setIsChecking(true);
-
-    // Limpa todos os timeouts de retry pendentes
-    retryTimeouts.current.forEach((timeout) => clearTimeout(timeout));
-    retryTimeouts.current.clear();
-
-    const results = await Promise.all(
-      domains.map((domain) => checkDomain({ ...domain, retryCount: 0 }, false)),
-    );
-
-    setDomains(results);
-    setIsChecking(false);
-    setNextCheck(new Date(Date.now() + CHECK_INTERVAL));
-  }, [domains, checkDomain]);
-
-  // Verificação inicial e intervalo
   useEffect(() => {
-    checkAllDomains();
+    const date = new Date();
+    if (data != null) setHistory((h) => [...h.slice(-59), data]);
+    console.log({ data, domain: domain.name, date });
+  }, [data, domain.name]);
 
-    const interval = setInterval(() => {
-      checkAllDomains();
-    }, CHECK_INTERVAL);
+  const spring = useSpring(0, { duration: 500, bounce: 0 });
+  const display = useTransform(spring, (current) => Math.round(current));
+  const [displayValue, setDisplayValue] = useState(0);
 
-    return () => {
-      clearInterval(interval);
-      retryTimeouts.current.forEach((timeout) => clearTimeout(timeout));
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Countdown timer
   useEffect(() => {
-    if (!nextCheck) return;
-
-    const updateCountdown = () => {
-      const remaining = Math.max(0, nextCheck.getTime() - Date.now());
-      setCountdown(Math.ceil(remaining / 1000));
-    };
-
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
-
-    return () => clearInterval(interval);
-  }, [nextCheck]);
-
-  const getStatusIcon = (domain: DomainStatus) => {
-    switch (domain.status) {
-      case "online":
-        return domain.retryCount > 0 ? (
-          <AlertCircle className="h-5 w-5 text-yellow-500" />
-        ) : (
-          <CheckCircle2 className="h-5 w-5 text-green-500" />
-        );
-      case "offline":
-        return <XCircle className="h-5 w-5 text-red-500" />;
-      case "checking":
-        return <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />;
-      default:
-        return <Clock className="h-5 w-5 text-muted-foreground" />;
+    if (!isFetching) {
+      setDate(Date.now() + domain.delay * 60_000);
     }
-  };
+  }, [isFetching]);
 
-  const getStatusBadge = (domain: DomainStatus) => {
-    const color: Record<
-      DomainStatus["status"],
-      "default" | "accent" | "danger" | "success" | "warning"
-    > = {
-      online: "success",
-      offline: "danger",
-      error: "warning",
-      checking: "default",
-      pending: "default",
-    };
+  useEffect(() => {
+    spring.set(countdown.ms / 1000);
+  }, [spring, countdown]);
 
-    const labels: Record<DomainStatus["status"], string> = {
-      online: "Online",
-      offline: "Offline",
-      error: "Erro",
-      checking: "Verificando...",
-      pending: "Aguardando...",
-    };
+  useEffect(() => {
+    const unsubscribe = display.on("change", (latest) => {
+      setDisplayValue(latest);
+    });
+    return unsubscribe;
+  }, [display]);
 
-    return (
-      <Chip
-        variant="primary"
-        color={color[domain.status]}
-      >
-        {labels[domain.status]}
-      </Chip>
-    );
-  };
+  const uptime = useMemo(
+    () => (
+      <div className="flex flex-row items-center justify-center space-x-0.5 col-span-2">
+        {...Array.from({ length: 12 }).map((_, i) => {
+          const slice = history.slice(i * 5, i * 5 + 5);
 
-  const onlineCount = domains.filter((d) => d.status === "online").length;
-  const offlineCount = domains.filter(
-    (d) => d.status === "offline" || d.status === "error",
-  ).length;
+          return (
+            <ColorSwatch
+              key={`COLOR-SWATCH-${i}`}
+              color={
+                slice.every((s) => s === "pending")
+                  ? COLORS["0"]
+                  : COLORS[
+                      5 - (slice.filter((s) => s === "error" || s === "offline").length >>
+                        0) as unknown as keyof typeof COLORS
+                    ]
+              }
+              className="w-1 h-5"
+            />
+          );
+        })}
+      </div>
+    ),
+    [history],
+  );
+
+  const status = useMemo(
+    () => (
+      <ColorSwatch
+        color={
+          COLORS[
+            (((history.filter((s) => s === "online").length / history.length) *
+              5) >>
+              0) as unknown as keyof typeof COLORS
+          ]
+        }
+        className={`size-2.5 ${isLoading || isFetching ? "animate-pulse" : ""}`}
+      />
+    ),
+    [isLoading, isFetching],
+  );
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <Card.Header className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <div>
-            <Card.Title className="text-2xl font-bold">
-              Monitor de Status
-            </Card.Title>
-            <p className="text-sm text-muted-foreground mt-1">
-              Verificando {domains.length} domínios • Próxima verificação em{" "}
-              {countdown}s
-            </p>
-          </div>
-          <Button
-            onClick={checkAllDomains}
-            isDisabled={isChecking}
-            variant="outline"
-          >
-            {isChecking ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4 mr-2" />
-            )}
-            Verificar Agora
-          </Button>
-        </Card.Header>
-        <Card.Content>
-          <div className="flex gap-4 mb-6">
-            <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 rounded-lg">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
-              <span className="font-semibold text-green-600">
-                {onlineCount} Online
-              </span>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-red-500/10 rounded-lg">
-              <XCircle className="h-5 w-5 text-red-500" />
-              <span className="font-semibold text-red-600">
-                {offlineCount} Offline
-              </span>
-            </div>
-          </div>
+    <div className="grid grid-flow-row grid-cols-6 px-2 justify-items-start items-center space-x-2">
+      {expanded ? uptime : status}
+      <div className={expanded ? "col-span-3 w-full" : "col-span-4 w-full"}>
+        <Label className="text-left">{domain.name}</Label>
+      </div>
+      <ProgressCircle
+        aria-label="Default"
+        color="success"
+        size="sm"
+        value={displayValue}
+        maxValue={domain.delay * 60}
+        isIndeterminate={isFetching || isLoading}
+        className="place-self-end"
+      >
+        <ProgressCircle.Track>
+          <ProgressCircle.TrackCircle />
+          <ProgressCircle.FillCircle />
+        </ProgressCircle.Track>
+      </ProgressCircle>
+    </div>
+  );
+}
 
-          <div className="space-y-3">
-            {domains.map((domain) => (
-              <div
-                key={domain.url}
-                className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  {getStatusIcon(domain)}
-                  <div>
-                    <p className="font-medium">{domain.name}</p>
-                    <p className="text-sm text-muted-foreground font-mono">
-                      {domain.url}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  {getStatusBadge(domain)}
-                  {domain.currentDelay}
-                  {domain.lastChecked && (
-                    <span className="text-xs text-muted-foreground hidden sm:block">
-                      {domain.lastChecked.toLocaleTimeString("pt-BR")}
-                    </span>
-                  )}
-                </div>
-              </div>
+export function Status() {
+  const [expand, setExpand] = useState(false);
+
+  return (
+    <div>
+      <motion.div
+        transition={{
+          duration: 1.2,
+          ease: "easeInOut",
+        }}
+        animate={{ width: expand ? 280 : 40 }}
+        className="pl-2 p-3 rounded-xl bg-slate-900/25 overflow-hidden backdrop-blur-sm"
+      >
+        <motion.div className="">
+          <motion.div className="flex flex-col w-max space-y-3">
+            <motion.div className="grid grid-flow-row grid-cols-6 justify-items-start items-center h-7 px-1 space-x-2">
+              <HeartPulseIcon
+                className={expand ? "size-5 col-span-2" : "size-5"}
+              />
+              <Label className="col-span-4">Serviço</Label>
+            </motion.div>
+            {...DOMAINS.map((domain) => (
+              <Domain
+                domain={domain}
+                expanded={expand}
+                shouldExpand={setExpand}
+              />
             ))}
-          </div>
-        </Card.Content>
-      </Card>
+          </motion.div>
+        </motion.div>
+      </motion.div>
+      <Button onPress={() => setExpand((v) => !v)}>+</Button>
     </div>
   );
 }
