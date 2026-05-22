@@ -1,6 +1,6 @@
 import { token_schema } from "@/lib/types";
 import { Button, ColorSwatch, Label, ProgressCircle } from "@heroui/react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { HeartPulseIcon } from "lucide-react";
 import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
 import { useCountdown, useSafeState } from "@shined/react-use";
@@ -136,6 +136,9 @@ function Domain({
   expanded: boolean;
   shouldExpand: Dispatch<SetStateAction<boolean>>;
 }) {
+  const queryClient = useQueryClient();
+
+
   const { data, isLoading, isFetching } = useQuery({
     queryKey: [domain.key],
     queryFn: domain.check,
@@ -156,18 +159,18 @@ function Domain({
   );
 
   useEffect(() => {
-    const date = new Date();
-    if (data != null) setHistory((h) => [...h.slice(-59), data]);
-    console.log({ data, domain: domain.name, date });
   }, [data, domain.name]);
-
+  
   const spring = useSpring(0, { duration: 500, bounce: 0 });
   const display = useTransform(spring, (current) => Math.round(current));
   const [displayValue, setDisplayValue] = useState(0);
-
+  
   useEffect(() => {
     if (!isFetching) {
-      setDate(Date.now() + domain.delay * 60_000);
+      const date = new Date();
+      console.log({ data, domain: domain.name, date });
+      if (data != null) setHistory((h) => [...h.slice(-59), data]);
+      setDate(date.getTime() + domain.delay * 60_000);
     }
   }, [isFetching]);
 
@@ -187,6 +190,7 @@ function Domain({
       <div className="flex flex-row items-center justify-center space-x-0.5 col-span-2">
         {...Array.from({ length: 12 }).map((_, i) => {
           const slice = history.slice(i * 5, i * 5 + 5);
+          console.log({ domain: domain.name, slice: slice.toString(), history })
 
           return (
             <ColorSwatch
