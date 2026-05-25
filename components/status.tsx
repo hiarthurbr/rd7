@@ -1,9 +1,9 @@
 import { token_schema } from "@/lib/types";
 import { Button, ColorSwatch, Label, ProgressCircle } from "@heroui/react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { HeartPulseIcon } from "lucide-react";
-import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
-import { useCountdown, useSafeState } from "@shined/react-use";
+import { useEffect, useMemo, useState } from "react";
+import { useCountdown } from "@shined/react-use";
 import z from "zod";
 import { useSpring, useTransform, motion } from "framer-motion";
 
@@ -124,55 +124,89 @@ const DOMAINS: Array<Domain> = [
   },
 ];
 
-const history_schema = z
-  .array(z.enum(["online", "offline", "error", "pending"]))
-  .default(() => new Array());
+const history_schema = z.object({
+  status: z.enum(["online", "offline", "error", "pending"]),
+  date: z.coerce.date().or(z.date()),
+});
 
 function Domain({
   domain,
   expanded,
+  shouldExpand
 }: {
   domain: Domain;
   expanded: boolean;
-  shouldExpand: Dispatch<SetStateAction<boolean>>;
+  shouldExpand: () => void;
 }) {
-  const queryClient = useQueryClient();
-
-
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, dataUpdatedAt } = useQuery({
     queryKey: [domain.key],
     queryFn: domain.check,
     refetchInterval: 1000 * 60 * domain.delay,
     staleTime: 1000 * 60 * domain.delay,
-    refetchOnWindowFocus: false,
-  });
+    refetchOnWindowFocus: "always",
+    refetchIntervalInBackground: true,
+    refetchOnReconnect: "always",
+  })
 
-  const [date, setDate] = useSafeState(() => Date.now());
+  useEffect(
+    () =>
+      console.log({
+        date: new Date(dataUpdatedAt + domain.delay * 60_000),
+        domain: domain.name,
+      }),
+    [dataUpdatedAt],
+  );
+  const date = useMemo(
+    () => new Date(dataUpdatedAt + domain.delay * 60_000),
+    [dataUpdatedAt],
+  );
   const countdown = useCountdown(date, {
     controls: true,
-    interval: 500,
+    interval: 250,
   });
-  const [history, setHistory] = useState<z.infer<typeof history_schema>>(
-    Array.from<z.infer<typeof history_schema>[number]>({ length: 60 }).fill(
-      "pending",
-    ),
+  const [history, setHistory] = useState<Array<z.infer<typeof history_schema>>>(
+    [],
   );
 
-  useEffect(() => {
-  }, [data, domain.name]);
-  
   const spring = useSpring(0, { duration: 500, bounce: 0 });
   const display = useTransform(spring, (current) => Math.round(current));
   const [displayValue, setDisplayValue] = useState(0);
-  
+
   useEffect(() => {
-    if (!isFetching) {
-      const date = new Date();
-      console.log({ data, domain: domain.name, date });
-      if (data != null) setHistory((h) => [...h.slice(-59), data]);
-      setDate(date.getTime() + domain.delay * 60_000);
-    }
-  }, [isFetching]);
+    if (data != null)
+      setHistory((h) => {
+        const now = Date.now();
+
+        console.log({
+          h,
+          cache: z
+            .array(history_schema)
+            .safeParse(JSON.parse(localStorage.getItem(domain.key) ?? "[]"))
+            ?.data,
+          filtered: z
+            .array(history_schema)
+            .safeParse(JSON.parse(localStorage.getItem(domain.key) ?? "[]"))
+            ?.data?.filter((h) => h.date < new Date(now - 1000 * 60 * 60)),
+          start: new Date(now - 1000 * 60 * 60),
+          domain: domain.key,
+        });
+
+        const history = [
+          ...(h.length
+            ? h
+            : (z
+                .array(history_schema)
+                .safeParse(JSON.parse(localStorage.getItem(domain.key) ?? "[]"))
+                ?.data ?? [])
+          ).filter((h) => h.date >= new Date(now - 1000 * 60 * 60)),
+          { status: data, date: new Date(now) },
+        ];
+
+        localStorage.setItem(domain.key, JSON.stringify(history));
+
+        return history;
+      });
+  }, [dataUpdatedAt]);
 
   useEffect(() => {
     spring.set(countdown.ms / 1000);
@@ -185,52 +219,56 @@ function Domain({
     return unsubscribe;
   }, [display]);
 
-  const uptime = useMemo(
-    () => (
-      <div className="flex flex-row items-center justify-center space-x-0.5 col-span-2">
-        {...Array.from({ length: 12 }).map((_, i) => {
-          const slice = history.slice(i * 5, i * 5 + 5);
-          console.log({ domain: domain.name, slice: slice.toString(), history })
+  const timeline_score = useMemo(() => {
+    const now = Date.now() - 1000 * 60 * 60;
 
-          return (
-            <ColorSwatch
-              key={`COLOR-SWATCH-${i}`}
-              color={
-                slice.every((s) => s === "pending")
-                  ? COLORS["0"]
-                  : COLORS[
-                      5 - (slice.filter((s) => s === "error" || s === "offline").length >>
-                        0) as unknown as keyof typeof COLORS
-                    ]
-              }
-              className="w-1 h-5"
-            />
-          );
-        })}
-      </div>
-    ),
-    [history],
-  );
+    return Array.from({ length: 12 }).map((_, i) => {
+      const start = new Date(now + 1000 * 60 * 5 * i);
+      const end = new Date(now + 1000 * 60 * 5 * (i + 1));
 
-  const status = useMemo(
-    () => (
-      <ColorSwatch
-        color={
-          COLORS[
-            (((history.filter((s) => s === "online").length / history.length) *
-              5) >>
-              0) as unknown as keyof typeof COLORS
-          ]
-        }
-        className={`size-2.5 ${isLoading || isFetching ? "animate-pulse" : ""}`}
-      />
-    ),
-    [isLoading, isFetching],
-  );
+      const slice = history.filter((h) => h.date >= start && h.date <= end);
+
+      if (slice.length === 0) return 0;
+
+      const res = Math.floor(
+        slice.reduce((prev, curr) => {
+          switch (curr.status) {
+            case "offline":
+              return prev + 1;
+            case "error":
+              return prev + 2;
+            case "online":
+              return prev + 5;
+            default:
+              return prev;
+          }
+        }, 0) / slice.length,
+      );
+
+      // console.log({slice, domain: domain.name, res})
+
+      return res;
+    });
+  }, [history]);
 
   return (
     <div className="grid grid-flow-row grid-cols-6 px-2 justify-items-start items-center space-x-2">
-      {expanded ? uptime : status}
+      {expanded ? (
+        <div className="flex flex-row items-center justify-center space-x-0.5 col-span-2">
+          {timeline_score.map((score, i) => (
+            <ColorSwatch
+              key={`COLOR-SWATCH-${domain.key}-${i}`}
+              color={COLORS[score.toFixed(0) as keyof typeof COLORS]}
+              className="w-1 h-5"
+            />
+          ))}
+        </div>
+      ) : (
+        <ColorSwatch
+          color={COLORS[timeline_score[11].toFixed(0) as keyof typeof COLORS]}
+          className={`size-2.5 ${isLoading || isFetching || new Date() > date ? "animate-pulse" : ""}`}
+        />
+      )}
       <div className={expanded ? "col-span-3 w-full" : "col-span-4 w-full"}>
         <Label className="text-left">{domain.name}</Label>
       </div>
@@ -240,7 +278,7 @@ function Domain({
         size="sm"
         value={displayValue}
         maxValue={domain.delay * 60}
-        isIndeterminate={isFetching || isLoading}
+        isIndeterminate={isFetching || isLoading || new Date() > date}
         className="place-self-end"
       >
         <ProgressCircle.Track>
@@ -253,7 +291,11 @@ function Domain({
 }
 
 export function Status() {
-  const [expand, setExpand] = useState(false);
+  const [expand, setExpand] = useState<{ [key: string]: boolean }>({ force_expand: false });
+
+  const expanded = useMemo(() => !Object.values(expand).every(e => e === false), [expand])
+
+  console.log({ expand, expanded })
 
   return (
     <div>
@@ -262,28 +304,28 @@ export function Status() {
           duration: 1.2,
           ease: "easeInOut",
         }}
-        animate={{ width: expand ? 280 : 40 }}
-        className="pl-2 p-3 rounded-xl bg-slate-900/25 overflow-hidden backdrop-blur-sm"
+        animate={{ width: expanded ? 280 : 40 }}
+        className="pl-2 p-3 rounded-xl bg-slate-900/40 overflow-hidden backdrop-blur-sm"
       >
         <motion.div className="">
           <motion.div className="flex flex-col w-max space-y-3">
             <motion.div className="grid grid-flow-row grid-cols-6 justify-items-start items-center h-7 px-1 space-x-2">
               <HeartPulseIcon
-                className={expand ? "size-5 col-span-2" : "size-5"}
+                className={expanded ? "size-5 stroke-white col-span-2" : "size-5 stroke-white"}
               />
               <Label className="col-span-4">Serviço</Label>
             </motion.div>
             {...DOMAINS.map((domain) => (
               <Domain
                 domain={domain}
-                expanded={expand}
-                shouldExpand={setExpand}
+                expanded={expanded}
+                shouldExpand={() => setExpand(v => ({ ...v, [domain.key]: true }))}
               />
             ))}
           </motion.div>
         </motion.div>
       </motion.div>
-      <Button onPress={() => setExpand((v) => !v)}>+</Button>
+      {/* <Button onPress={() => setExpand(v => ({ ...v, force_expand: !v.force_expand }))}>+</Button> */}
     </div>
   );
 }

@@ -25,6 +25,7 @@ import z from "zod";
 import { useState } from "react";
 import { Etapa } from "@/lib/types";
 import { get_dashboard_data } from "@/lib/pda";
+import { Status } from "@/components/status";
 
 const etapaIcons: Record<string, React.ReactNode> = {
   Pedido: <Package className="h-5 w-5" />,
@@ -324,6 +325,10 @@ function Dashboard() {
             </AnimatePresence>
           </motion.div>
         </motion.div>
+
+        <div className="absolute bottom-0 left-8">
+          <Status />
+        </div>
       </div>
     </div>
   );
