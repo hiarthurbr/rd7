@@ -91,7 +91,7 @@ function EtapaCard({
               </motion.div>
               <div>
                 <CardTitle className="text-lg font-semibold">
-                  {etapa.etapa}
+                  {etapa.etapa === "Pedido" ? "Planejamento" : etapa.etapa}
                 </CardTitle>
               </div>
             </div>
@@ -297,7 +297,9 @@ function Dashboard() {
                                 className={`h-3 w-3 rounded-full ${colors.bg}`}
                               />
                               <span className="text-sm text-muted-foreground">
-                                {etapa.etapa}
+                                {etapa.etapa === "Pedido"
+                                  ? "Planejamento"
+                                  : etapa.etapa}
                               </span>
                               <span className="text-sm font-extrabold text-foreground">
                                 {etapa.valorTotal}

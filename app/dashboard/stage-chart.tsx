@@ -2,7 +2,7 @@
 
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from "recharts"
 import { motion } from "framer-motion"
-import { DadoEtapa } from "./page"
+import { DadoEtapa } from "@/lib/types"
 import z from "zod"
 
 interface StageChartProps {

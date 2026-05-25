@@ -3,7 +3,7 @@
 import { motion } from "framer-motion"
 import { useMemo } from "react"
 import z from "zod"
-import { Etapa } from "./page"
+import { Etapa } from "@/lib/types"
 
 
 interface DynamicBackgroundProps {

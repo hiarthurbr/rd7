@@ -136,7 +136,7 @@ function Domain({
 }: {
   domain: Domain;
   expanded: boolean;
-  shouldExpand: () => void;
+  shouldExpand: (yes: boolean) => void;
 }) {
   const { data, isLoading, isFetching, dataUpdatedAt } = useQuery({
     queryKey: [domain.key],
@@ -204,7 +204,7 @@ function Domain({
 
         localStorage.setItem(domain.key, JSON.stringify(history));
 
-        if (history.find(h => h.status !== "online") != null) shouldExpand();
+        shouldExpand(history.find(h => h.status !== "online") != null)
 
         return history;
       });
@@ -321,7 +321,7 @@ export function Status() {
               <Domain
                 domain={domain}
                 expanded={expanded}
-                shouldExpand={() => setExpand(v => ({ ...v, [domain.key]: true }))}
+                shouldExpand={(yes) => setExpand(v => ({ ...v, [domain.key]: yes }))}
               />
             ))}
           </motion.div>

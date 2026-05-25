@@ -3,7 +3,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 import { motion } from "framer-motion"
 import z from "zod"
-import { Etapa } from "./page"
+import { Etapa } from "@/lib/types"
 
 const COLORS = [
   "oklch(.704 .04 256.788)",
