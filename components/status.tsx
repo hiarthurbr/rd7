@@ -204,6 +204,8 @@ function Domain({
 
         localStorage.setItem(domain.key, JSON.stringify(history));
 
+        if (history.find(h => h.status !== "online") != null) shouldExpand();
+
         return history;
       });
   }, [dataUpdatedAt]);
