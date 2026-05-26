@@ -1,10 +1,14 @@
-import { DashboardData, token_schema } from "./types";
+import z from "zod";
+import { DashboardData, status_pedido_schema, token_schema } from "./types";
 
 const TOKEN_KEY = "PDA:TOKEN";
 
 export async function getToken() {
   const curr_token = token_schema.safeParse(localStorage.getItem(TOKEN_KEY));
-  if (!curr_token.success || new Date() > new Date(curr_token.data.expiration)) {
+  if (
+    !curr_token.success ||
+    new Date() > new Date(curr_token.data.expiration)
+  ) {
     console.log("Refreshing token...");
     return await fetch("https://api.pdahub.com.br/api/Autenticacao", {
       headers: {
@@ -21,7 +25,7 @@ export async function getToken() {
         return `Bearer ${token.accessToken}` as const;
       });
   }
-  console.log("Current token expires on:", curr_token.data.expiration)
+  console.log("Current token expires on:", curr_token.data.expiration);
   return `Bearer ${curr_token.data.accessToken}` as const;
 }
 
@@ -48,3 +52,10 @@ export async function get_dashboard_data() {
 
   return data;
 }
+
+export async function get_relatorio_separacao(payload: {
+  produto?: string;
+  pedido?: string;
+  status?: z.infer<typeof status_pedido_schema>;
+  data?: { inicio: Date; fim: Date };
+}) {}

@@ -1,18 +1,18 @@
-import { NumberParser } from "@internationalized/number"
-import z from "zod"
+import { NumberParser } from "@internationalized/number";
+import z from "zod";
 
 export type ComparisonResult = {
-  eq: { [key: string]: [[number, number], [number, number]] }
-  diff: { [key: string]: [[number, number], [number, number]] }
-  same_sku: { [sku: string]: Array<[number, number, number]>}
-  raw: any
-}
+  eq: { [key: string]: [[number, number], [number, number]] };
+  diff: { [key: string]: [[number, number], [number, number]] };
+  same_sku: { [sku: string]: Array<[number, number, number]> };
+  raw: any;
+};
 
 export type ProductData = {
-  name: string
-  quantity: number
-  weight: number
-}
+  name: string;
+  quantity: number;
+  weight: number;
+};
 
 const NumParser = new NumberParser("pt-BR", { style: "decimal" });
 const Porcentagem = z
@@ -54,4 +54,30 @@ export const token_schema = z.object({
   expiration: z.coerce.date(),
   accessToken: z.string(),
   refreshToken: z.uuidv4(),
+});
+
+export const status_pedido_schema = z.enum(["Andamento"]);
+
+export const relatorio_separacao_schema = z.object({
+  codigoPedido: z.string(),
+  codigoTransportadora: z.string(),
+  codigoEcCliente: z.number(),
+  nomeCliente: z.string(),
+  produto: z.string(),
+  descricaoStatus: status_pedido_schema,
+  transportadora: z.string(),
+  dataIntegracao: z.coerce.date().or(z.date()),
+  cor: z.string(),
+  tamanho: z.date(),
+  grade: z.date(),
+  descricaoEndereco: z.string(),
+  quantidadePicking: z.number(),
+  notaFiscal: z.date(),
+  serie: z.date(),
+  dataInicioSeparacao: z.coerce.date().or(z.date()),
+  tipoPedido: z.enum(["Vinculo", "Pedido"]),
+  quantidadePedido: z.number(),
+  ean: z.date(),
+  lote: z.date(),
+  promocao: z.date(),
 });

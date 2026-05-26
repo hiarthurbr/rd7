@@ -177,26 +177,12 @@ function Domain({
       setHistory((h) => {
         const now = Date.now();
 
-        console.log({
-          h,
-          cache: z
-            .array(history_schema)
-            .safeParse(JSON.parse(localStorage.getItem(domain.key) ?? "[]"))
-            ?.data,
-          filtered: z
-            .array(history_schema)
-            .safeParse(JSON.parse(localStorage.getItem(domain.key) ?? "[]"))
-            ?.data?.filter((h) => h.date < new Date(now - 1000 * 60 * 60)),
-          start: new Date(now - 1000 * 60 * 60),
-          domain: domain.key,
-        });
-
         const history = [
           ...(h.length
             ? h
             : (z
                 .array(history_schema)
-                .safeParse(JSON.parse(localStorage.getItem(domain.key) ?? "[]"))
+                .safeParse(localStorage.getItem(domain.key))
                 ?.data ?? [])
           ).filter((h) => h.date >= new Date(now - 1000 * 60 * 60)),
           { status: data, date: new Date(now) },
