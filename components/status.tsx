@@ -132,7 +132,7 @@ const history_schema = z.object({
 function Domain({
   domain,
   expanded,
-  shouldExpand
+  shouldExpand,
 }: {
   domain: Domain;
   expanded: boolean;
@@ -146,7 +146,12 @@ function Domain({
     refetchOnWindowFocus: "always",
     refetchIntervalInBackground: true,
     refetchOnReconnect: "always",
-  })
+    retry: 4,
+    retryDelay(failureCount) {
+      if (failureCount < 2) return 5_000;
+      return 10_000;
+    },
+  });
 
   useEffect(
     () =>
@@ -182,15 +187,14 @@ function Domain({
             ? h
             : (z
                 .array(history_schema)
-                .safeParse(localStorage.getItem(domain.key))
-                ?.data ?? [])
+                .safeParse(localStorage.getItem(domain.key))?.data ?? [])
           ).filter((h) => h.date >= new Date(now - 1000 * 60 * 60)),
           { status: data, date: new Date(now) },
         ];
 
         localStorage.setItem(domain.key, JSON.stringify(history));
 
-        shouldExpand(history.find(h => h.status !== "online") != null)
+        shouldExpand(history.find((h) => h.status !== "online") != null);
 
         return history;
       });
@@ -279,11 +283,16 @@ function Domain({
 }
 
 export function Status() {
-  const [expand, setExpand] = useState<{ [key: string]: boolean }>({ force_expand: false });
+  const [expand, setExpand] = useState<{ [key: string]: boolean }>({
+    force_expand: false,
+  });
 
-  const expanded = useMemo(() => !Object.values(expand).every(e => e === false), [expand])
+  const expanded = useMemo(
+    () => !Object.values(expand).every((e) => e === false),
+    [expand],
+  );
 
-  console.log({ expand, expanded })
+  console.log({ expand, expanded });
 
   return (
     <div>
@@ -299,7 +308,11 @@ export function Status() {
           <motion.div className="flex flex-col w-max space-y-3">
             <motion.div className="grid grid-flow-row grid-cols-6 justify-items-start items-center h-7 px-1 space-x-2">
               <HeartPulseIcon
-                className={expanded ? "size-5 stroke-white col-span-2" : "size-5 stroke-white"}
+                className={
+                  expanded
+                    ? "size-5 stroke-white col-span-2"
+                    : "size-5 stroke-white"
+                }
               />
               <Label className="col-span-4">Serviço</Label>
             </motion.div>
@@ -307,7 +320,9 @@ export function Status() {
               <Domain
                 domain={domain}
                 expanded={expanded}
-                shouldExpand={(yes) => setExpand(v => ({ ...v, [domain.key]: yes }))}
+                shouldExpand={(yes) =>
+                  setExpand((v) => ({ ...v, [domain.key]: yes }))
+                }
               />
             ))}
           </motion.div>

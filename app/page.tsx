@@ -1,6 +1,7 @@
 "use client";
 import {
   ArchiveRestoreIcon,
+  CalendarClockIcon,
   ChartAreaIcon,
   GitCompareArrowsIcon,
   LayoutDashboardIcon,
@@ -170,13 +171,35 @@ export default function Default() {
               <Card.Title>Dashboard de Logística</Card.Title>
               <Card.Description>
                 Monitore o fluxo, status e indicadores de performance dos
-                pedidos em tempo real. Otimize sua operação com dados
+                pedidos em tempo real. Otimize a operação com dados
                 estratégicos de ponta a ponta.
               </Card.Description>
             </Card.Header>
             <Card.Footer>
               <Link aria-label="Ver dashboard de logistica" href="/dashboard" target="_blank">
                 Ver dashboard
+                <Link.Icon aria-hidden="true" />
+              </Link>
+            </Card.Footer>
+          </Card>
+
+          <Separator orientation="vertical" className="my-6" />
+
+          <Card className="w-100">
+            <CalendarClockIcon
+              aria-label="Dollar sign icon"
+              className="text-primary size-6"
+              role="img"
+            />
+            <Card.Header>
+              <Card.Title>Armazenagens pendentes</Card.Title>
+              <Card.Description>
+                Lista de notas com pendencias/divergências na armazenagem
+              </Card.Description>
+            </Card.Header>
+            <Card.Footer>
+              <Link aria-label="Ver pendências" href="/armazenagem_pendentes">
+                Ver pendências
                 <Link.Icon aria-hidden="true" />
               </Link>
             </Card.Footer>
