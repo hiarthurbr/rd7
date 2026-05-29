@@ -213,7 +213,7 @@ export default function Page() {
                   <Table.Column isRowHeader id="nfe" maxWidth={200}>
                     Nota Fiscal
                   </Table.Column>
-                  <Table.Column id="data" maxWidth={224}>
+                  <Table.Column id="data" maxWidth={300}>
                     Data recebimento
                   </Table.Column>
                   <Table.Column id="sku" maxWidth={384}>Produto</Table.Column>
@@ -234,10 +234,10 @@ export default function Page() {
                   {(row) => (
                     <Table.Row>
                       <Table.Cell className="text-left">{row.notafiscal}</Table.Cell>
-                      <Table.Cell className="p-0">
+                      <Table.Cell className="p-0 flex items-center justify-center">
                         <DatePicker
                           aria-label="Horario do recebimento"
-                          className="w-48"
+                          className="w-64"
                           value={fromDate(
                             row.dataRecebimento,
                             "America/Sao_Paulo",
@@ -247,7 +247,6 @@ export default function Page() {
                           name="date"
                           shouldForceLeadingZeros
                           hideTimeZone
-                          isReadOnly
                         >
                           {({ state }) => (
                             <>
