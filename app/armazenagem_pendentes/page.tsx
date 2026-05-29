@@ -24,7 +24,7 @@ import { useEffect, useMemo, useState } from "react";
 import z from "zod";
 
 const fmt_date = (date: Date) =>
-  `${date.getFullYear()}-${date.getMonth().toFixed(0).padStart(2, "0")}-${date.getDate().toFixed(0).padStart(2, "0")}`;
+  `${date.getFullYear()}-${(date.getMonth() + 1).toFixed(0).padStart(2, "0")}-${date.getDate().toFixed(0).padStart(2, "0")}`;
 
 const timeRangeEnum = z.enum({
   Day: 1,
