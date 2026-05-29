@@ -1,5 +1,6 @@
 "use client";
 import { getToken } from "@/lib/pda";
+import { cn } from "@/lib/utils";
 import {
   ProgressCircle,
   TableLayout,
@@ -14,12 +15,13 @@ import {
   TimeValue,
   EmptyState,
   ProgressBar,
+  SortDescriptor,
 } from "@heroui/react";
 import { fromDate } from "@internationalized/date";
 import { useCountdown } from "@shined/react-use";
 import { useQuery, QueryClient } from "@tanstack/react-query";
 import { useSpring, useTransform } from "framer-motion";
-import { InboxIcon } from "lucide-react";
+import { ChevronUpIcon, InboxIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import z from "zod";
 
@@ -54,6 +56,28 @@ const recebimento_schema = z.object({
 
 const QUERY_KEY = "armazenagens_pendentes";
 
+function SortableColumnHeader({
+  children,
+  sortDirection,
+}: {
+  children: React.ReactNode;
+  sortDirection?: "ascending" | "descending";
+}) {
+  return (
+    <span className="flex items-center justify-between">
+      {children}
+      {!!sortDirection && (
+        <ChevronUpIcon
+          className={cn(
+            "size-3 transform transition-transform duration-100 ease-out",
+            sortDirection === "descending" ? "rotate-180" : "",
+          )}
+        />
+      )}
+    </span>
+  );
+}
+
 export default function Page() {
   const queryClient = useMemo(() => new QueryClient(), []);
   const [timeRange, setTimeRange] = useState<z.infer<typeof timeRangeEnum>>(
@@ -63,45 +87,40 @@ export default function Page() {
   const { data, isLoading, isFetching, dataUpdatedAt } = useQuery(
     {
       queryKey: [QUERY_KEY],
-      queryFn: async () => {
-        return fetch(
-          "https://api.pdahub.com.br/api/Relatorio/RecebimentoAnalitico",
-          {
-            headers: {
-              accept: "application/json, text/plain, */*",
-              "content-type": "application/json",
-              authorization: await getToken(),
-            },
-            referrer: "https://wms.pdahub.com.br/",
-            body: JSON.stringify({
-              notafiscal: null,
-              codigoPedido: null,
-              palete: null,
-              caixa: null,
-              lote: null,
-              produto: null,
-              tipoPedido: null,
-              usuarioRecebimento: null,
-              usuarioArmazenagem: null,
-              dataInicio: fmt_date(
-                new Date(Date.now() - 1000 * 60 * 60 * 24 * timeRange),
-              ),
-              dataFim: fmt_date(new Date()),
-            }),
-            method: "PATCH",
+      queryFn: async () =>
+        fetch("https://api.pdahub.com.br/api/Relatorio/RecebimentoAnalitico", {
+          headers: {
+            accept: "application/json, text/plain, */*",
+            "content-type": "application/json",
+            authorization: await getToken(),
           },
-        )
+          referrer: "https://wms.pdahub.com.br/",
+          body: JSON.stringify({
+            notafiscal: null,
+            codigoPedido: null,
+            palete: null,
+            caixa: null,
+            lote: null,
+            produto: null,
+            tipoPedido: null,
+            usuarioRecebimento: null,
+            usuarioArmazenagem: null,
+            dataInicio: fmt_date(
+              new Date(Date.now() - 1000 * 60 * 60 * 24 * timeRange),
+            ),
+            dataFim: fmt_date(new Date()),
+          }),
+          method: "PATCH",
+        })
           .then((r) => r.json())
           .then(z.array(recebimento_schema).parseAsync)
           .then((r) =>
             r
               .filter((op) => op.pendenteArmazenar > 0)
               .map((nf) => ({ ...nf, id: Object.values(nf).sort().join("-") })),
-          );
-      },
-      refetchInterval: 1000 * 60 * 10,
+          ),
+      initialData: [],
       refetchOnWindowFocus: true,
-      refetchIntervalInBackground: true,
       refetchOnReconnect: true,
     },
     queryClient,
@@ -135,6 +154,31 @@ export default function Page() {
     });
     return unsubscribe;
   }, [display]);
+
+  const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
+    column: "date",
+    direction: "ascending",
+  });
+  const sortedRows = useMemo(() => {
+    return [...data].sort((a, b) => {
+      const col = sortDescriptor.column as keyof z.infer<
+        typeof recebimento_schema
+      >;
+
+      const first = a[col];
+      const second = b[col];
+      let cmp =
+        typeof first === "number"
+          ? first - (second as number)
+          : first instanceof Date
+            ? first.getTime() - (second as number)
+            : first.localeCompare(second as string);
+      if (sortDescriptor.direction === "descending") {
+        cmp *= -1;
+      }
+      return cmp;
+    });
+  }, [sortDescriptor]);
 
   return (
     <main className="min-h-screen bg-background">
@@ -208,20 +252,68 @@ export default function Page() {
               <Table.Content
                 aria-label="Virtualized table with 1000 rows"
                 className="h-full min-w-175 overflow-auto"
+                sortDescriptor={sortDescriptor}
+                onSortChange={setSortDescriptor}
               >
                 <Table.Header className="h-full w-full">
-                  <Table.Column isRowHeader id="nfe" maxWidth={200}>
-                    Nota Fiscal
+                  <Table.Column
+                    allowsSorting
+                    isRowHeader
+                    id="nfe"
+                    maxWidth={200}
+                  >
+                    {({ sortDirection }) => (
+                      <SortableColumnHeader sortDirection={sortDirection}>
+                        Nota Fiscal
+                      </SortableColumnHeader>
+                    )}
                   </Table.Column>
-                  <Table.Column id="data" maxWidth={300}>
-                    Data recebimento
+                  <Table.Column
+                    allowsSorting
+                    isRowHeader
+                    id="date"
+                    maxWidth={300}
+                  >
+                    {({ sortDirection }) => (
+                      <SortableColumnHeader sortDirection={sortDirection}>
+                        Data recebimento
+                      </SortableColumnHeader>
+                    )}
                   </Table.Column>
-                  <Table.Column id="sku" maxWidth={384}>Produto</Table.Column>
-                  <Table.Column id="pendente" maxWidth={200}>Pendente</Table.Column>
-                  <Table.Column id="progresso">Progresso</Table.Column>
+                  <Table.Column
+                    allowsSorting
+                    isRowHeader
+                    id="sku"
+                    maxWidth={384}
+                  >
+                    {({ sortDirection }) => (
+                      <SortableColumnHeader sortDirection={sortDirection}>
+                        Produto
+                      </SortableColumnHeader>
+                    )}
+                  </Table.Column>
+                  <Table.Column
+                    allowsSorting
+                    isRowHeader
+                    id="pendente"
+                    maxWidth={200}
+                  >
+                    {({ sortDirection }) => (
+                      <SortableColumnHeader sortDirection={sortDirection}>
+                        Pendente
+                      </SortableColumnHeader>
+                    )}
+                  </Table.Column>
+                  <Table.Column allowsSorting isRowHeader id="progresso">
+                    {({ sortDirection }) => (
+                      <SortableColumnHeader sortDirection={sortDirection}>
+                        Progresso
+                      </SortableColumnHeader>
+                    )}
+                  </Table.Column>
                 </Table.Header>
                 <Table.Body
-                  items={data}
+                  items={sortedRows}
                   renderEmptyState={() => (
                     <EmptyState className="flex h-full w-full flex-col items-center justify-center gap-4 text-center">
                       <InboxIcon className="size-6 stroke-muted" />
@@ -233,7 +325,9 @@ export default function Page() {
                 >
                   {(row) => (
                     <Table.Row>
-                      <Table.Cell className="text-left">{row.notafiscal}</Table.Cell>
+                      <Table.Cell className="text-left">
+                        {row.notafiscal}
+                      </Table.Cell>
                       <Table.Cell className="p-0 flex items-center justify-center">
                         <DatePicker
                           aria-label="Horario do recebimento"
@@ -327,13 +421,16 @@ export default function Page() {
                       <Table.Cell>{row.pendenteArmazenar}</Table.Cell>
                       <Table.Cell className="py-2 px-8">
                         <ProgressBar
-                          aria-label="Revenue"
+                          aria-label="Progresso"
                           className="w-full"
                           maxValue={row.quantidadeRecebido}
                           minValue={0}
                           value={row.quantidadeArmazenada}
                         >
-                          <Label>Progresso ({row.quantidadeArmazenada} / {row.quantidadeRecebido})</Label>
+                          <Label>
+                            Progresso ({row.quantidadeArmazenada} /{" "}
+                            {row.quantidadeRecebido})
+                          </Label>
                           <ProgressBar.Output />
                           <ProgressBar.Track>
                             <ProgressBar.Fill />
@@ -343,6 +440,21 @@ export default function Page() {
                     </Table.Row>
                   )}
                 </Table.Body>
+                <Table.Footer>
+                  <ProgressBar
+                    aria-label="Atualizando dados"
+                    className="w-full"
+                    value={0}
+                    isIndeterminate={
+                      isFetching || isLoading || new Date() > date
+                    }
+                  >
+                    <ProgressBar.Output />
+                    <ProgressBar.Track>
+                      <ProgressBar.Fill />
+                    </ProgressBar.Track>
+                  </ProgressBar>
+                </Table.Footer>
               </Table.Content>
             </Table.ScrollContainer>
           </Table>

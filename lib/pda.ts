@@ -4,7 +4,7 @@ import { DashboardData, status_pedido_schema, token_schema } from "./types";
 const TOKEN_KEY = "PDA:TOKEN";
 
 export async function getToken() {
-  const curr_token = token_schema.safeParse(localStorage.getItem(TOKEN_KEY));
+  const curr_token = token_schema.safeParse(JSON.parse(localStorage.getItem(TOKEN_KEY) ?? '{}'));
   if (
     !curr_token.success ||
     new Date() > new Date(curr_token.data.expiration)
