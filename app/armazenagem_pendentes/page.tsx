@@ -1,9 +1,25 @@
 "use client";
 import { getToken } from "@/lib/pda";
-import { ProgressCircle, TableLayout, Tabs, Virtualizer, Table } from "@heroui/react";
+import {
+  ProgressCircle,
+  TableLayout,
+  Tabs,
+  Virtualizer,
+  Table,
+  DatePicker,
+  Label,
+  DateField,
+  Calendar,
+  TimeField,
+  TimeValue,
+  EmptyState,
+  ProgressBar,
+} from "@heroui/react";
+import { fromDate } from "@internationalized/date";
 import { useCountdown } from "@shined/react-use";
 import { useQuery, QueryClient } from "@tanstack/react-query";
 import { useSpring, useTransform } from "framer-motion";
+import { InboxIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import z from "zod";
 
@@ -77,7 +93,11 @@ export default function Page() {
         )
           .then((r) => r.json())
           .then(z.array(recebimento_schema).parseAsync)
-          .then((r) => r.filter((op) => op.pendenteArmazenar > 0).map(nf => ({ ...nf, id: `${nf.notafiscal}-${nf.codigoPedido}-${nf.produto}-${nf.quantidadeArmazenada}-${nf.quantidadePedido}-${nf.quantidadeRecebido}-${nf.pendenteArmazenar}-${nf.usuarioRecebimento}` })));
+          .then((r) =>
+            r
+              .filter((op) => op.pendenteArmazenar > 0)
+              .map((nf) => ({ ...nf, id: Object.values(nf).sort().join("-") })),
+          );
       },
       refetchInterval: 1000 * 60 * 10,
       refetchOnWindowFocus: true,
@@ -122,6 +142,9 @@ export default function Page() {
         {/* Header */}
         <Tabs
           className="w-md justify-self-start place-self-start pt-4"
+          selectedKey={
+            timeRange === 1 ? "Day" : timeRange === 7 ? "Week" : "Month"
+          }
           onSelectionChange={(key) =>
             setTimeRange(
               timeRangeEnum.parse(
@@ -172,45 +195,152 @@ export default function Page() {
           </ProgressCircle.Track>
         </ProgressCircle>
       </div>
-      <div className="w-full text-center">
+      <div className="container text-center mx-auto">
         <Virtualizer
           layout={TableLayout}
           layoutOptions={{
             headingHeight: 42,
-            rowHeight: 42,
+            rowHeight: 50,
           }}
         >
           <Table>
-            <Table.ScrollContainer>
+            <Table.ScrollContainer className="h-[75vh]">
               <Table.Content
                 aria-label="Virtualized table with 1000 rows"
                 className="h-full min-w-175 overflow-auto"
               >
                 <Table.Header className="h-full w-full">
-                  <Table.Column isRowHeader id="nfe" minWidth={160}>
+                  <Table.Column isRowHeader id="nfe" maxWidth={200}>
                     Nota Fiscal
                   </Table.Column>
-                  <Table.Column id="data" minWidth={220}>
+                  <Table.Column id="data" maxWidth={224}>
                     Data recebimento
                   </Table.Column>
-                  <Table.Column id="sku" minWidth={240}>
-                    Produto
-                  </Table.Column>
-                  <Table.Column id="pendente" minWidth={240}>
-                    Pendente
-                  </Table.Column>
-                  <Table.Column id="progresso" minWidth={240}>
-                    Progresso
-                  </Table.Column>
+                  <Table.Column id="sku" maxWidth={384}>Produto</Table.Column>
+                  <Table.Column id="pendente" maxWidth={200}>Pendente</Table.Column>
+                  <Table.Column id="progresso">Progresso</Table.Column>
                 </Table.Header>
-                <Table.Body items={data}>
+                <Table.Body
+                  items={data}
+                  renderEmptyState={() => (
+                    <EmptyState className="flex h-full w-full flex-col items-center justify-center gap-4 text-center">
+                      <InboxIcon className="size-6 stroke-muted" />
+                      <span className="text-sm text-muted">
+                        Nenhum resultado encontrado
+                      </span>
+                    </EmptyState>
+                  )}
+                >
                   {(row) => (
                     <Table.Row>
-                      <Table.Cell>{row.notafiscal}</Table.Cell>
-                      <Table.Cell>{row.dataRecebimento.toDateString()}</Table.Cell>
+                      <Table.Cell className="text-left">{row.notafiscal}</Table.Cell>
+                      <Table.Cell className="p-0">
+                        <DatePicker
+                          aria-label="Horario do recebimento"
+                          className="w-48"
+                          value={fromDate(
+                            row.dataRecebimento,
+                            "America/Sao_Paulo",
+                          )}
+                          granularity="minute"
+                          hourCycle={24}
+                          name="date"
+                          shouldForceLeadingZeros
+                          hideTimeZone
+                          isReadOnly
+                        >
+                          {({ state }) => (
+                            <>
+                              <DateField.Group fullWidth>
+                                <DateField.Input>
+                                  {(segment) => (
+                                    <DateField.Segment segment={segment} />
+                                  )}
+                                </DateField.Input>
+                                <DateField.Suffix>
+                                  <DatePicker.Trigger>
+                                    <DatePicker.TriggerIndicator />
+                                  </DatePicker.Trigger>
+                                </DateField.Suffix>
+                              </DateField.Group>
+                              <DatePicker.Popover className="flex flex-col gap-3">
+                                <Calendar aria-label="Horario do recebimento">
+                                  <Calendar.Header>
+                                    <Calendar.YearPickerTrigger>
+                                      <Calendar.YearPickerTriggerHeading />
+                                      <Calendar.YearPickerTriggerIndicator />
+                                    </Calendar.YearPickerTrigger>
+                                    <Calendar.NavButton slot="previous" />
+                                    <Calendar.NavButton slot="next" />
+                                  </Calendar.Header>
+                                  <Calendar.Grid>
+                                    <Calendar.GridHeader>
+                                      {(day) => (
+                                        <Calendar.HeaderCell>
+                                          {day}
+                                        </Calendar.HeaderCell>
+                                      )}
+                                    </Calendar.GridHeader>
+                                    <Calendar.GridBody>
+                                      {(date) => <Calendar.Cell date={date} />}
+                                    </Calendar.GridBody>
+                                  </Calendar.Grid>
+                                  <Calendar.YearPickerGrid>
+                                    <Calendar.YearPickerGridBody>
+                                      {({ year }) => (
+                                        <Calendar.YearPickerCell year={year} />
+                                      )}
+                                    </Calendar.YearPickerGridBody>
+                                  </Calendar.YearPickerGrid>
+                                </Calendar>
+                                <div className="flex items-center justify-between">
+                                  <Label>Horario do recebimento</Label>
+                                  <TimeField
+                                    aria-label="Horario do recebimento"
+                                    granularity="minute"
+                                    hourCycle={24}
+                                    name="time"
+                                    value={state.timeValue}
+                                    onChange={(v) =>
+                                      state.setTimeValue(v as TimeValue)
+                                    }
+                                    shouldForceLeadingZeros
+                                    hideTimeZone
+                                    isReadOnly
+                                  >
+                                    <TimeField.Group variant="secondary">
+                                      <TimeField.Input>
+                                        {(segment) => (
+                                          <TimeField.Segment
+                                            segment={segment}
+                                          />
+                                        )}
+                                      </TimeField.Input>
+                                    </TimeField.Group>
+                                  </TimeField>
+                                </div>
+                              </DatePicker.Popover>
+                            </>
+                          )}
+                        </DatePicker>
+                      </Table.Cell>
                       <Table.Cell>{row.produto}</Table.Cell>
                       <Table.Cell>{row.pendenteArmazenar}</Table.Cell>
-                      <Table.Cell>{row.quantidadeArmazenada}/{row.quantidadeRecebido}</Table.Cell>
+                      <Table.Cell className="py-2 px-8">
+                        <ProgressBar
+                          aria-label="Revenue"
+                          className="w-full"
+                          maxValue={row.quantidadeRecebido}
+                          minValue={0}
+                          value={row.quantidadeArmazenada}
+                        >
+                          <Label>Progresso ({row.quantidadeArmazenada} / {row.quantidadeRecebido})</Label>
+                          <ProgressBar.Output />
+                          <ProgressBar.Track>
+                            <ProgressBar.Fill />
+                          </ProgressBar.Track>
+                        </ProgressBar>
+                      </Table.Cell>
                     </Table.Row>
                   )}
                 </Table.Body>
