@@ -33,47 +33,20 @@ import {
 import { FileUploader } from "@/components/file-uploader";
 import { z } from "zod";
 import excel from "exceljs";
-import { parseAbsoluteToLocal, parseDate } from "@internationalized/date";
+import { parseAbsoluteToLocal } from "@internationalized/date";
+import { nota_fiscal_schema } from "@/lib/schemas";
 
 const STORAGE_KEY = "jeferson-nfs-data";
 
-const NFData = z.object({
-  Transportador: z.string().default("Entregador não definido"),
-  PrevisaoSaida: z.coerce.date().or(z.undefined()).or(z.date()),
-  NumeroNotaFiscal: z.coerce.number(),
-  Origem: z.string(),
-  CodigoNotaFiscal: z.int(),
-  IdEntrega: z.int(),
-  Destinatario: z.string(),
-  EnderecoDestinatario: z.string().or(z.undefined()),
-  BairroDestinatario: z.string().or(z.undefined()),
-  ValorLiquido: z.number(),
-  PesoLiquido: z.number(),
-  Volumes: z.int(),
-  DataAutorizacao: z.coerce.date().or(z.date()),
-  Tipo: z.coerce.number(),
-  Transportadora: z.string().or(z.undefined()),
-  EnderecoTransportadora: z.string().or(z.undefined()),
-  BairroTransportadora: z.string().or(z.undefined()),
-  Status: z.enum(["Entregue", "Pendente"]),
-  DataEntrega: z.coerce.date().or(z.date()).or(z.undefined()),
-  DataColeta: z.coerce.date().or(z.date()).or(z.undefined()),
-  UsuarioColeta: z.string().or(z.undefined()),
-  UsuarioEntrega: z.string().or(z.undefined()),
-  Latitude: z.number().or(z.undefined()),
-  Longitude: z.number().or(z.undefined()),
-  NumeroColeta: z.string().or(z.undefined()),
-});
-
 const StoredNFsData = z.object({
-  nfs: z.array(NFData),
+  nfs: z.array(nota_fiscal_schema),
   lastUpdated: z.coerce.date(),
 });
 
 const Result = z.object({
-  corr: z.array(NFData),
-  err: z.array(NFData),
-  ni: z.array(NFData),
+  corr: z.array(nota_fiscal_schema),
+  err: z.array(nota_fiscal_schema),
+  ni: z.array(nota_fiscal_schema),
 });
 
 async function parseXlsx(buffer: ArrayBuffer) {
@@ -199,7 +172,7 @@ function compareWithStoredData(
   };
 }
 
-function List({ nfs }: { nfs: Array<z.infer<typeof NFData>> }) {
+function List({ nfs }: { nfs: Array<z.infer<typeof nota_fiscal_schema>> }) {
   return (
     <Virtualizer
       layout={TableLayout}
@@ -461,7 +434,7 @@ export default function JefersonPage() {
   const handleUpdateStorage = useCallback(async () => {
     setIsUpdating(true);
     try {
-      const nfs: Array<z.infer<typeof NFData>> = await fetch(
+      const nfs: Array<z.infer<typeof nota_fiscal_schema>> = await fetch(
         "https://api-erp.rainhadassete.com.br/api/expedicao/notas-kanban",
         {
           headers: {
@@ -478,7 +451,7 @@ export default function JefersonPage() {
       )
         .then((r) => r.json())
         .then((r) => r.data)
-        .then(z.array(NFData).parseAsync);
+        .then(z.array(nota_fiscal_schema).parseAsync);
 
       const newData: z.infer<typeof StoredNFsData> = {
         lastUpdated: new Date(),

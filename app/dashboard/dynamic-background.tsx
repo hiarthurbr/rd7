@@ -3,11 +3,11 @@
 import { motion } from "framer-motion"
 import { useMemo } from "react"
 import z from "zod"
-import { Etapa } from "@/lib/types"
+import { etapa_schema } from "@/lib/schemas"
 
 
 interface DynamicBackgroundProps {
-  etapas: z.infer<typeof Etapa>[]
+  etapas: z.infer<typeof etapa_schema>[]
 }
 
 const etapaColorValues: Record<string, { r: number; g: number; b: number }> = {

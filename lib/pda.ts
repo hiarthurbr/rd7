@@ -1,5 +1,5 @@
 import z from "zod";
-import { DashboardData, status_pedido_schema, token_schema } from "./types";
+import { dashboard_data_schema, status_pedido_pda_enum, token_schema } from "./schemas";
 
 const TOKEN_KEY = "PDA:TOKEN";
 
@@ -46,7 +46,7 @@ export async function get_dashboard_data() {
     },
   )
     .then((res) => res.json())
-    .then(DashboardData.parseAsync);
+    .then(dashboard_data_schema.parseAsync);
 
   console.log(data);
 
@@ -56,6 +56,6 @@ export async function get_dashboard_data() {
 export async function get_relatorio_separacao(payload: {
   produto?: string;
   pedido?: string;
-  status?: z.infer<typeof status_pedido_schema>;
+  status?: z.infer<typeof status_pedido_pda_enum>;
   data?: { inicio: Date; fim: Date };
 }) {}

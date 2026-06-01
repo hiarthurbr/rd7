@@ -1,13 +1,11 @@
 "use client";
 import {
-  ArchiveRestoreIcon,
   CalendarClockIcon,
   ChartAreaIcon,
   GitCompareArrowsIcon,
   LayoutDashboardIcon,
   MapIcon,
   RefreshCcwIcon,
-  ScanBarcodeIcon,
   ScrollTextIcon,
   Undo2Icon,
 } from "lucide-react";

@@ -3,7 +3,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 import { motion } from "framer-motion"
 import z from "zod"
-import { Etapa } from "@/lib/types"
+import { etapa_schema } from "@/lib/schemas"
 
 const COLORS = [
   "oklch(.704 .04 256.788)",
@@ -12,7 +12,7 @@ const COLORS = [
   "oklch(.768 .233 130.85)",
 ]
 
-export function OverviewChart({ data }: { data: Array<z.infer<typeof Etapa>>}) {
+export function OverviewChart({ data }: { data: Array<z.infer<typeof etapa_schema>>}) {
   const chartData = data.map((item, index) => ({
     name: item.etapa,
     value: item.valorTotal,

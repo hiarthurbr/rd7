@@ -23,7 +23,7 @@ import { OverviewChart } from "./overview-chart";
 import { DynamicBackground } from "./dynamic-background";
 import z from "zod";
 import { useState } from "react";
-import { Etapa } from "@/lib/types";
+import { etapa_schema } from "@/lib/schemas";
 import { get_dashboard_data } from "@/lib/pda";
 import { Status } from "@/components/status";
 
@@ -67,7 +67,7 @@ function EtapaCard({
   etapa,
   index,
 }: {
-  etapa: z.infer<typeof Etapa>;
+  etapa: z.infer<typeof etapa_schema>;
   index: number;
 }) {
   const icon = etapaIcons[etapa.etapa] || <Package className="h-5 w-5" />;

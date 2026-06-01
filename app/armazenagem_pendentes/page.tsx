@@ -1,6 +1,6 @@
 "use client";
 import { getToken } from "@/lib/pda";
-import { cn } from "@/lib/utils";
+import { cn, fmt_date } from "@/lib/utils";
 import {
   ProgressCircle,
   Tabs,
@@ -19,9 +19,7 @@ import {
   Spinner,
 } from "@heroui/react";
 import { fromDate } from "@internationalized/date";
-import { useCountdown } from "@shined/react-use";
 import { useQuery, QueryClient } from "@tanstack/react-query";
-import { useSpring, useTransform } from "framer-motion";
 import { ChevronUpIcon, InboxIcon, RefreshCwIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -34,34 +32,12 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import z from "zod";
-
-const fmt_date = (date: Date) =>
-  `${date.getFullYear()}-${(date.getMonth() + 1).toFixed(0).padStart(2, "0")}-${date.getDate().toFixed(0).padStart(2, "0")}`;
+import { recebimento_schema } from "@/lib/schemas";
 
 const timeRangeEnum = z.enum({
   Day: 1,
   Week: 7,
   Month: 30,
-});
-
-const recebimento_schema = z.object({
-  codigoRecebimento: z.number(),
-  notafiscal: z.string(),
-  codigoPedido: z.string(),
-  lote: z.string(),
-  numeroSerie: z.string(),
-  produto: z.string(),
-  cor: z.string(),
-  tamanho: z.string(),
-  grade: z.string(),
-  descricao: z.string(),
-  quantidadePedido: z.number(),
-  quantidadeRecebido: z.number(),
-  quantidadeArmazenada: z.number(),
-  pendenteArmazenar: z.number(),
-  usuarioRecebimento: z.string(),
-  dataRecebimento: z.coerce.date().or(z.date()),
-  tipoPedido: z.string(),
 });
 
 const QUERY_KEY = "armazenagens_pendentes";
@@ -388,7 +364,11 @@ export default function Page() {
             Lista de notas com pendencias/divergências na armazenagem
           </p>
         </div>
-        <Button isPending={isLoading || isFetching} onPress={() => refresh()} className="justify-self-end place-self-start mt-4">
+        <Button
+          isPending={isLoading || isFetching}
+          onPress={() => refresh()}
+          className="justify-self-end place-self-start mt-4"
+        >
           {({ isPending }) => (
             <>
               {isPending ? (

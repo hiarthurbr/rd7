@@ -2,11 +2,11 @@
 
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from "recharts"
 import { motion } from "framer-motion"
-import { DadoEtapa } from "@/lib/types"
+import { dado_etapa_schema } from "@/lib/schemas"
 import z from "zod"
 
 interface StageChartProps {
-  data: Array<z.infer<typeof DadoEtapa>>
+  data: Array<z.infer<typeof dado_etapa_schema>>
   color: string
 }
 

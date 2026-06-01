@@ -1,4 +1,4 @@
-import { token_schema } from "@/lib/types";
+import { token_schema } from "@/lib/schemas";
 import { Button, ColorSwatch, Label, ProgressCircle } from "@heroui/react";
 import { useQuery } from "@tanstack/react-query";
 import { HeartPulseIcon } from "lucide-react";

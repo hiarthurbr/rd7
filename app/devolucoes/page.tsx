@@ -6,127 +6,10 @@ import { DatabaseIcon, HardDriveUploadIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import Dexie, { type Table } from "dexie";
 import z from "zod";
-
-const motivoEnum = z.enum({
-  F: "Falta",
-  S: "Sobra",
-  G: "Garantia",
-  T: "Troca de mercadoria",
-  C: "Comprou errado",
-});
-
-const departamentoEnum = z.enum({
-  Exp: "Expedição",
-  Emb: "Embalagem",
-  Fat: "Faturamento",
-  Vend: "Vendas",
-  C: "Cliente",
-  Qual: "Qualidade",
-  Josi: "Josimar",
-});
-
-type a = excel.CellSharedFormulaValue;
-
-const ExcelCellErrorValue = z.enum([
-  "#N/A",
-  "#REF!",
-  "#NAME?",
-  "#DIV/0!",
-  "#NULL!",
-  "#VALUE!",
-  "#NUM!",
-]);
-
-const ExcelCellValue = z
-  .string()
-  .or(z.number())
-  .or(z.boolean())
-  .or(z.date())
-  .or(z.null())
-  .or(z.undefined())
-  .or(
-    // excel.CellErrorValue
-    ExcelCellErrorValue,
-  )
-  .or(
-    // excel.CellRichTextValue
-    z.strictObject({
-      richText: z.array(
-        z.strictObject({
-          text: z.string(),
-          font: z
-            .strictObject({
-              name: z.string(),
-              size: z.number(),
-              family: z.number(),
-              scheme: z.enum(["minor", "major", "none"]),
-              charset: z.number(),
-              color: z.strictObject({
-                argb: z.string().optional(),
-                theme: z.number().optional(),
-              }),
-              bold: z.boolean(),
-              italic: z.boolean(),
-              underline: z
-                .boolean()
-                .or(
-                  z.enum([
-                    "none",
-                    "single",
-                    "double",
-                    "singleAccounting",
-                    "doubleAccounting",
-                  ]),
-                ),
-              vertAlign: z.enum(["superscript", "subscript"]),
-              strike: z.boolean(),
-              outline: z.boolean(),
-            })
-            .optional(),
-        }),
-      ),
-    }),
-  )
-  .or(
-    // excel.CellHyperlinkValue
-    z.strictObject({
-      text: z.string(),
-      hyperlink: z.string(),
-      tooltip: z.string().optional(),
-    }),
-  )
-  .or(
-    //excel.CellFormulaValue
-    z.strictObject({
-      formula: z.string(),
-      result: z
-        .number()
-        .or(z.string())
-        .or(z.boolean())
-        .or(z.date())
-        .or(ExcelCellErrorValue)
-        .optional(),
-      date1904: z.boolean().optional(),
-    }),
-  )
-  .or(
-    // excel.CellSharedFormulaValue
-    z.strictObject({
-      sharedFormula: z.string(),
-      formula: z.string().readonly().optional(),
-      result: z
-        .number()
-        .or(z.string())
-        .or(z.boolean())
-        .or(z.date())
-        .or(ExcelCellErrorValue)
-        .optional(),
-      date1904: z.boolean().optional(),
-    }),
-  );
+import { departamento_enum, excel_cell_value_schema, motivo_devolução_enum } from "@/lib/schemas";
 
 const DevolucaoSchema = z.codec(
-  z.array(ExcelCellValue),
+  z.array(excel_cell_value_schema),
   z.object({
     cliente: z.string(),
     nota_fiscal_devolução: z.number().or(z.null()).catch(null),
@@ -134,16 +17,16 @@ const DevolucaoSchema = z.codec(
     data_relatado: z.date().default(() => new Date()),
     valor_com_impostos: z.number().positive().or(z.null()).catch(null),
     valor_sem_impostos: z.number().positive().or(z.null()).catch(null),
-    departamento: departamentoEnum.or(z.null()).catch(null),
+    departamento: departamento_enum.or(z.null()).catch(null),
     motivos: z.preprocess((str) => {
       if (typeof str === "string") {
         return str.split("/");
       }
       return null;
-    }, z.array(motivoEnum)),
+    }, z.array(motivo_devolução_enum)),
     código_produtos: z.array(
       z.object({
-        tipo: motivoEnum,
+        tipo: motivo_devolução_enum,
         codigo: z.string().or(z.null()),
       }),
     ),
@@ -190,7 +73,7 @@ const DevolucaoSchema = z.codec(
 
       return Object.fromEntries(
         Object.entries(INDEXES).map(([key, index]) => [key, excel_row[index]]),
-      ) as Record<keyof typeof INDEXES, z.infer<typeof ExcelCellValue>>;
+      ) as Record<keyof typeof INDEXES, z.infer<typeof excel_cell_value_schema>>;
     },
   },
 );
@@ -217,7 +100,7 @@ export class Devoluções extends Dexie {
     return this.devolucoes.add(dadosValidados);
   }
 
-  buscarPorDepartamento(depto: z.infer<typeof departamentoEnum>) {
+  buscarPorDepartamento(depto: z.infer<typeof departamento_enum>) {
     return this.devolucoes
       .where("departamento")
       .equals(depto)
@@ -225,7 +108,7 @@ export class Devoluções extends Dexie {
       .toArray();
   }
 
-  buscarPorMotivo(motivo: z.infer<typeof motivoEnum>) {
+  buscarPorMotivo(motivo: z.infer<typeof motivo_devolução_enum>) {
     return this.devolucoes.where("motivos").equals(motivo).toArray();
   }
 }
