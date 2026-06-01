@@ -15,13 +15,15 @@ import {
   ProgressBar,
   SortDescriptor,
   Pagination,
+  Button,
+  Spinner,
 } from "@heroui/react";
 import { fromDate } from "@internationalized/date";
 import { useCountdown } from "@shined/react-use";
 import { useQuery, QueryClient } from "@tanstack/react-query";
 import { useSpring, useTransform } from "framer-motion";
-import { ChevronUpIcon, InboxIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ChevronUpIcon, InboxIcon, RefreshCwIcon } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   createColumnHelper,
   flexRender,
@@ -268,9 +270,13 @@ export default function Page() {
     queryClient,
   );
 
-  useEffect(() => {
+  const refresh = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-  }, [timeRange]);
+  }, [queryClient]);
+
+  useEffect(() => {
+    refresh();
+  }, [timeRange, refresh]);
 
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -340,7 +346,7 @@ export default function Page() {
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="w-full px-4 py-8 grid grid-flow-col grid-cols-3 items-center">
+      <div className="mx-auto w-2/3 px-4 py-8 grid grid-flow-col grid-cols-3 items-center">
         {/* Header */}
         <Tabs
           className="w-md justify-self-start place-self-start pt-4"
@@ -382,6 +388,18 @@ export default function Page() {
             Lista de notas com pendencias/divergências na armazenagem
           </p>
         </div>
+        <Button isPending={isLoading || isFetching} onPress={() => refresh()} className="justify-self-end place-self-start mt-4">
+          {({ isPending }) => (
+            <>
+              {isPending ? (
+                <Spinner color="current" size="sm" />
+              ) : (
+                <RefreshCwIcon />
+              )}
+              {isPending ? "Atualizando..." : "Atualizar"}
+            </>
+          )}
+        </Button>
       </div>
       <div className="container text-center mx-auto">
         <Table>
