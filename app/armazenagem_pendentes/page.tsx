@@ -141,13 +141,14 @@ const columns = [
       </DatePicker>
     ),
     header: "Data de Recebimento",
+    sortingFn: "datetime",
   }),
   columnHelper.accessor("produto", { header: "Produto" }),
   columnHelper.accessor("pendenteArmazenar", {
     header: "Armazenagem pendente",
   }),
   columnHelper.accessor(
-    (row) => [row.quantidadeArmazenada, row.quantidadeRecebido],
+    (row) => [row.quantidadeArmazenada, row.quantidadeRecebido] as const,
     {
       cell: (info) => (
         <ProgressBar
@@ -167,6 +168,11 @@ const columns = [
         </ProgressBar>
       ),
       header: "Status",
+      sortingFn: (a, b, id) =>
+        (a.getValue(id) as [number, number])[0] /
+          (a.getValue(id) as [number, number])[1] -
+        (b.getValue(id) as [number, number])[0] /
+          (b.getValue(id) as [number, number])[1],
     },
   ),
 ];
