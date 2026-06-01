@@ -3,9 +3,7 @@ import { getToken } from "@/lib/pda";
 import { cn } from "@/lib/utils";
 import {
   ProgressCircle,
-  TableLayout,
   Tabs,
-  Virtualizer,
   Table,
   DatePicker,
   Label,
@@ -16,6 +14,7 @@ import {
   EmptyState,
   ProgressBar,
   SortDescriptor,
+  Pagination,
 } from "@heroui/react";
 import { fromDate } from "@internationalized/date";
 import { useCountdown } from "@shined/react-use";
@@ -23,6 +22,15 @@ import { useQuery, QueryClient } from "@tanstack/react-query";
 import { useSpring, useTransform } from "framer-motion";
 import { ChevronUpIcon, InboxIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type SortingState,
+} from "@tanstack/react-table";
 import z from "zod";
 
 const fmt_date = (date: Date) =>
@@ -56,6 +64,131 @@ const recebimento_schema = z.object({
 
 const QUERY_KEY = "armazenagens_pendentes";
 
+const columnHelper = createColumnHelper<z.infer<typeof recebimento_schema>>();
+const columns = [
+  columnHelper.accessor("notafiscal", { header: "Nota Fiscal" }),
+  columnHelper.accessor("dataRecebimento", {
+    cell: (info) => (
+      <DatePicker
+        aria-label="Horario do recebimento"
+        className="w-64"
+        value={fromDate(info.getValue(), "America/Sao_Paulo")}
+        granularity="minute"
+        hourCycle={24}
+        name="date"
+        shouldForceLeadingZeros
+        hideTimeZone
+      >
+        {({ state }) => (
+          <>
+            <DateField.Group fullWidth>
+              <DateField.Input>
+                {(segment) => <DateField.Segment segment={segment} />}
+              </DateField.Input>
+              <DateField.Suffix>
+                <DatePicker.Trigger>
+                  <DatePicker.TriggerIndicator />
+                </DatePicker.Trigger>
+              </DateField.Suffix>
+            </DateField.Group>
+            <DatePicker.Popover className="flex flex-col gap-3">
+              <Calendar aria-label="Horario do recebimento">
+                <Calendar.Header>
+                  <Calendar.YearPickerTrigger>
+                    <Calendar.YearPickerTriggerHeading />
+                    <Calendar.YearPickerTriggerIndicator />
+                  </Calendar.YearPickerTrigger>
+                  <Calendar.NavButton slot="previous" />
+                  <Calendar.NavButton slot="next" />
+                </Calendar.Header>
+                <Calendar.Grid>
+                  <Calendar.GridHeader>
+                    {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
+                  </Calendar.GridHeader>
+                  <Calendar.GridBody>
+                    {(date) => <Calendar.Cell date={date} />}
+                  </Calendar.GridBody>
+                </Calendar.Grid>
+                <Calendar.YearPickerGrid>
+                  <Calendar.YearPickerGridBody>
+                    {({ year }) => <Calendar.YearPickerCell year={year} />}
+                  </Calendar.YearPickerGridBody>
+                </Calendar.YearPickerGrid>
+              </Calendar>
+              <div className="flex items-center justify-between">
+                <Label>Horario do recebimento</Label>
+                <TimeField
+                  aria-label="Horario do recebimento"
+                  granularity="minute"
+                  hourCycle={24}
+                  name="time"
+                  value={state.timeValue}
+                  onChange={(v) => state.setTimeValue(v as TimeValue)}
+                  shouldForceLeadingZeros
+                  hideTimeZone
+                  isReadOnly
+                >
+                  <TimeField.Group variant="secondary">
+                    <TimeField.Input>
+                      {(segment) => <TimeField.Segment segment={segment} />}
+                    </TimeField.Input>
+                  </TimeField.Group>
+                </TimeField>
+              </div>
+            </DatePicker.Popover>
+          </>
+        )}
+      </DatePicker>
+    ),
+    header: "Data de Recebimento",
+  }),
+  columnHelper.accessor("produto", { header: "Produto" }),
+  columnHelper.accessor("pendenteArmazenar", {
+    header: "Armazenagem pendente",
+  }),
+  columnHelper.accessor(
+    (row) => [row.quantidadeArmazenada, row.quantidadeRecebido],
+    {
+      cell: (info) => (
+        <ProgressBar
+          aria-label="Progresso"
+          className="w-full"
+          maxValue={info.getValue()[1]}
+          minValue={0}
+          value={info.getValue()[0]}
+        >
+          <Label>
+            Progresso ({info.getValue()[0]} / {info.getValue()[1]})
+          </Label>
+          <ProgressBar.Output />
+          <ProgressBar.Track>
+            <ProgressBar.Fill />
+          </ProgressBar.Track>
+        </ProgressBar>
+      ),
+      header: "Status",
+    },
+  ),
+];
+
+function toSortDescriptor(sorting: SortingState): SortDescriptor | undefined {
+  const first = sorting[0];
+  if (!first) return undefined;
+  return {
+    column: first.id,
+    direction: first.desc ? "descending" : "ascending",
+  };
+}
+// Convert React Aria SortDescriptor → TanStack SortingState
+function toSortingState(descriptor: SortDescriptor): SortingState {
+  return [
+    {
+      desc: descriptor.direction === "descending",
+      id: descriptor.column as string,
+    },
+  ];
+}
+
 function SortableColumnHeader({
   children,
   sortDirection,
@@ -78,13 +211,15 @@ function SortableColumnHeader({
   );
 }
 
+const PAGE_SIZE = 13;
+
 export default function Page() {
   const queryClient = useMemo(() => new QueryClient(), []);
   const [timeRange, setTimeRange] = useState<z.infer<typeof timeRangeEnum>>(
     timeRangeEnum.enum.Day,
   );
 
-  const { data, isLoading, isFetching, dataUpdatedAt } = useQuery(
+  const { data, isLoading, isFetching } = useQuery(
     {
       queryKey: [QUERY_KEY],
       queryFn: async () =>
@@ -130,55 +265,43 @@ export default function Page() {
     queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
   }, [timeRange]);
 
-  const date = useMemo(
-    () => new Date(dataUpdatedAt + 600_000),
-    [dataUpdatedAt],
+  const [sorting, setSorting] = useState<SortingState>([]);
+
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const table = useReactTable({
+    columns,
+    data,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    initialState: { pagination: { pageSize: PAGE_SIZE } },
+    onSortingChange: setSorting,
+    state: { sorting },
+  });
+
+  const sortDescriptor = useMemo(() => toSortDescriptor(sorting), [sorting]);
+  const { pageIndex } = table.getState().pagination;
+  const pageCount = useMemo(() => table.getPageCount(), [table]);
+  const pages = useMemo(
+    () =>
+      Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
+        <Pagination.Item key={p}>
+          <Pagination.Link
+            isActive={p === pageIndex + 1}
+            onPress={() => table.setPageIndex(p - 1)}
+            className="data-[active=true]:bg-accent data-[active=true]:text-accent-foreground"
+          >
+            {p}
+          </Pagination.Link>
+        </Pagination.Item>
+      )),
+    [pageCount, pageIndex, table],
   );
-
-  const countdown = useCountdown(date, {
-    controls: true,
-    interval: 1000,
-  });
-
-  const spring = useSpring(0, { duration: 500, bounce: 0 });
-  const display = useTransform(spring, (current) => Math.round(current));
-  const [displayValue, setDisplayValue] = useState(0);
-
-  useEffect(() => {
-    spring.set(countdown.ms / 1000);
-  }, [spring, countdown]);
-
-  useEffect(() => {
-    const unsubscribe = display.on("change", (latest) => {
-      setDisplayValue(latest);
-    });
-    return unsubscribe;
-  }, [display]);
-
-  const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
-    column: "date",
-    direction: "ascending",
-  });
-  const sortedRows = useMemo(() => {
-    return [...data].sort((a, b) => {
-      const col = sortDescriptor.column as keyof z.infer<
-        typeof recebimento_schema
-      >;
-
-      const first = a[col];
-      const second = b[col];
-      let cmp =
-        typeof first === "number"
-          ? first - (second as number)
-          : first instanceof Date
-            ? first.getTime() - (second as number)
-            : first.localeCompare(second as string);
-      if (sortDescriptor.direction === "descending") {
-        cmp *= -1;
-      }
-      return cmp;
-    });
-  }, [sortDescriptor]);
+  const start = pageIndex * PAGE_SIZE + 1;
+  const end = useMemo(
+    () => Math.min((pageIndex + 1) * PAGE_SIZE, data.length),
+    [pageIndex, data.length],
+  );
 
   return (
     <main className="min-h-screen bg-background">
@@ -224,241 +347,101 @@ export default function Page() {
             Lista de notas com pendencias/divergências na armazenagem
           </p>
         </div>
-
-        <ProgressCircle
-          aria-label="Default"
-          color="accent"
-          value={displayValue}
-          maxValue={600}
-          isIndeterminate={isFetching || isLoading || new Date() > date}
-          className="justify-self-end place-self-start pt-4"
-        >
-          <ProgressCircle.Track>
-            <ProgressCircle.TrackCircle />
-            <ProgressCircle.FillCircle />
-          </ProgressCircle.Track>
-        </ProgressCircle>
       </div>
       <div className="container text-center mx-auto">
-        <Virtualizer
-          layout={TableLayout}
-          layoutOptions={{
-            headingHeight: 42,
-            rowHeight: 50,
-          }}
-        >
-          <Table>
-            <Table.ScrollContainer className="h-[75vh]">
-              <Table.Content
-                aria-label="Virtualized table with 1000 rows"
-                className="h-full min-w-175 overflow-auto"
-                sortDescriptor={sortDescriptor}
-                onSortChange={setSortDescriptor}
+        <Table>
+          <Table.ScrollContainer className="h-[75vh]">
+            <Table.Content
+              aria-label="Virtualized table with 1000 rows"
+              className="h-full min-w-175 overflow-auto"
+              sortDescriptor={sortDescriptor}
+              onSortChange={(d) => setSorting(toSortingState(d))}
+            >
+              <Table.Header className="h-fit w-full">
+                {table.getHeaderGroups()[0]!.headers.map((header) => (
+                  <Table.Column
+                    key={header.id}
+                    className="h-fit"
+                    allowsSorting={header.column.getCanSort()}
+                    id={header.id}
+                    isRowHeader
+                  >
+                    {({ sortDirection }) => (
+                      <SortableColumnHeader sortDirection={sortDirection}>
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                      </SortableColumnHeader>
+                    )}
+                  </Table.Column>
+                ))}
+              </Table.Header>
+              <Table.Body
+                items={data}
+                renderEmptyState={() => (
+                  <EmptyState className="flex h-full w-full flex-col items-center justify-center gap-4 text-center">
+                    <InboxIcon className="size-6 stroke-muted" />
+                    <span className="text-sm text-muted">
+                      Nenhum resultado encontrado
+                    </span>
+                  </EmptyState>
+                )}
               >
-                <Table.Header className="h-full w-full">
-                  <Table.Column
-                    allowsSorting
-                    isRowHeader
-                    id="nfe"
-                    maxWidth={200}
-                  >
-                    {({ sortDirection }) => (
-                      <SortableColumnHeader sortDirection={sortDirection}>
-                        Nota Fiscal
-                      </SortableColumnHeader>
-                    )}
-                  </Table.Column>
-                  <Table.Column
-                    allowsSorting
-                    isRowHeader
-                    id="date"
-                    maxWidth={300}
-                  >
-                    {({ sortDirection }) => (
-                      <SortableColumnHeader sortDirection={sortDirection}>
-                        Data recebimento
-                      </SortableColumnHeader>
-                    )}
-                  </Table.Column>
-                  <Table.Column
-                    allowsSorting
-                    isRowHeader
-                    id="sku"
-                    maxWidth={384}
-                  >
-                    {({ sortDirection }) => (
-                      <SortableColumnHeader sortDirection={sortDirection}>
-                        Produto
-                      </SortableColumnHeader>
-                    )}
-                  </Table.Column>
-                  <Table.Column
-                    allowsSorting
-                    isRowHeader
-                    id="pendente"
-                    maxWidth={200}
-                  >
-                    {({ sortDirection }) => (
-                      <SortableColumnHeader sortDirection={sortDirection}>
-                        Pendente
-                      </SortableColumnHeader>
-                    )}
-                  </Table.Column>
-                  <Table.Column allowsSorting isRowHeader id="progresso">
-                    {({ sortDirection }) => (
-                      <SortableColumnHeader sortDirection={sortDirection}>
-                        Progresso
-                      </SortableColumnHeader>
-                    )}
-                  </Table.Column>
-                </Table.Header>
-                <Table.Body
-                  items={sortedRows}
-                  renderEmptyState={() => (
-                    <EmptyState className="flex h-full w-full flex-col items-center justify-center gap-4 text-center">
-                      <InboxIcon className="size-6 stroke-muted" />
-                      <span className="text-sm text-muted">
-                        Nenhum resultado encontrado
-                      </span>
-                    </EmptyState>
-                  )}
-                >
-                  {(row) => (
-                    <Table.Row>
-                      <Table.Cell className="text-left">
-                        {row.notafiscal}
+                {table.getRowModel().rows.map((row) => (
+                  <Table.Row key={row.id} id={row.id} className="*:h-10 h-10">
+                    {row.getVisibleCells().map((cell) => (
+                      <Table.Cell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
                       </Table.Cell>
-                      <Table.Cell className="p-0 flex items-center justify-center">
-                        <DatePicker
-                          aria-label="Horario do recebimento"
-                          className="w-64"
-                          value={fromDate(
-                            row.dataRecebimento,
-                            "America/Sao_Paulo",
-                          )}
-                          granularity="minute"
-                          hourCycle={24}
-                          name="date"
-                          shouldForceLeadingZeros
-                          hideTimeZone
-                        >
-                          {({ state }) => (
-                            <>
-                              <DateField.Group fullWidth>
-                                <DateField.Input>
-                                  {(segment) => (
-                                    <DateField.Segment segment={segment} />
-                                  )}
-                                </DateField.Input>
-                                <DateField.Suffix>
-                                  <DatePicker.Trigger>
-                                    <DatePicker.TriggerIndicator />
-                                  </DatePicker.Trigger>
-                                </DateField.Suffix>
-                              </DateField.Group>
-                              <DatePicker.Popover className="flex flex-col gap-3">
-                                <Calendar aria-label="Horario do recebimento">
-                                  <Calendar.Header>
-                                    <Calendar.YearPickerTrigger>
-                                      <Calendar.YearPickerTriggerHeading />
-                                      <Calendar.YearPickerTriggerIndicator />
-                                    </Calendar.YearPickerTrigger>
-                                    <Calendar.NavButton slot="previous" />
-                                    <Calendar.NavButton slot="next" />
-                                  </Calendar.Header>
-                                  <Calendar.Grid>
-                                    <Calendar.GridHeader>
-                                      {(day) => (
-                                        <Calendar.HeaderCell>
-                                          {day}
-                                        </Calendar.HeaderCell>
-                                      )}
-                                    </Calendar.GridHeader>
-                                    <Calendar.GridBody>
-                                      {(date) => <Calendar.Cell date={date} />}
-                                    </Calendar.GridBody>
-                                  </Calendar.Grid>
-                                  <Calendar.YearPickerGrid>
-                                    <Calendar.YearPickerGridBody>
-                                      {({ year }) => (
-                                        <Calendar.YearPickerCell year={year} />
-                                      )}
-                                    </Calendar.YearPickerGridBody>
-                                  </Calendar.YearPickerGrid>
-                                </Calendar>
-                                <div className="flex items-center justify-between">
-                                  <Label>Horario do recebimento</Label>
-                                  <TimeField
-                                    aria-label="Horario do recebimento"
-                                    granularity="minute"
-                                    hourCycle={24}
-                                    name="time"
-                                    value={state.timeValue}
-                                    onChange={(v) =>
-                                      state.setTimeValue(v as TimeValue)
-                                    }
-                                    shouldForceLeadingZeros
-                                    hideTimeZone
-                                    isReadOnly
-                                  >
-                                    <TimeField.Group variant="secondary">
-                                      <TimeField.Input>
-                                        {(segment) => (
-                                          <TimeField.Segment
-                                            segment={segment}
-                                          />
-                                        )}
-                                      </TimeField.Input>
-                                    </TimeField.Group>
-                                  </TimeField>
-                                </div>
-                              </DatePicker.Popover>
-                            </>
-                          )}
-                        </DatePicker>
-                      </Table.Cell>
-                      <Table.Cell>{row.produto}</Table.Cell>
-                      <Table.Cell>{row.pendenteArmazenar}</Table.Cell>
-                      <Table.Cell className="py-2 px-8">
-                        <ProgressBar
-                          aria-label="Progresso"
-                          className="w-full"
-                          maxValue={row.quantidadeRecebido}
-                          minValue={0}
-                          value={row.quantidadeArmazenada}
-                        >
-                          <Label>
-                            Progresso ({row.quantidadeArmazenada} /{" "}
-                            {row.quantidadeRecebido})
-                          </Label>
-                          <ProgressBar.Output />
-                          <ProgressBar.Track>
-                            <ProgressBar.Fill />
-                          </ProgressBar.Track>
-                        </ProgressBar>
-                      </Table.Cell>
-                    </Table.Row>
-                  )}
-                </Table.Body>
-                <Table.Footer>
-                  <ProgressBar
-                    aria-label="Atualizando dados"
-                    className="w-full"
-                    value={0}
-                    isIndeterminate={
-                      isFetching || isLoading || new Date() > date
-                    }
+                    ))}
+                  </Table.Row>
+                ))}
+              </Table.Body>
+            </Table.Content>
+          </Table.ScrollContainer>
+          <Table.Footer>
+            <ProgressBar
+              aria-label="Atualizando dados"
+              className="w-32"
+              value={0}
+              isIndeterminate={isFetching || isLoading}
+            >
+              <ProgressBar.Track>
+                <ProgressBar.Fill />
+              </ProgressBar.Track>
+            </ProgressBar>
+            <Pagination size="sm">
+              <Pagination.Summary>
+                {start} to {end} of {data.length} results
+              </Pagination.Summary>
+              <Pagination.Content>
+                <Pagination.Item>
+                  <Pagination.Previous
+                    isDisabled={!table.getCanPreviousPage()}
+                    onPress={() => table.previousPage()}
                   >
-                    <ProgressBar.Output />
-                    <ProgressBar.Track>
-                      <ProgressBar.Fill />
-                    </ProgressBar.Track>
-                  </ProgressBar>
-                </Table.Footer>
-              </Table.Content>
-            </Table.ScrollContainer>
-          </Table>
-        </Virtualizer>
+                    <Pagination.PreviousIcon />
+                    Prev
+                  </Pagination.Previous>
+                </Pagination.Item>
+                {pages}
+                <Pagination.Item>
+                  <Pagination.Next
+                    isDisabled={!table.getCanNextPage()}
+                    onPress={() => table.nextPage()}
+                  >
+                    Next
+                    <Pagination.NextIcon />
+                  </Pagination.Next>
+                </Pagination.Item>
+              </Pagination.Content>
+            </Pagination>
+          </Table.Footer>
+        </Table>
       </div>
     </main>
   );
