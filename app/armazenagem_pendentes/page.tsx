@@ -146,6 +146,7 @@ const columns = [
   columnHelper.accessor("produto", { header: "Produto" }),
   columnHelper.accessor("pendenteArmazenar", {
     header: "Armazenagem pendente",
+    sortingFn: "basic",
   }),
   columnHelper.accessor(
     (row) => [row.quantidadeArmazenada, row.quantidadeRecebido] as const,
@@ -287,26 +288,54 @@ export default function Page() {
 
   const sortDescriptor = useMemo(() => toSortDescriptor(sorting), [sorting]);
   const { pageIndex } = table.getState().pagination;
-  const pageCount = useMemo(() => table.getPageCount(), [table]);
-  const pages = useMemo(
-    () =>
-      Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
-        <Pagination.Item key={p}>
-          <Pagination.Link
-            isActive={p === pageIndex + 1}
-            onPress={() => table.setPageIndex(p - 1)}
-            className="data-[active=true]:bg-accent data-[active=true]:text-accent-foreground"
-          >
-            {p}
-          </Pagination.Link>
-        </Pagination.Item>
-      )),
-    [pageCount, pageIndex, table],
-  );
+  const pageCount = table.getPageCount();
   const start = pageIndex * PAGE_SIZE + 1;
   const end = useMemo(
     () => Math.min((pageIndex + 1) * PAGE_SIZE, data.length),
     [pageIndex, data.length],
+  );
+  const pageNumbers = useMemo(() => {
+    const neighbors = 3; // Number of pages to show on each side of current page
+    const items: (number | "ellipsis")[] = [];
+
+    for (let i = 1; i <= pageCount; i++) {
+      const isFirstPage = i === 1;
+      const isLastPage = i === pageCount;
+      const isWithinRange =
+        i >= pageIndex - neighbors && i <= pageIndex + neighbors;
+
+      if (isFirstPage || isLastPage || isWithinRange) {
+        items.push(i);
+      } else if (
+        (i === pageIndex - neighbors - 1 || i === pageIndex + neighbors + 1) &&
+        items[items.length - 1] !== "ellipsis"
+      ) {
+        items.push("ellipsis");
+      }
+    }
+
+    return items;
+  }, [pageCount, pageIndex]);
+  const pages = useMemo(
+    () =>
+      pageNumbers.map((p, i) =>
+        p === "ellipsis" ? (
+          <Pagination.Item key={`ellipsis-${i}`}>
+            <Pagination.Ellipsis />
+          </Pagination.Item>
+        ) : (
+          <Pagination.Item key={p}>
+            <Pagination.Link
+              isActive={p === pageIndex + 1}
+              onPress={() => table.setPageIndex(p - 1)}
+              className="data-[active=true]:bg-accent data-[active=true]:text-accent-foreground"
+            >
+              {p}
+            </Pagination.Link>
+          </Pagination.Item>
+        ),
+      ),
+    [pageCount, pageIndex, table, pageNumbers],
   );
 
   return (
@@ -409,7 +438,7 @@ export default function Page() {
               </Table.Body>
             </Table.Content>
           </Table.ScrollContainer>
-          <Table.Footer>
+          <Table.Footer className="flex items-center justify-between px-4 space-x-8">
             <ProgressBar
               aria-label="Atualizando dados"
               className="w-32"
