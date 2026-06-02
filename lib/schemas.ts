@@ -268,3 +268,56 @@ export const token_schema = z.object({
   accessToken: z.string(),
   refreshToken: z.uuidv4(),
 });
+
+export const status_proposta_pda_schema = z.object({
+  codigoProposta: z.int(),
+  numeroProposta: z.string(),
+  nomeEmpresa: z.string(),
+  nomeVendedor: z.string(),
+  dataLiberacaoProposta: z.coerce.date().or(z.date()),
+  liquidoProposta: z.number(),
+  vinculos: z.int(),
+  itensDiferentesTotalProposta: z.int(),
+  itensDiferentesAlocadosProposta: z.int(),
+  percentualItensAlocadosProposta: z.number(),
+  percentualItensAlocadosPropostaNoGrupo: z.number(),
+  statusProposta: z.number(),
+  statusPda: z.number(),
+  descricaoStatusPda: z.string(),
+  ePrioridade: z.boolean(),
+  critico: z.boolean(),
+  programada: z.string(),
+  pais: z.coerce.number(),
+  estado: z.string(),
+  pendenciaFinanceira: z.string(),
+});
+
+export const produto_titanium_schema = z.object({
+  produto: z.string(),
+  nome: z.string(),
+  unidade: z.enum(["UNID"]),
+  tipo: z.string(),
+  nivel: z.number(),
+  necessario: z.number(),
+  estoque: z.number(),
+  emCompra: z.number(),
+  emProducao: z.number(),
+  falta: z.number(),
+  origem: z.string(),
+  paiDireto: z.string(),
+  estrutura: z.string(),
+  status: z.string(),
+});
+
+export const montagem_caixa_schema = z.object({
+  endereco: z.string(),
+  codigoCaixa: z.number(),
+  caixa: z.string(),
+  produto: z.string(),
+  descricaoProduto: z.string(),
+  quantidade: z.number(),
+  usuario: z.string(),
+  montagem: z.coerce.date().or(z.date()),
+  codigoPedido: z.string(),
+  descTipoCaixa: z.string(),
+});
