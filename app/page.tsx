@@ -1,149 +1,209 @@
-'use client'
+"use client";
+import {
+  CalendarClockIcon,
+  ChartAreaIcon,
+  GitCompareArrowsIcon,
+  LayoutDashboardIcon,
+  MapIcon,
+  RefreshCcwIcon,
+  ScrollTextIcon,
+  Undo2Icon,
+} from "lucide-react";
+import { Card, Chip, Link, Separator } from "@heroui/react";
 
-import { useState, useCallback } from 'react'
-import { FileUploader } from '@/components/file-uploader'
-import { ResultsList } from '@/components/results-list'
-import { Card, Spinner, Button } from '@heroui/react'
-import { parseXlsx, parseXml, compareFiles } from '@/lib/compare-files'
-import type { ComparisonResult } from '@/lib/types'
-import { ArrowRight, FileSearch, RotateCcw } from 'lucide-react'
-
-export default function Dashboard() {
-  const [xlsxFile, setXlsxFile] = useState<File | null>(null)
-  const [xmlFile, setXmlFile] = useState<File | null>(null)
-  const [results, setResults] = useState<ComparisonResult | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const handleCompare = useCallback(async () => {
-    if (!xlsxFile || !xmlFile) return
-
-    setIsProcessing(true)
-    setError(null)
-
-    try {
-      // Processa o arquivo XLSX
-      const xlsxBuffer = await xlsxFile.arrayBuffer()
-      const xlsxData = await parseXlsx(xlsxBuffer)
-
-      // Processa o arquivo XML
-      const xmlText = await xmlFile.text()
-      const xmlData = parseXml(xmlText)
-
-      // Compara os dados
-      const comparisonResult = compareFiles(xlsxData, xmlData)
-      setResults(comparisonResult)
-    } catch (err) {
-      console.error('[v0] Erro ao processar arquivos:', err)
-      setError('Erro ao processar os arquivos. Verifique se os formatos estão corretos.')
-    } finally {
-      setIsProcessing(false)
-    }
-  }, [xlsxFile, xmlFile])
-
-  const handleReset = useCallback(() => {
-    setXlsxFile(null)
-    setXmlFile(null)
-    setResults(null)
-    setError(null)
-  }, [])
-
-  const canCompare = xlsxFile && xmlFile && !isProcessing
-
+export default function Default() {
   return (
-    <main className="min-h-screen bg-background">
-      <div className="container mx-auto max-w-4xl px-4 py-8">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-balance">
-            Comparador de Arquivos
-          </h1>
-          <p className="mt-2 text-muted-foreground text-pretty">
-            Compare arquivos XLSX e XML para identificar divergências de produtos
-          </p>
+    <div className="flex w-full h-screen items-center justify-center">
+      <div className="flex flex-col space-y-8">
+        <div className="flex flex-row space-x-8">
+          <Card className="w-100">
+            <GitCompareArrowsIcon
+              aria-label="Dollar sign icon"
+              className="text-primary size-6"
+              role="img"
+            />
+            <Card.Header>
+              <Card.Title>Comparador NFe{"<>"}Packlist</Card.Title>
+              <Card.Description>
+                Compare arquivos XLSX e XML para identificar divergências de
+                produtos em propostas em faturamento
+              </Card.Description>
+            </Card.Header>
+            <Card.Footer>
+              <Link aria-label="Ver comparador" href="/comparar-nfe-packlist">
+                Comparar arquivos
+                <Link.Icon aria-hidden="true" />
+              </Link>
+            </Card.Footer>
+          </Card>
+
+          <Separator orientation="vertical" className="my-6" />
+
+          <Card className="w-100">
+            <ScrollTextIcon
+              aria-label="Dollar sign icon"
+              className="text-primary size-6"
+              role="img"
+            />
+            <Card.Header>
+              <Card.Title>Verificador JEFFTRANSPORTE</Card.Title>
+              <Card.Description>
+                Compare a planilha de fechamento JEFFTRANSPORTE com os dados do
+                ERP
+              </Card.Description>
+            </Card.Header>
+            <Card.Footer>
+              <Link aria-label="Ver relatório de picking" href="/jeferson">
+                Comparar fechamento
+                <Link.Icon aria-hidden="true" />
+              </Link>
+            </Card.Footer>
+          </Card>
         </div>
+        <div className="flex flex-row space-x-8">
+          <Card className="w-100">
+            <Undo2Icon
+              aria-label="Dollar sign icon"
+              className="text-primary size-6"
+              role="img"
+            />
+            <Card.Header>
+              <Card.Title>Análise de devoluções</Card.Title>
+              <Card.Description>Analise o histórico de devoluções de pedidos e suas divergências</Card.Description>
+            </Card.Header>
+            <Card.Footer>
+              <Link aria-label="Ver relatório de devoluções" href="/devolucoes">
+                Ver relatório
+                <Link.Icon aria-hidden="true" />
+              </Link>
+            </Card.Footer>
+          </Card>
 
-        {!results ? (
-          <>
-            {/* Upload Section */}
-            <Card className="mb-6">
-              <Card.Header>
-                <Card.Title className="flex items-center gap-2">
-                  <FileSearch className="size-5" />
-                  Upload de Arquivos
-                </Card.Title>
-                <Card.Description>
-                  Selecione um arquivo Excel (.xlsx) com os dados esperados e um arquivo XML com os dados recebidos
-                </Card.Description>
-              </Card.Header>
-              <Card.Content>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <p className="mb-2 text-sm font-medium">Dados Esperados (XLSX)</p>
-                    <FileUploader
-                      label="Arquivo Excel (.xlsx)"
-                      accept=".xlsx,.xls"
-                      file={xlsxFile}
-                      onFileChange={setXlsxFile}
-                      icon="xlsx"
-                    />
-                  </div>
-                  <div>
-                    <p className="mb-2 text-sm font-medium">Dados Recebidos (XML)</p>
-                    <FileUploader
-                      label="Arquivo XML (.xml)"
-                      accept=".xml"
-                      file={xmlFile}
-                      onFileChange={setXmlFile}
-                      icon="xml"
-                    />
-                  </div>
-                </div>
+          <Separator orientation="vertical" className="my-6" />
 
-                {error && (
-                  <div className="mt-4 rounded-lg border border-danger/50 bg-danger/10 p-3 text-sm text-danger">
-                    {error}
-                  </div>
-                )}
+          <Card className="w-100">
+            <RefreshCcwIcon
+              aria-label="Dollar sign icon"
+              className="text-primary size-6"
+              role="img"
+            />
+            <Card.Header>
+              <Card.Title>
+                Sincronizador de estoque{" "}
+                <Chip variant="primary" className="w-fit">
+                  Em desenvolvimento
+                </Chip>
+              </Card.Title>
+              <Card.Description>
+                Analise e sincronize produtos entre PDA e Titanium
+              </Card.Description>
+            </Card.Header>
+            <Card.Footer>
+              <Link aria-label="Sincronizar produtos" href="/sync" isDisabled>
+                Sincronizar produtos
+                <Link.Icon aria-hidden="true" />
+              </Link>
+            </Card.Footer>
+          </Card>
+        </div>
+        <div className="flex flex-row space-x-8">
+          <Card className="w-100">
+            <ChartAreaIcon
+              aria-label="Dollar sign icon"
+              className="text-primary size-6"
+              role="img"
+            />
+            <Card.Header>
+              <Card.Title>Relatório de produtividade</Card.Title>
+              <Card.Description>
+                Visualize a produtividade por hora ou dia da conferência/picking
+              </Card.Description>
+            </Card.Header>
+            <Card.Footer>
+              <Link
+                aria-label="Ver relatório de produtividade"
+                href="/produtividade"
+              >
+                Ver relatório
+                <Link.Icon aria-hidden="true" />
+              </Link>
+            </Card.Footer>
+          </Card>
 
-                <div className="mt-6 flex justify-center">
-                  <Button
-                    size="lg"
-                    onClick={handleCompare}
-                    isDisabled={!canCompare}
-                    className="min-w-50"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Spinner className="size-4" />
-                        Processando...
-                      </>
-                    ) : (
-                      <>
-                        Comparar Arquivos
-                        <ArrowRight className="size-4" />
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </Card.Content>
-            </Card>
-          </>
-        ) : (
-          <>
-            {/* Results Section */}
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Resultado da Comparação</h2>
-              <Button variant="outline" onClick={handleReset}>
-                <RotateCcw className="size-4" />
-                Nova Comparação
-              </Button>
-            </div>
+          <Separator orientation="vertical" className="my-6" />
 
-            <ResultsList results={results} />
-          </>
-        )}
+          <Card className="w-100">
+            <MapIcon
+              aria-label="Dollar sign icon"
+              className="text-primary size-6"
+              role="img"
+            />
+            <Card.Header>
+              <Card.Title>
+                Mapa de calor{" "}
+                <Chip variant="primary" className="w-fit">
+                  Em desenvolvimento
+                </Chip>
+              </Card.Title>
+              <Card.Description>
+                Visualize um mapa da empresa com dados relacionados as posições
+                individuais do armazém
+              </Card.Description>
+            </Card.Header>
+            <Card.Footer>
+              <Link aria-label="Ver mapa" href="/map" isDisabled>
+                Ver mapa
+                <Link.Icon aria-hidden="true" />
+              </Link>
+            </Card.Footer>
+          </Card>
+        </div>
+        <div className="flex flex-row space-x-8">
+          <Card className="w-100">
+            <LayoutDashboardIcon
+              aria-label="Dollar sign icon"
+              className="text-primary size-6"
+              role="img"
+            />
+            <Card.Header>
+              <Card.Title>Dashboard de Logística</Card.Title>
+              <Card.Description>
+                Monitore o fluxo, status e indicadores de performance dos
+                pedidos em tempo real. Otimize a operação com dados
+                estratégicos de ponta a ponta.
+              </Card.Description>
+            </Card.Header>
+            <Card.Footer>
+              <Link aria-label="Ver dashboard de logistica" href="/dashboard" target="_blank">
+                Ver dashboard
+                <Link.Icon aria-hidden="true" />
+              </Link>
+            </Card.Footer>
+          </Card>
+
+          <Separator orientation="vertical" className="my-6" />
+
+          <Card className="w-100">
+            <CalendarClockIcon
+              aria-label="Dollar sign icon"
+              className="text-primary size-6"
+              role="img"
+            />
+            <Card.Header>
+              <Card.Title>Armazenagens pendentes</Card.Title>
+              <Card.Description>
+                Lista de notas com pendencias/divergências na armazenagem
+              </Card.Description>
+            </Card.Header>
+            <Card.Footer>
+              <Link aria-label="Ver pendências" href="/armazenagem_pendentes">
+                Ver pendências
+                <Link.Icon aria-hidden="true" />
+              </Link>
+            </Card.Footer>
+          </Card>
+        </div>
       </div>
-    </main>
-  )
+    </div>
+  );
 }

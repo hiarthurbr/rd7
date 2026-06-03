@@ -1,25 +1,11 @@
 import z from "zod";
 import { uuidv7 } from "uuidv7";
+import { produto_titanium_schema, status_proposta_pda_schema } from "./schemas";
+import { fmt_date } from "./utils";
 
-export function getDisponivel(item: string) {
-  const product = z.object({
-    produto: z.string(),
-    nome: z.string(),
-    unidade: z.enum(["UNID"]),
-    tipo: z.string(),
-    nivel: z.number(),
-    necessario: z.number(),
-    estoque: z.number(),
-    emCompra: z.number(),
-    emProducao: z.number(),
-    falta: z.number(),
-    origem: z.string(),
-    paiDireto: z.string(),
-    estrutura: z.string(),
-    status: z.string(),
-  });
+export async function getDisponivel(item: string) {
   const schema = z.object({
-    data: z.array(product),
+    data: z.array(produto_titanium_schema),
     pageNumber: z.int(),
     pageSize: z.int(),
     totalRecords: z.int(),
@@ -31,7 +17,7 @@ export function getDisponivel(item: string) {
   const now = new Date();
   const past_month = new Date(now.getTime() - 2592000000);
   return fetch(
-    `https://api-erp.rainhadassete.com.br/api/Mrp/planning-bom-paged?principalPartNumber=${item}&periodStart=${past_month.getFullYear()}-${past_month.getMonth()}-${past_month.getDay()}&periodEnd=${now.getFullYear()}-${now.getMonth()}-${now.getDay()}&pageNumber=1&pageSize=10`,
+    `https://api-erp.rainhadassete.com.br/api/Mrp/planning-bom-paged?principalPartNumber=${item}&periodStart=${fmt_date(past_month)}&periodEnd=${fmt_date(now)}&pageNumber=1&pageSize=10`,
     {
       headers: {
         accept: "application/json, text/plain, */*",
@@ -47,38 +33,12 @@ export function getDisponivel(item: string) {
     .then((r) => r.data.find((i) => i.produto === item)?.estoque);
 }
 
-export function getPropostas() {
-  const schema = z.array(
-    z.object({
-      codigoProposta: z.int(),
-      numeroProposta: z.string(),
-      nomeEmpresa: z.string(),
-      nomeVendedor: z.string(),
-      dataLiberacaoProposta: z.coerce.date().or(z.date()),
-      liquidoProposta: z.number(),
-      vinculos: z.int(),
-      itensDiferentesTotalProposta: z.int(),
-      itensDiferentesAlocadosProposta: z.int(),
-      percentualItensAlocadosProposta: z.number(),
-      percentualItensAlocadosPropostaNoGrupo: z.number(),
-      statusProposta: z.number(),
-      statusPda: z.number(),
-      descricaoStatusPda: z.string(),
-      ePrioridade: z.boolean(),
-      critico: z.boolean(),
-      programada: z.string(),
-      pais: z.coerce.number(),
-      estado: z.string(),
-      pendenciaFinanceira: z.string(),
-    }),
-  );
-
+export async function getPropostas() {
   return fetch(
     "https://api-erp.rainhadassete.com.br/api/expedicao/propostas-status-pda",
     {
       headers: {
         accept: "application/json, text/plain, */*",
-        "accept-language": "pt-BR,pt;q=0.9",
       },
       referrer: "https://rainhaerp.rainhadassete.com.br/",
       body: null,
@@ -86,10 +46,10 @@ export function getPropostas() {
     },
   )
     .then((r) => r.json())
-    .then(schema.parseAsync);
+    .then(status_proposta_pda_schema.array().parseAsync);
 }
 
-export function getVendaPerdida() {
+export async function getVendaPerdida() {
   const schema = z.array(
     z
       .object({
@@ -128,3 +88,4 @@ export function getVendaPerdida() {
     },
   ).then((r) => r.json()).then(schema.parseAsync);
 }
+
