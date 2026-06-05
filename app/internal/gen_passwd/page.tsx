@@ -75,7 +75,7 @@ export default function Page() {
               console.log(input);
 
               try {
-                hash(z.string().min(6).max(6).parse(input), rounds).then(
+                hash(z.string().min(8).max(8).parse(input), rounds).then(
                   (hash) => {
                     setGeneratedPasswd(hash);
                   },

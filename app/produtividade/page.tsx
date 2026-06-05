@@ -1,7 +1,7 @@
 "use client";
 
 import { ArchiveRestoreIcon, ScanBarcodeIcon } from "lucide-react";
-import { Card, Link, Separator } from "@heroui/react";
+import { Card, Chip, Link, Separator } from "@heroui/react";
 
 export default function Default() {
   return (
@@ -37,7 +37,12 @@ export default function Default() {
             role="img"
           />
           <Card.Header>
-            <Card.Title>Produtividade Picking</Card.Title>
+            <Card.Title>
+              Produtividade Picking{" "}
+              <Chip variant="primary" className="w-fit">
+                Em desenvolvimento
+              </Chip>
+            </Card.Title>
             <Card.Description></Card.Description>
           </Card.Header>
           <Card.Footer>
