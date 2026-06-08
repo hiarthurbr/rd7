@@ -1,11 +1,11 @@
-import { token_schema } from "@/lib/schemas";
-import { Button, ColorSwatch, Label, ProgressCircle } from "@heroui/react";
+import { ColorSwatch, Label, ProgressCircle } from "@heroui/react";
+import { useCountdown } from "@shined/react-use";
 import { useQuery } from "@tanstack/react-query";
+import { motion, useSpring, useTransform } from "framer-motion";
 import { HeartPulseIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useCountdown } from "@shined/react-use";
 import z from "zod";
-import { useSpring, useTransform, motion } from "framer-motion";
+import { token_schema } from "@/lib/schemas";
 
 const COLORS = {
   "0": "#a1a1a1",
@@ -59,15 +59,12 @@ const DOMAINS: Array<Domain> = [
   },
   {
     check: () =>
-      fetch(
-        "https://pdawmspickingfuncprd.azurewebsites.net/api/Picking/Conferencia",
-        {
-          method: "HEAD",
-          signal: AbortSignal.timeout(5000),
-          cache: "no-store",
-          mode: "no-cors",
-        },
-      )
+      fetch("https://pdawmspickingfuncprd.azurewebsites.net/api/Picking/Conferencia", {
+        method: "HEAD",
+        signal: AbortSignal.timeout(5000),
+        cache: "no-store",
+        mode: "no-cors",
+      })
         .then(() => "online" as const)
         .catch(() => "offline"),
     name: "PDA Picking API",
@@ -82,9 +79,7 @@ const DOMAINS: Array<Domain> = [
           "content-type": "application/json",
         },
         referrer: "https://rainhaerp.rainhadassete.com.br/",
-        body: atob(
-          "eyJVc3VhcmlvIjoiYXJ0aHVyLnJvZHJpZ3VleiIsIlNlbmhhIjoiJCRSUjc3aGgifQ==",
-        ),
+        body: atob("eyJVc3VhcmlvIjoiYXJ0aHVyLnJvZHJpZ3VleiIsIlNlbmhhIjoiJCRSUjc3aGgifQ=="),
         method: "POST",
       })
         .then((r) => r.json())
@@ -159,24 +154,23 @@ function Domain({
         date: new Date(dataUpdatedAt + domain.delay * 60_000),
         domain: domain.name,
       }),
-    [dataUpdatedAt],
+    [dataUpdatedAt, domain],
   );
   const date = useMemo(
     () => new Date(dataUpdatedAt + domain.delay * 60_000),
-    [dataUpdatedAt],
+    [dataUpdatedAt, domain.delay],
   );
   const countdown = useCountdown(date, {
     controls: true,
     interval: 250,
   });
-  const [history, setHistory] = useState<Array<z.infer<typeof history_schema>>>(
-    [],
-  );
+  const [history, setHistory] = useState<Array<z.infer<typeof history_schema>>>([]);
 
   const spring = useSpring(0, { duration: 500, bounce: 0 });
   const display = useTransform(spring, (current) => Math.round(current));
   const [displayValue, setDisplayValue] = useState(0);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: esse hook só precisa ser atualizado quando a query for atualizada, domain.key e shouldExpand são estaticos, e data pode não atualizar no refetch, se o valor for o mesmo que o antigo, por isso usamos somente o dataUpdatedAt
   useEffect(() => {
     if (data != null)
       setHistory((h) => {
@@ -185,9 +179,7 @@ function Domain({
         const history = [
           ...(h.length
             ? h
-            : (z
-                .array(history_schema)
-                .safeParse(localStorage.getItem(domain.key))?.data ?? [])
+            : (z.array(history_schema).safeParse(localStorage.getItem(domain.key))?.data ?? [])
           ).filter((h) => h.date >= new Date(now - 1000 * 60 * 60)),
           { status: data, date: new Date(now) },
         ];
@@ -249,7 +241,10 @@ function Domain({
         <div className="flex flex-row items-center justify-center space-x-0.5 col-span-2">
           {timeline_score.map((score, i) => (
             <ColorSwatch
-              key={`COLOR-SWATCH-${domain.key}-${i}`}
+              key={`COLOR-SWATCH-${domain.key}-${
+                // biome-ignore lint/suspicious/noArrayIndexKey: o index aqui é o unico diferencial entre as barras
+                i
+              }`}
               color={COLORS[score.toFixed(0) as keyof typeof COLORS]}
               className="w-1 h-5"
             />
@@ -287,10 +282,7 @@ export function Status() {
     force_expand: false,
   });
 
-  const expanded = useMemo(
-    () => !Object.values(expand).every((e) => e === false),
-    [expand],
-  );
+  const expanded = useMemo(() => !Object.values(expand).every((e) => e === false), [expand]);
 
   console.log({ expand, expanded });
 
@@ -308,21 +300,16 @@ export function Status() {
           <motion.div className="flex flex-col w-max space-y-3">
             <motion.div className="grid grid-flow-row grid-cols-6 justify-items-start items-center h-7 px-1 space-x-2">
               <HeartPulseIcon
-                className={
-                  expanded
-                    ? "size-5 stroke-white col-span-2"
-                    : "size-5 stroke-white"
-                }
+                className={expanded ? "size-5 stroke-white col-span-2" : "size-5 stroke-white"}
               />
               <Label className="col-span-4">Serviço</Label>
             </motion.div>
             {...DOMAINS.map((domain) => (
               <Domain
+                key={domain.key}
                 domain={domain}
                 expanded={expanded}
-                shouldExpand={(yes) =>
-                  setExpand((v) => ({ ...v, [domain.key]: yes }))
-                }
+                shouldExpand={(yes) => setExpand((v) => ({ ...v, [domain.key]: yes }))}
               />
             ))}
           </motion.div>

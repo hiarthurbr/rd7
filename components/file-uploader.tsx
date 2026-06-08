@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useRef } from "react";
-import { Upload, FileSpreadsheet, FileCode2, X } from "lucide-react";
 import { Button, Card } from "@heroui/react";
+import { FileCode2, FileSpreadsheet, Upload, X } from "lucide-react";
+import { useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 type FileUploaderProps = {
@@ -13,13 +13,7 @@ type FileUploaderProps = {
   icon: "xlsx" | "xml";
 };
 
-export function FileUploader({
-  label,
-  accept,
-  file,
-  onFileChange,
-  icon,
-}: FileUploaderProps) {
+export function FileUploader({ label, accept, file, onFileChange, icon }: FileUploaderProps) {
   const inputRef = useRef(null);
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
@@ -62,9 +56,7 @@ export function FileUploader({
               <IconComponent className="size-8 text-primary" />
               <div className="text-left">
                 <p className="font-medium text-sm">{file.name}</p>
-                <p className="text-muted-foreground text-xs">
-                  {(file.size / 1024).toFixed(2)} KB
-                </p>
+                <p className="text-muted-foreground text-xs">{(file.size / 1024).toFixed(2)} KB</p>
               </div>
             </div>
             <Button

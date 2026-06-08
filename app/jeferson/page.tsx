@@ -1,39 +1,38 @@
 "use client";
 
 import {
+  Button,
+  Calendar,
   Card,
   Chip,
-  Button,
-  Tabs,
-  Table,
-  Virtualizer,
-  Modal,
-  TableLayout,
-  Link,
-  Calendar,
-  Label,
-  TimeField,
-  Separator,
   Disclosure,
-  Text,
+  Label,
+  Link,
+  Modal,
+  Separator,
+  Table,
+  TableLayout,
+  Tabs,
+  TimeField,
+  Virtualizer,
 } from "@heroui/react";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { parseAbsoluteToLocal } from "@internationalized/date";
+import excel from "exceljs";
 import {
-  FileSpreadsheet,
-  Database,
-  RefreshCw,
-  Download,
-  ArrowLeft,
-  Trash2,
   AlertCircle,
+  ArrowLeft,
   ArrowUpRightFromSquareIcon,
   CalendarIcon,
   ClockIcon,
+  Database,
+  Download,
+  FileSpreadsheet,
+  RefreshCw,
+  Trash2,
 } from "lucide-react";
-import { FileUploader } from "@/components/file-uploader";
+import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
-import excel from "exceljs";
-import { parseAbsoluteToLocal } from "@internationalized/date";
+import { FileUploader } from "@/components/file-uploader";
 import { nota_fiscal_schema } from "@/lib/schemas";
 
 const STORAGE_KEY = "jeferson-nfs-data";
@@ -65,9 +64,7 @@ async function parseXlsx(buffer: ArrayBuffer) {
   );
 
   // @ts-expect-error
-  globalThis.worksheets = workbook.worksheets.filter(
-    (w) => w.state === "visible",
-  );
+  globalThis.worksheets = workbook.worksheets.filter((w) => w.state === "visible");
   // @ts-expect-error
   globalThis.dateWorksheet = dateWorksheet;
 
@@ -79,9 +76,7 @@ async function parseXlsx(buffer: ArrayBuffer) {
           w.findCell("A1", 0)?.value?.toString().trim().toLocaleUpperCase() ===
             "FECHAMENTO JEFFTRANSPORTE",
       )
-      .flatMap((w) =>
-        w.getColumn("A").values.filter((v) => typeof v === "number"),
-      ),
+      .flatMap((w) => w.getColumn("A").values.filter((v) => typeof v === "number")),
     startDate: new Date(
       Math.min(
         // @ts-expect-error
@@ -124,32 +119,21 @@ function compareWithStoredData(
   console.log({ xlsxData, storedData });
 
   const NFStore = storedData.nfs.filter(
-    (nfe) =>
-      nfe.PrevisaoSaida! >= xlsxData.startDate &&
-      nfe.PrevisaoSaida! <= xlsxData.endDate,
+    (nfe) => nfe.PrevisaoSaida! >= xlsxData.startDate && nfe.PrevisaoSaida! <= xlsxData.endDate,
   );
-  const NFStoreJeferson = NFStore.filter(
-    (nfe) => nfe.Transportador?.trim() === "Jeferson",
-  );
-  const NFStoreJefersonSet = new Set(
-    NFStoreJeferson.map((nf) => nf.NumeroNotaFiscal),
-  );
+  const NFStoreJeferson = NFStore.filter((nfe) => nfe.Transportador?.trim() === "Jeferson");
+  const NFStoreJefersonSet = new Set(NFStoreJeferson.map((nf) => nf.NumeroNotaFiscal));
   const NFPlaniSet = new Set(xlsxData.nfs);
   const NFNome = Object.fromEntries(
-    NFStore.map((nfe) => [
-      nfe.NumeroNotaFiscal,
-      nfe.Transportador ?? "Nenhum especificado",
-    ]),
+    NFStore.map((nfe) => [nfe.NumeroNotaFiscal, nfe.Transportador ?? "Nenhum especificado"]),
   );
 
-  const Correct = NFStoreJeferson.filter((nf) =>
-    xlsxData.nfs.includes(nf.NumeroNotaFiscal),
-  );
+  const Correct = NFStoreJeferson.filter((nf) => xlsxData.nfs.includes(nf.NumeroNotaFiscal));
   const NotIncluded = NFStoreJefersonSet.difference(NFPlaniSet);
   const NotCorrect = xlsxData.nfs
     .map((nf) => NFStore.find((nfe) => nfe.NumeroNotaFiscal === nf))
     .filter((nf) => nf != null)
-    .filter((nf) => nf.Transportador !== "Jeferson")
+    .filter((nf) => nf.Transportador !== "Jeferson");
 
   console.log({
     NFStore,
@@ -183,10 +167,7 @@ function List({ nfs }: { nfs: Array<z.infer<typeof nota_fiscal_schema>> }) {
     >
       <Table>
         <Table.ScrollContainer>
-          <Table.Content
-            aria-label="Example table"
-            className="h-75 min-w-175 overflow-auto"
-          >
+          <Table.Content aria-label="Example table" className="h-75 min-w-175 overflow-auto">
             <Table.Header>
               <Table.Column allowsSorting isRowHeader>
                 NF
@@ -221,26 +202,16 @@ function List({ nfs }: { nfs: Array<z.infer<typeof nota_fiscal_schema>> }) {
                             <Modal.Body>
                               <div className="flex flex-col space-y-2">
                                 <div className="flex flex-row space-x-2">
-                                  <Chip variant="soft">
-                                    {nf.NumeroNotaFiscal}
-                                  </Chip>
+                                  <Chip variant="soft">{nf.NumeroNotaFiscal}</Chip>
                                   <Chip
                                     variant="primary"
-                                    color={
-                                      nf.Status === "Entregue"
-                                        ? "success"
-                                        : "warning"
-                                    }
+                                    color={nf.Status === "Entregue" ? "success" : "warning"}
                                   >
                                     {nf.Status}
                                   </Chip>
                                   <Chip
                                     variant="primary"
-                                    color={
-                                      nf.Transportador === "Jeferson"
-                                        ? "success"
-                                        : "danger"
-                                    }
+                                    color={nf.Transportador === "Jeferson" ? "success" : "danger"}
                                   >
                                     {nf.Transportador}
                                   </Chip>
@@ -250,8 +221,7 @@ function List({ nfs }: { nfs: Array<z.infer<typeof nota_fiscal_schema>> }) {
                                   <h3 className="text-lg font-bold">Local de entrega</h3>
                                   <span>
                                     Endereço:{" "}
-                                    {nf.EnderecoTransportadora ??
-                                      "Endereço não informado"}
+                                    {nf.EnderecoTransportadora ?? "Endereço não informado"}
                                   </span>
                                   {nf.Latitude && nf.Longitude && (
                                     <Link
@@ -266,9 +236,7 @@ function List({ nfs }: { nfs: Array<z.infer<typeof nota_fiscal_schema>> }) {
                                     </Link>
                                   )}
                                 </div>
-                                {nf.DataEntrega && (
-                                  <Separator className="my-4" />
-                                )}
+                                {nf.DataEntrega && <Separator className="my-4" />}
                                 {nf.DataEntrega && (
                                   <div className="flex flex-col space-x-2">
                                     <h3 className="text-lg font-bold">Data da entrega</h3>
@@ -288,24 +256,18 @@ function List({ nfs }: { nfs: Array<z.infer<typeof nota_fiscal_schema>> }) {
                                       <Calendar.Grid>
                                         <Calendar.GridHeader>
                                           {(day) => (
-                                            <Calendar.HeaderCell>
-                                              {day}
-                                            </Calendar.HeaderCell>
+                                            <Calendar.HeaderCell>{day}</Calendar.HeaderCell>
                                           )}
                                         </Calendar.GridHeader>
                                         <Calendar.GridBody>
-                                          {(date) => (
-                                            <Calendar.Cell date={date} />
-                                          )}
+                                          {(date) => <Calendar.Cell date={date} />}
                                         </Calendar.GridBody>
                                       </Calendar.Grid>
                                     </Calendar>
                                     <TimeField
                                       className="w-[256px]"
                                       name="time"
-                                      value={parseAbsoluteToLocal(
-                                        nf.DataEntrega.toISOString(),
-                                      )}
+                                      value={parseAbsoluteToLocal(nf.DataEntrega.toISOString())}
                                     >
                                       <Label>Hora</Label>
                                       <TimeField.Group>
@@ -313,11 +275,7 @@ function List({ nfs }: { nfs: Array<z.infer<typeof nota_fiscal_schema>> }) {
                                           <ClockIcon className="size-4 text-muted" />
                                         </TimeField.Prefix>
                                         <TimeField.Input>
-                                          {(segment) => (
-                                            <TimeField.Segment
-                                              segment={segment}
-                                            />
-                                          )}
+                                          {(segment) => <TimeField.Segment segment={segment} />}
                                         </TimeField.Input>
                                       </TimeField.Group>
                                     </TimeField>
@@ -337,32 +295,20 @@ function List({ nfs }: { nfs: Array<z.infer<typeof nota_fiscal_schema>> }) {
                                         <Table.ScrollContainer>
                                           <Table.Content aria-label="Detalhes da nota">
                                             <Table.Header>
-                                              <Table.Column
-                                                allowsSorting
-                                                isRowHeader
-                                              >
+                                              <Table.Column allowsSorting isRowHeader>
                                                 Chave
                                               </Table.Column>
-                                              <Table.Column
-                                                allowsSorting
-                                                isRowHeader
-                                              >
+                                              <Table.Column allowsSorting isRowHeader>
                                                 Valor
                                               </Table.Column>
                                             </Table.Header>
                                             <Table.Body>
-                                              {Object.entries(nf).map(
-                                                ([key, value]) => (
-                                                  <Table.Row key={key}>
-                                                    <Table.Cell>
-                                                      {key}
-                                                    </Table.Cell>
-                                                    <Table.Cell>
-                                                      {value?.toString()}
-                                                    </Table.Cell>
-                                                  </Table.Row>
-                                                ),
-                                              )}
+                                              {Object.entries(nf).map(([key, value]) => (
+                                                <Table.Row key={key}>
+                                                  <Table.Cell>{key}</Table.Cell>
+                                                  <Table.Cell>{value?.toString()}</Table.Cell>
+                                                </Table.Row>
+                                              ))}
                                             </Table.Body>
                                           </Table.Content>
                                         </Table.ScrollContainer>
@@ -394,9 +340,7 @@ function List({ nfs }: { nfs: Array<z.infer<typeof nota_fiscal_schema>> }) {
 
 export default function JefersonPage() {
   const [xlsxFile, setXlsxFile] = useState<File | null>(null);
-  const [storedData, setStoredData] = useState<z.infer<
-    typeof StoredNFsData
-  > | null>(null);
+  const [storedData, setStoredData] = useState<z.infer<typeof StoredNFsData> | null>(null);
   const [results, setResults] = useState<z.infer<typeof Result> | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -439,10 +383,6 @@ export default function JefersonPage() {
         {
           headers: {
             accept: "application/json, text/plain, */*",
-            "accept-language": "pt-BR,pt;q=0.9",
-            priority: "u=1, i",
-            "sec-ch-ua":
-              '"Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"',
           },
           referrer: "https://rainhaerp.rainhadassete.com.br/",
           body: null,
@@ -466,7 +406,7 @@ export default function JefersonPage() {
     } finally {
       setIsUpdating(false);
     }
-  }, [updateFile]);
+  }, []);
 
   const handleClearStorage = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
@@ -499,9 +439,7 @@ export default function JefersonPage() {
             <ArrowLeft className="size-4" />
             Voltar ao comparador principal
           </Link>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Comparador Jeferson
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight">Comparador Jeferson</h1>
           <p className="text-muted-foreground mt-2">
             Compare arquivos XLSX com os dados armazenados localmente
           </p>
@@ -514,9 +452,7 @@ export default function JefersonPage() {
               <Database className="size-5" />
               Dados Armazenados
             </Card.Title>
-            <Card.Description>
-              Base de dados local para comparação
-            </Card.Description>
+            <Card.Description>Base de dados local para comparação</Card.Description>
           </Card.Header>
           <Card.Content>
             {storedData ? (
@@ -532,19 +468,13 @@ export default function JefersonPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold">
-                      {storedData.nfs.length}
-                    </p>
+                    <p className="text-2xl font-bold">{storedData.nfs.length}</p>
                     <p className="text-xs text-muted-foreground">NFs</p>
                   </div>
                 </div>
 
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleUpdateStorage}
-                  >
+                  <Button variant="outline" size="sm" onClick={handleUpdateStorage}>
                     {isUpdating ? (
                       <>
                         <RefreshCw className="size-4 mr-2 animate-spin" />
@@ -572,14 +502,8 @@ export default function JefersonPage() {
               <div className="space-y-4">
                 <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed bg-muted/30 px-4 py-6 justify-center">
                   <Database className="size-6 text-muted-foreground" />
-                  <p className="text-muted-foreground">
-                    Nenhum dado armazenado.
-                  </p>
-                  <Button
-                    onClick={handleUpdateStorage}
-                    isDisabled={isUpdating}
-                    className="w-1/3"
-                  >
+                  <p className="text-muted-foreground">Nenhum dado armazenado.</p>
+                  <Button onClick={handleUpdateStorage} isDisabled={isUpdating} className="w-1/3">
                     {isUpdating ? (
                       <>
                         <RefreshCw className="size-4 mr-2 animate-spin" />
@@ -615,8 +539,7 @@ export default function JefersonPage() {
                 Comparar Arquivo
               </Card.Title>
               <Card.Description>
-                Selecione um arquivo .xlsx para comparar com os dados
-                armazenados
+                Selecione um arquivo .xlsx para comparar com os dados armazenados
               </Card.Description>
             </Card.Header>
             <Card.Content className="space-y-4">
@@ -653,9 +576,7 @@ export default function JefersonPage() {
         {results && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">
-                Resultados da Comparação
-              </h2>
+              <h2 className="text-xl font-semibold">Resultados da Comparação</h2>
               <Button variant="outline" onClick={handleReset}>
                 Nova comparação
               </Button>
@@ -665,24 +586,16 @@ export default function JefersonPage() {
               <Card>
                 <Card.Content className="pt-6">
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-green-600">
-                      {results.corr.length}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Notas corretas
-                    </p>
+                    <p className="text-3xl font-bold text-green-600">{results.corr.length}</p>
+                    <p className="text-sm text-muted-foreground">Notas corretas</p>
                   </div>
                 </Card.Content>
               </Card>
               <Card>
                 <Card.Content className="pt-6">
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-danger">
-                      {results.err.length}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Notas divergentes
-                    </p>
+                    <p className="text-3xl font-bold text-danger">{results.err.length}</p>
+                    <p className="text-sm text-muted-foreground">Notas divergentes</p>
                   </div>
                 </Card.Content>
               </Card>
@@ -690,9 +603,7 @@ export default function JefersonPage() {
                 <Card.Content className="pt-6">
                   <div className="text-center">
                     <p className="text-3xl font-bold">{results.ni.length}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Notas não incluidas
-                    </p>
+                    <p className="text-sm text-muted-foreground">Notas não incluidas</p>
                   </div>
                 </Card.Content>
               </Card>

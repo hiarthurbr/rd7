@@ -1,7 +1,7 @@
-import type { ComparisonResult, ProductData } from "./types";
 import excel from "exceljs";
 import { XMLParser } from "fast-xml-parser";
 import z from "zod";
+import type { ComparisonResult } from "./types";
 
 function get_propostas(xml: string) {
   return new Set(
@@ -19,17 +19,11 @@ export async function parseXlsx(buffer: ArrayBuffer) {
 
   console.log({ worksheets: workbook.worksheets });
 
-  const worksheet = workbook.worksheets
-    .filter((w) => w.state === "visible")
-    .pop()!;
+  const worksheet = workbook.worksheets.filter((w) => w.state === "visible").pop()!;
   console.log({ worksheet });
   const prods: { [key: string]: [number, number] } = {};
-  worksheet.eachRow({ includeEmpty: true }, function (row) {
-    if (
-      Array.isArray(row.values) &&
-      row.values.length > 0 &&
-      row.values[1] != null
-    ) {
+  worksheet.eachRow({ includeEmpty: true }, (row) => {
+    if (Array.isArray(row.values) && row.values.length > 0 && row.values[1] != null) {
       const prod = row.values[1],
         qntd = z.coerce.number().safeParse(row.values[2]),
         peso_uni = z.coerce.number().safeParse(row.values[3]);
@@ -64,7 +58,7 @@ export async function parseXlsx(buffer: ArrayBuffer) {
 
 export function parseXml(xmlString: string) {
   const parser = new XMLParser();
-  let jObj = parser.parse(xmlString);
+  const jObj = parser.parse(xmlString);
 
   const prods_nfe: {
     [key: string]: {
@@ -74,14 +68,10 @@ export function parseXml(xmlString: string) {
   } = {};
 
   console.log();
-  // @ts-ignore
+  // @ts-expect-error
   jObj.NFe.infNFe.det.forEach((prod, nItem) => {
     if (prods_nfe[prod.prod.cProd] != null) {
-      prods_nfe[prod.prod.cProd].ids.push([
-        nItem + 1,
-        prod.prod.qCom,
-        prod.prod.qTrib,
-      ]);
+      prods_nfe[prod.prod.cProd].ids.push([nItem + 1, prod.prod.qCom, prod.prod.qTrib]);
       prods_nfe[prod.prod.cProd].res[0] += prod.prod.qCom;
       prods_nfe[prod.prod.cProd].res[1] += prod.prod.qTrib;
     } else
@@ -115,10 +105,7 @@ export function compareFiles(
     if (result.same_sku[prod] == null) result.same_sku[prod] = [];
     result.same_sku[prod] = prod_nfe?.ids;
 
-    if (
-      prod_pl?.[0] === prod_nfe?.res[0] &&
-      Math.abs(prod_pl?.[1] - prod_nfe?.res[1]) < 0.0001
-    )
+    if (prod_pl?.[0] === prod_nfe?.res[0] && Math.abs(prod_pl?.[1] - prod_nfe?.res[1]) < 0.0001)
       result.eq[prod] = [
         [prod_pl?.[0] ?? 0, prod_pl?.[1] ?? 0],
         [prod_nfe?.res[0] ?? 0, prod_nfe?.res[1] ?? 0],

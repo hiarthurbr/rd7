@@ -12,9 +12,9 @@ import {
   TextArea,
   TextField,
 } from "@heroui/react";
+import { hash } from "bcryptjs";
 import { CheckIcon } from "lucide-react";
 import { useState } from "react";
-import { hash } from "bcryptjs";
 import z from "zod";
 
 export default function Page() {
@@ -27,13 +27,7 @@ export default function Page() {
   return (
     <div className="size-full flex flex-col items-center justify-center min-h-screen space-y-8">
       <Form className="flex w-96 flex-col gap-4">
-        <TextField
-          isRequired
-          minLength={8}
-          name="password"
-          type="password"
-          isInvalid={!!error}
-        >
+        <TextField isRequired minLength={8} name="password" type="password" isInvalid={!!error}>
           <Label>Password</Label>
           <Input
             placeholder="Enter your password"
@@ -53,7 +47,7 @@ export default function Page() {
           minValue={1}
           maxValue={15}
           value={rounds}
-          onChange={setRounds as any}
+          onChange={(rounds) => setRounds(rounds as number)}
         >
           <Label>Rounds</Label>
           <Slider.Output />
@@ -75,16 +69,16 @@ export default function Page() {
               console.log(input);
 
               try {
-                hash(z.string().min(8).max(8).parse(input), rounds).then(
-                  (hash) => {
-                    setGeneratedPasswd(hash);
-                  },
-                ).then(() => setWaitingPasswd(false));
+                hash(z.string().min(8).max(8).parse(input), rounds)
+                  .then((hash) => {
+                    setGeneratedPasswd(Buffer.from(hash).toBase64());
+                  })
+                  .then(() => setWaitingPasswd(false));
               } catch (err) {
                 try {
                   setError(
                     JSON.parse((err as Error).message)
-                    // @ts-expect-error
+                      // @ts-expect-error
                       .map((e) => e.message)
                       .join(", "),
                   );
@@ -97,11 +91,7 @@ export default function Page() {
           >
             {({ isPending }) => (
               <>
-                {isPending ? (
-                  <Spinner color="current" size="sm" />
-                ) : (
-                  <CheckIcon />
-                )}
+                {isPending ? <Spinner color="current" size="sm" /> : <CheckIcon />}
                 {isPending ? "Hashing..." : "Submit"}
               </>
             )}

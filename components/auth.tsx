@@ -1,30 +1,25 @@
 "use client";
 
 import { InputOTP, Label, ProgressBar, Surface } from "@heroui/react";
-import { useEffect, useState } from "react";
 import { compare } from "bcryptjs";
+import { useEffect, useState } from "react";
 import z from "zod";
 
-export function Auth({
-  Element,
-  hash,
-}: {
-  Element: () => React.ReactNode;
-  hash: string;
-}) {
+export function Auth({ Element, hash }: { Element: () => React.ReactNode; hash: string }) {
   z.string().min(8).parse(hash);
   const [passwd, setPasswd] = useState(null);
   const [hashing, setHashing] = useState(false);
   const [error, setError] = useState<null | string>(null);
   const [success, setSuccess] = useState<null | boolean>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `hash` é um valor estático
   useEffect(() => {
     if (passwd == null) return;
     setHashing(true);
     setError(null);
 
     try {
-      compare(z.string().min(8).max(8).parse(passwd), atob(hash))
+      compare(z.string().min(8).max(8).parse(passwd), Buffer.from(hash, 'base64').toString('utf-8'))
         .then((hash) => {
           setSuccess(hash);
         })
@@ -52,8 +47,7 @@ export function Auth({
         <div className="flex flex-col gap-1">
           <Label>Conteúdo sensível</Label>
           <p className="text-sm text-muted">
-            Você está acessando um conteúdo sensível, por favor insira a senha
-            para continuar.
+            Você está acessando um conteúdo sensível, por favor insira a senha para continuar.
           </p>
         </div>
         <InputOTP
@@ -78,18 +72,10 @@ export function Auth({
             <InputOTP.Slot index={7} />
           </InputOTP.Group>
         </InputOTP>
-        <span
-          className="field-error"
-          data-visible={!!error || success === false}
-          id="code-error"
-        >
+        <span className="field-error" data-visible={!!error || success === false} id="code-error">
           {error ?? "Senha incorreta, tente novamente."}
         </span>
-        <ProgressBar
-          isIndeterminate={hashing}
-          aria-label="Loading"
-          className="w-64"
-        >
+        <ProgressBar isIndeterminate={hashing} aria-label="Loading" className="w-64">
           <ProgressBar.Track className={hashing ? "" : "bg-transparent"}>
             <ProgressBar.Fill />
           </ProgressBar.Track>

@@ -1,4 +1,5 @@
 "use client";
+import { Card, Chip, Link, Separator } from "@heroui/react";
 import {
   CalendarClockIcon,
   ChartAreaIcon,
@@ -9,7 +10,6 @@ import {
   ScrollTextIcon,
   Undo2Icon,
 } from "lucide-react";
-import { Card, Chip, Link, Separator } from "@heroui/react";
 
 export default function Default() {
   return (
@@ -25,8 +25,8 @@ export default function Default() {
             <Card.Header>
               <Card.Title>Comparador NFe{"<>"}Packlist</Card.Title>
               <Card.Description>
-                Compare arquivos XLSX e XML para identificar divergências de
-                produtos em propostas em faturamento
+                Compare arquivos XLSX e XML para identificar divergências de produtos em propostas
+                em faturamento
               </Card.Description>
             </Card.Header>
             <Card.Footer>
@@ -48,8 +48,7 @@ export default function Default() {
             <Card.Header>
               <Card.Title>Verificador JEFFTRANSPORTE</Card.Title>
               <Card.Description>
-                Compare a planilha de fechamento JEFFTRANSPORTE com os dados do
-                ERP
+                Compare a planilha de fechamento JEFFTRANSPORTE com os dados do ERP
               </Card.Description>
             </Card.Header>
             <Card.Footer>
@@ -62,14 +61,12 @@ export default function Default() {
         </div>
         <div className="flex flex-row space-x-8">
           <Card className="w-100">
-            <Undo2Icon
-              aria-label="Dollar sign icon"
-              className="text-primary size-6"
-              role="img"
-            />
+            <Undo2Icon aria-label="Dollar sign icon" className="text-primary size-6" role="img" />
             <Card.Header>
               <Card.Title>Análise de devoluções</Card.Title>
-              <Card.Description>Analise o histórico de devoluções de pedidos e suas divergências</Card.Description>
+              <Card.Description>
+                Analise o histórico de devoluções de pedidos e suas divergências
+              </Card.Description>
             </Card.Header>
             <Card.Footer>
               <Link aria-label="Ver relatório de devoluções" href="/devolucoes">
@@ -120,10 +117,7 @@ export default function Default() {
               </Card.Description>
             </Card.Header>
             <Card.Footer>
-              <Link
-                aria-label="Ver relatório de produtividade"
-                href="/produtividade"
-              >
+              <Link aria-label="Ver relatório de produtividade" href="/produtividade">
                 Ver relatório
                 <Link.Icon aria-hidden="true" />
               </Link>
@@ -133,11 +127,7 @@ export default function Default() {
           <Separator orientation="vertical" className="my-6" />
 
           <Card className="w-100">
-            <MapIcon
-              aria-label="Dollar sign icon"
-              className="text-primary size-6"
-              role="img"
-            />
+            <MapIcon aria-label="Dollar sign icon" className="text-primary size-6" role="img" />
             <Card.Header>
               <Card.Title>
                 Mapa de calor{" "}
@@ -146,8 +136,8 @@ export default function Default() {
                 </Chip>
               </Card.Title>
               <Card.Description>
-                Visualize um mapa da empresa com dados relacionados as posições
-                individuais do armazém
+                Visualize um mapa da empresa com dados relacionados as posições individuais do
+                armazém
               </Card.Description>
             </Card.Header>
             <Card.Footer>
@@ -168,9 +158,8 @@ export default function Default() {
             <Card.Header>
               <Card.Title>Dashboard de Logística</Card.Title>
               <Card.Description>
-                Monitore o fluxo, status e indicadores de performance dos
-                pedidos em tempo real. Otimize a operação com dados
-                estratégicos de ponta a ponta.
+                Monitore o fluxo, status e indicadores de performance dos pedidos em tempo real.
+                Otimize a operação com dados estratégicos de ponta a ponta.
               </Card.Description>
             </Card.Header>
             <Card.Footer>

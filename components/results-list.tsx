@@ -1,21 +1,9 @@
 "use client";
 
-import {
-  AlertCircle,
-  ArrowUpRightFromSquareIcon,
-  CheckCircle2,
-} from "lucide-react";
-import {
-  Badge,
-  Button,
-  Card,
-  Chip,
-  Disclosure,
-  Modal,
-  Separator,
-} from "@heroui/react";
-import type { ComparisonResult } from "@/lib/types";
+import { Badge, Button, Card, Chip, Disclosure, Modal, Separator } from "@heroui/react";
+import { AlertCircle, ArrowUpRightFromSquareIcon, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
+import type { ComparisonResult } from "@/lib/types";
 
 type ResultsListProps = {
   results: ComparisonResult;
@@ -78,46 +66,28 @@ function ProductDiffItem({
                             <div className="space-y-2">
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="flex justify-between">
-                                  <pre className="text-sm text-muted-foreground">
-                                    cProd
-                                  </pre>
-                                  <span className="text-sm font-medium">
-                                    {nfeData.prod.cProd}
-                                  </span>
+                                  <pre className="text-sm text-muted-foreground">cProd</pre>
+                                  <span className="text-sm font-medium">{nfeData.prod.cProd}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                  <pre className="text-sm text-muted-foreground">
-                                    cEANTrib
-                                  </pre>
+                                  <pre className="text-sm text-muted-foreground">cEANTrib</pre>
                                   <span className="text-sm font-medium">
                                     {nfeData.prod.cEANTrib}
                                   </span>
                                 </div>
                               </div>
                               <div>
-                                <pre className="text-sm text-muted-foreground">
-                                  xProd
-                                </pre>
-                                <p className="text-sm font-medium mt-1">
-                                  {nfeData.prod.xProd}
-                                </p>
+                                <pre className="text-sm text-muted-foreground">xProd</pre>
+                                <p className="text-sm font-medium mt-1">{nfeData.prod.xProd}</p>
                               </div>
                               <div className="grid grid-cols-2 gap-4 pt-2">
                                 <div className="flex justify-between">
-                                  <span className="text-sm text-muted-foreground">
-                                    NCM
-                                  </span>
-                                  <span className="text-sm font-medium">
-                                    {nfeData.prod.NCM}
-                                  </span>
+                                  <span className="text-sm text-muted-foreground">NCM</span>
+                                  <span className="text-sm font-medium">{nfeData.prod.NCM}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                  <span className="text-sm text-muted-foreground">
-                                    CFOP
-                                  </span>
-                                  <span className="text-sm font-medium">
-                                    {nfeData.prod.CFOP}
-                                  </span>
+                                  <span className="text-sm text-muted-foreground">CFOP</span>
+                                  <span className="text-sm font-medium">{nfeData.prod.CFOP}</span>
                                 </div>
                               </div>
                             </div>
@@ -132,49 +102,29 @@ function ProductDiffItem({
                             </h3>
                             <div className="grid grid-cols-2 gap-4">
                               <div className="flex justify-between">
-                                <pre className="text-sm text-muted-foreground">
-                                  nItemPed
-                                </pre>
-                                <span className="text-sm font-medium">
-                                  {nfeData.prod.nItemPed}
-                                </span>
+                                <pre className="text-sm text-muted-foreground">nItemPed</pre>
+                                <span className="text-sm font-medium">{nfeData.prod.nItemPed}</span>
                               </div>
                               <div className="flex justify-between">
-                                <pre className="text-sm text-muted-foreground">
-                                  uCom
-                                </pre>
-                                <span className="text-sm font-medium">
-                                  {nfeData.prod.uCom}
-                                </span>
+                                <pre className="text-sm text-muted-foreground">uCom</pre>
+                                <span className="text-sm font-medium">{nfeData.prod.uCom}</span>
                               </div>
                               <div className="flex justify-between">
-                                <pre className="text-sm text-muted-foreground">
-                                  vUnCom
-                                </pre>
+                                <pre className="text-sm text-muted-foreground">vUnCom</pre>
                                 <span className="text-sm font-medium">
                                   {nfeData.prod.vUnCom.toFixed(4)}
                                 </span>
                               </div>
                               <div className="flex justify-between">
-                                <pre className="text-sm text-muted-foreground">
-                                  qTrib
-                                </pre>
-                                <span className="text-sm font-medium">
-                                  {nfeData.prod.qTrib}
-                                </span>
+                                <pre className="text-sm text-muted-foreground">qTrib</pre>
+                                <span className="text-sm font-medium">{nfeData.prod.qTrib}</span>
                               </div>
                               <div className="flex justify-between">
-                                <pre className="text-sm text-muted-foreground">
-                                  uTrib
-                                </pre>
-                                <span className="text-sm font-medium">
-                                  {nfeData.prod.uTrib}
-                                </span>
+                                <pre className="text-sm text-muted-foreground">uTrib</pre>
+                                <span className="text-sm font-medium">{nfeData.prod.uTrib}</span>
                               </div>
                               <div className="flex justify-between">
-                                <pre className="text-sm text-muted-foreground">
-                                  vProd
-                                </pre>
+                                <pre className="text-sm text-muted-foreground">vProd</pre>
                                 <span className="text-sm font-medium">
                                   {nfeData.prod.vProd.toFixed(2)}
                                 </span>
@@ -222,19 +172,13 @@ function ProductDiffItem({
         </div>
 
         <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            NFe
-          </p>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">NFe</p>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="rounded bg-muted/25 px-2 py-1">
               <span className="text-muted-foreground">Qntd: </span>
               <span className="font-medium">{qntdReceived}</span>
               {qntdDiff !== 0 && (
-                <span
-                  className={
-                    qntdDiff > 0 ? "text-green-600 ml-1" : "text-danger ml-1"
-                  }
-                >
+                <span className={qntdDiff > 0 ? "text-green-600 ml-1" : "text-danger ml-1"}>
                   ({qntdDiff > 0 ? "+" : ""}
                   {qntdDiff})
                 </span>
@@ -244,11 +188,7 @@ function ProductDiffItem({
               <span className="text-muted-foreground">Peso: </span>
               <span className="font-medium">{pesoReceived.toFixed(4)}</span>
               {pesoDiff !== 0 && (
-                <span
-                  className={
-                    pesoDiff > 0 ? "text-green-600 ml-1" : "text-danger ml-1"
-                  }
-                >
+                <span className={pesoDiff > 0 ? "text-green-600 ml-1" : "text-danger ml-1"}>
                   ({pesoDiff > 0 ? "+" : ""}
                   {pesoDiff.toFixed(4)})
                 </span>
@@ -264,7 +204,7 @@ function ProductDiffItem({
 function ProductSameItem({
   name,
   values,
-  raw
+  raw,
 }: {
   name: string;
   values: [number, number, number][];
@@ -277,7 +217,7 @@ function ProductSameItem({
           <AlertCircle className="size-5 text-accent shrink-0" />
           <h4 className="font-medium text-balance">{name}</h4>
         </div>
-        
+
         <Modal>
           <Button size="sm" variant="ghost" onClick={() => console.log()}>
             Abrir NF
@@ -308,46 +248,28 @@ function ProductSameItem({
                             <div className="space-y-2">
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="flex justify-between">
-                                  <pre className="text-sm text-muted-foreground">
-                                    cProd
-                                  </pre>
-                                  <span className="text-sm font-medium">
-                                    {nfeData.prod.cProd}
-                                  </span>
+                                  <pre className="text-sm text-muted-foreground">cProd</pre>
+                                  <span className="text-sm font-medium">{nfeData.prod.cProd}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                  <pre className="text-sm text-muted-foreground">
-                                    cEANTrib
-                                  </pre>
+                                  <pre className="text-sm text-muted-foreground">cEANTrib</pre>
                                   <span className="text-sm font-medium">
                                     {nfeData.prod.cEANTrib}
                                   </span>
                                 </div>
                               </div>
                               <div>
-                                <pre className="text-sm text-muted-foreground">
-                                  xProd
-                                </pre>
-                                <p className="text-sm font-medium mt-1">
-                                  {nfeData.prod.xProd}
-                                </p>
+                                <pre className="text-sm text-muted-foreground">xProd</pre>
+                                <p className="text-sm font-medium mt-1">{nfeData.prod.xProd}</p>
                               </div>
                               <div className="grid grid-cols-2 gap-4 pt-2">
                                 <div className="flex justify-between">
-                                  <span className="text-sm text-muted-foreground">
-                                    NCM
-                                  </span>
-                                  <span className="text-sm font-medium">
-                                    {nfeData.prod.NCM}
-                                  </span>
+                                  <span className="text-sm text-muted-foreground">NCM</span>
+                                  <span className="text-sm font-medium">{nfeData.prod.NCM}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                  <span className="text-sm text-muted-foreground">
-                                    CFOP
-                                  </span>
-                                  <span className="text-sm font-medium">
-                                    {nfeData.prod.CFOP}
-                                  </span>
+                                  <span className="text-sm text-muted-foreground">CFOP</span>
+                                  <span className="text-sm font-medium">{nfeData.prod.CFOP}</span>
                                 </div>
                               </div>
                             </div>
@@ -362,49 +284,29 @@ function ProductSameItem({
                             </h3>
                             <div className="grid grid-cols-2 gap-4">
                               <div className="flex justify-between">
-                                <pre className="text-sm text-muted-foreground">
-                                  nItemPed
-                                </pre>
-                                <span className="text-sm font-medium">
-                                  {nfeData.prod.nItemPed}
-                                </span>
+                                <pre className="text-sm text-muted-foreground">nItemPed</pre>
+                                <span className="text-sm font-medium">{nfeData.prod.nItemPed}</span>
                               </div>
                               <div className="flex justify-between">
-                                <pre className="text-sm text-muted-foreground">
-                                  uCom
-                                </pre>
-                                <span className="text-sm font-medium">
-                                  {nfeData.prod.uCom}
-                                </span>
+                                <pre className="text-sm text-muted-foreground">uCom</pre>
+                                <span className="text-sm font-medium">{nfeData.prod.uCom}</span>
                               </div>
                               <div className="flex justify-between">
-                                <pre className="text-sm text-muted-foreground">
-                                  vUnCom
-                                </pre>
+                                <pre className="text-sm text-muted-foreground">vUnCom</pre>
                                 <span className="text-sm font-medium">
                                   {nfeData.prod.vUnCom.toFixed(4)}
                                 </span>
                               </div>
                               <div className="flex justify-between">
-                                <pre className="text-sm text-muted-foreground">
-                                  qTrib
-                                </pre>
-                                <span className="text-sm font-medium">
-                                  {nfeData.prod.qTrib}
-                                </span>
+                                <pre className="text-sm text-muted-foreground">qTrib</pre>
+                                <span className="text-sm font-medium">{nfeData.prod.qTrib}</span>
                               </div>
                               <div className="flex justify-between">
-                                <pre className="text-sm text-muted-foreground">
-                                  uTrib
-                                </pre>
-                                <span className="text-sm font-medium">
-                                  {nfeData.prod.uTrib}
-                                </span>
+                                <pre className="text-sm text-muted-foreground">uTrib</pre>
+                                <span className="text-sm font-medium">{nfeData.prod.uTrib}</span>
                               </div>
                               <div className="flex justify-between">
-                                <pre className="text-sm text-muted-foreground">
-                                  vProd
-                                </pre>
+                                <pre className="text-sm text-muted-foreground">vProd</pre>
                                 <span className="text-sm font-medium">
                                   {nfeData.prod.vProd.toFixed(2)}
                                 </span>
@@ -480,9 +382,7 @@ function ProductEqItem({
 }
 
 export function ResultsList({ results }: ResultsListProps) {
-  const same_sku = Object.values(results.same_sku).filter(
-    (v) => v?.length > 1,
-  ).length;
+  const same_sku = Object.values(results.same_sku).filter((v) => v?.length > 1).length;
   const [isEqOpen, setIsEqOpen] = useState(false);
   const [isDiffOpen, setIsDiffOpen] = useState(same_sku === 0);
   const [isSameOpen, setIsSameOpen] = useState(same_sku > 0);
@@ -509,9 +409,7 @@ export function ResultsList({ results }: ResultsListProps) {
         <Card>
           <Card.Content className="pt-6">
             <div className="text-center">
-              <p className="text-3xl font-bold text-danger">
-                {diffEntries.length}
-              </p>
+              <p className="text-3xl font-bold text-danger">{diffEntries.length}</p>
               <p className="text-sm text-muted-foreground">Divergentes</p>
             </div>
           </Card.Content>
@@ -519,9 +417,7 @@ export function ResultsList({ results }: ResultsListProps) {
         <Card>
           <Card.Content className="pt-6">
             <div className="text-center">
-              <p className="text-3xl font-bold text-green-600">
-                {eqEntries.length}
-              </p>
+              <p className="text-3xl font-bold text-green-600">{eqEntries.length}</p>
               <p className="text-sm text-muted-foreground">Iguais</p>
             </div>
           </Card.Content>
@@ -530,9 +426,7 @@ export function ResultsList({ results }: ResultsListProps) {
           <Card.Content className="pt-6">
             <div className="text-center">
               <p className="text-3xl font-bold text-accent">{same_sku}</p>
-              <p className="text-sm text-muted-foreground">
-                Itens repetidos na NFe
-              </p>
+              <p className="text-sm text-muted-foreground">Itens repetidos na NFe</p>
             </div>
           </Card.Content>
         </Card>
@@ -549,9 +443,7 @@ export function ResultsList({ results }: ResultsListProps) {
                     <AlertCircle className="size-5 text-accent" />
                     Produtos repetidos na NFe
                   </Card.Title>
-                  <Card.Description>
-                    Nota apresenta {same_sku} itens repetidos
-                  </Card.Description>
+                  <Card.Description>Nota apresenta {same_sku} itens repetidos</Card.Description>
                 </div>
                 <Disclosure.Heading>
                   <Button slot="trigger" variant="ghost" size="sm">
@@ -592,10 +484,8 @@ export function ResultsList({ results }: ResultsListProps) {
                   </Card.Title>
                   <Card.Description>
                     {diffEntries.length}{" "}
-                    {diffEntries.length === 1
-                      ? "item apresenta"
-                      : "itens apresentam"}{" "}
-                    diferença entre os arquivos
+                    {diffEntries.length === 1 ? "item apresenta" : "itens apresentam"} diferença
+                    entre os arquivos
                   </Card.Description>
                 </div>
                 <Disclosure.Heading>
@@ -634,8 +524,7 @@ export function ResultsList({ results }: ResultsListProps) {
                     Itens iguais
                   </Card.Title>
                   <Card.Description>
-                    {eqEntries.length}{" "}
-                    {eqEntries.length === 1 ? "item está" : "itens estão"} em
+                    {eqEntries.length} {eqEntries.length === 1 ? "item está" : "itens estão"} em
                     conformidade
                   </Card.Description>
                 </div>
@@ -650,11 +539,7 @@ export function ResultsList({ results }: ResultsListProps) {
             <Disclosure.Content>
               <Card.Content className="space-y-2">
                 {eqEntries.map(([name, values]) => (
-                  <ProductEqItem
-                    key={`${name}/${values.toString()}`}
-                    name={name}
-                    values={values}
-                  />
+                  <ProductEqItem key={`${name}/${values.toString()}`} name={name} values={values} />
                 ))}
               </Card.Content>
             </Disclosure.Content>
