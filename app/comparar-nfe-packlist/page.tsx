@@ -1,63 +1,61 @@
-'use client'
+"use client";
 
-import { useState, useCallback } from 'react'
-import { FileUploader } from '@/components/file-uploader'
-import { ResultsList } from '@/components/results-list'
-import { Card, Spinner, Button } from '@heroui/react'
-import { parseXlsx, parseXml, compareFiles } from '@/lib/compare-files'
-import type { ComparisonResult } from '@/lib/types'
-import { ArrowRight, FileSearch, RotateCcw } from 'lucide-react'
+import { Button, Card, Spinner } from "@heroui/react";
+import { ArrowRight, FileSearch, RotateCcw } from "lucide-react";
+import { useCallback, useState } from "react";
+import { FileUploader } from "@/components/file-uploader";
+import { ResultsList } from "@/components/results-list";
+import { compareFiles, parseXlsx, parseXml } from "@/lib/compare-files";
+import type { ComparisonResult } from "@/lib/types";
 
 export default function Dashboard() {
-  const [xlsxFile, setXlsxFile] = useState<File | null>(null)
-  const [xmlFile, setXmlFile] = useState<File | null>(null)
-  const [results, setResults] = useState<ComparisonResult | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [xlsxFile, setXlsxFile] = useState<File | null>(null);
+  const [xmlFile, setXmlFile] = useState<File | null>(null);
+  const [results, setResults] = useState<ComparisonResult | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleCompare = useCallback(async () => {
-    if (!xlsxFile || !xmlFile) return
+    if (!xlsxFile || !xmlFile) return;
 
-    setIsProcessing(true)
-    setError(null)
+    setIsProcessing(true);
+    setError(null);
 
     try {
       // Processa o arquivo XLSX
-      const xlsxBuffer = await xlsxFile.arrayBuffer()
-      const xlsxData = await parseXlsx(xlsxBuffer)
+      const xlsxBuffer = await xlsxFile.arrayBuffer();
+      const xlsxData = await parseXlsx(xlsxBuffer);
 
       // Processa o arquivo XML
-      const xmlText = await xmlFile.text()
-      const xmlData = parseXml(xmlText)
+      const xmlText = await xmlFile.text();
+      const xmlData = parseXml(xmlText);
 
       // Compara os dados
-      const comparisonResult = compareFiles(xlsxData, xmlData)
-      setResults(comparisonResult)
+      const comparisonResult = compareFiles(xlsxData, xmlData);
+      setResults(comparisonResult);
     } catch (err) {
-      console.error('[v0] Erro ao processar arquivos:', err)
-      setError('Erro ao processar os arquivos. Verifique se os formatos estão corretos.')
+      console.error("[v0] Erro ao processar arquivos:", err);
+      setError("Erro ao processar os arquivos. Verifique se os formatos estão corretos.");
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }, [xlsxFile, xmlFile])
+  }, [xlsxFile, xmlFile]);
 
   const handleReset = useCallback(() => {
-    setXlsxFile(null)
-    setXmlFile(null)
-    setResults(null)
-    setError(null)
-  }, [])
+    setXlsxFile(null);
+    setXmlFile(null);
+    setResults(null);
+    setError(null);
+  }, []);
 
-  const canCompare = xlsxFile && xmlFile && !isProcessing
+  const canCompare = xlsxFile && xmlFile && !isProcessing;
 
   return (
     <main className="min-h-screen bg-background">
       <div className="container mx-auto max-w-4xl px-4 py-8">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-balance">
-            Comparador de Arquivos
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight text-balance">Comparador de Arquivos</h1>
           <p className="mt-2 text-muted-foreground text-pretty">
             Compare arquivos XLSX e XML para identificar divergências de produtos
           </p>
@@ -73,7 +71,8 @@ export default function Dashboard() {
                   Upload de Arquivos
                 </Card.Title>
                 <Card.Description>
-                  Selecione um arquivo Excel (.xlsx) com os dados esperados e um arquivo XML com os dados recebidos
+                  Selecione um arquivo Excel (.xlsx) com os dados esperados e um arquivo XML com os
+                  dados recebidos
                 </Card.Description>
               </Card.Header>
               <Card.Content>
@@ -145,5 +144,5 @@ export default function Dashboard() {
         )}
       </div>
     </main>
-  )
+  );
 }

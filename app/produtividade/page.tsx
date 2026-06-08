@@ -1,7 +1,7 @@
 "use client";
 
-import { ArchiveRestoreIcon, ScanBarcodeIcon } from "lucide-react";
 import { Card, Chip, Link, Separator } from "@heroui/react";
+import { ArchiveRestoreIcon, ScanBarcodeIcon } from "lucide-react";
 
 export default function Default() {
   return (
@@ -18,10 +18,7 @@ export default function Default() {
             <Card.Description></Card.Description>
           </Card.Header>
           <Card.Footer>
-            <Link
-              aria-label="Ver relatório de conferência"
-              href="/produtividade/conferencia"
-            >
+            <Link aria-label="Ver relatório de conferência" href="/produtividade/conferencia">
               Ver relatório
               <Link.Icon aria-hidden="true" />
             </Link>
@@ -46,11 +43,7 @@ export default function Default() {
             <Card.Description></Card.Description>
           </Card.Header>
           <Card.Footer>
-            <Link
-              aria-label="Ver relatório de picking"
-              href="/produtividade/picking"
-              isDisabled
-            >
+            <Link aria-label="Ver relatório de picking" href="/produtividade/picking" isDisabled>
               Ver relatório
               <Link.Icon aria-hidden="true" />
             </Link>

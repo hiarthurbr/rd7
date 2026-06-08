@@ -1,38 +1,37 @@
 "use client";
-import { getToken } from "@/lib/pda";
-import { cn, fmt_date } from "@/lib/utils";
 import {
-  ProgressCircle,
-  Tabs,
-  Table,
-  DatePicker,
-  Label,
-  DateField,
-  Calendar,
-  TimeField,
-  TimeValue,
-  EmptyState,
-  ProgressBar,
-  SortDescriptor,
-  Pagination,
   Button,
+  Calendar,
+  DateField,
+  DatePicker,
+  EmptyState,
+  Label,
+  Pagination,
+  ProgressBar,
+  type SortDescriptor,
   Spinner,
+  Table,
+  Tabs,
+  TimeField,
+  type TimeValue,
 } from "@heroui/react";
 import { fromDate } from "@internationalized/date";
-import { useQuery, QueryClient } from "@tanstack/react-query";
-import { ChevronUpIcon, InboxIcon, RefreshCwIcon } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { QueryClient, useQuery } from "@tanstack/react-query";
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  useReactTable,
   type SortingState,
+  useReactTable,
 } from "@tanstack/react-table";
+import { ChevronUpIcon, InboxIcon, RefreshCwIcon } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import z from "zod";
+import { getToken } from "@/lib/pda";
 import { recebimento_schema } from "@/lib/schemas";
+import { cn, fmt_date } from "@/lib/utils";
 
 const timeRangeEnum = z.enum({
   Day: 1,
@@ -83,9 +82,7 @@ const columns = [
                   <Calendar.GridHeader>
                     {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
                   </Calendar.GridHeader>
-                  <Calendar.GridBody>
-                    {(date) => <Calendar.Cell date={date} />}
-                  </Calendar.GridBody>
+                  <Calendar.GridBody>{(date) => <Calendar.Cell date={date} />}</Calendar.GridBody>
                 </Calendar.Grid>
                 <Calendar.YearPickerGrid>
                   <Calendar.YearPickerGridBody>
@@ -126,34 +123,29 @@ const columns = [
     header: "Armazenagem pendente",
     sortingFn: "basic",
   }),
-  columnHelper.accessor(
-    (row) => [row.quantidadeArmazenada, row.quantidadeRecebido] as const,
-    {
-      cell: (info) => (
-        <ProgressBar
-          aria-label="Progresso"
-          className="w-full"
-          maxValue={info.getValue()[1]}
-          minValue={0}
-          value={info.getValue()[0]}
-        >
-          <Label>
-            Progresso ({info.getValue()[0]} / {info.getValue()[1]})
-          </Label>
-          <ProgressBar.Output />
-          <ProgressBar.Track>
-            <ProgressBar.Fill />
-          </ProgressBar.Track>
-        </ProgressBar>
-      ),
-      header: "Status",
-      sortingFn: (a, b, id) =>
-        (a.getValue(id) as [number, number])[0] /
-          (a.getValue(id) as [number, number])[1] -
-        (b.getValue(id) as [number, number])[0] /
-          (b.getValue(id) as [number, number])[1],
-    },
-  ),
+  columnHelper.accessor((row) => [row.quantidadeArmazenada, row.quantidadeRecebido] as const, {
+    cell: (info) => (
+      <ProgressBar
+        aria-label="Progresso"
+        className="w-full"
+        maxValue={info.getValue()[1]}
+        minValue={0}
+        value={info.getValue()[0]}
+      >
+        <Label>
+          Progresso ({info.getValue()[0]} / {info.getValue()[1]})
+        </Label>
+        <ProgressBar.Output />
+        <ProgressBar.Track>
+          <ProgressBar.Fill />
+        </ProgressBar.Track>
+      </ProgressBar>
+    ),
+    header: "Status",
+    sortingFn: (a, b, id) =>
+      (a.getValue(id) as [number, number])[0] / (a.getValue(id) as [number, number])[1] -
+      (b.getValue(id) as [number, number])[0] / (b.getValue(id) as [number, number])[1],
+  }),
 ];
 
 function toSortDescriptor(sorting: SortingState): SortDescriptor | undefined {
@@ -200,9 +192,7 @@ const PAGE_SIZE = 13;
 
 export default function Page() {
   const queryClient = useMemo(() => new QueryClient(), []);
-  const [timeRange, setTimeRange] = useState<z.infer<typeof timeRangeEnum>>(
-    timeRangeEnum.enum.Day,
-  );
+  const [timeRange, setTimeRange] = useState<z.infer<typeof timeRangeEnum>>(timeRangeEnum.enum.Day);
 
   const { data, isLoading, isFetching } = useQuery(
     {
@@ -225,9 +215,7 @@ export default function Page() {
             tipoPedido: null,
             usuarioRecebimento: null,
             usuarioArmazenagem: null,
-            dataInicio: fmt_date(
-              new Date(Date.now() - 1000 * 60 * 60 * 24 * timeRange),
-            ),
+            dataInicio: fmt_date(new Date(Date.now() - 1000 * 60 * 60 * 24 * timeRange)),
             dataFim: fmt_date(new Date()),
           }),
           method: "PATCH",
@@ -250,6 +238,7 @@ export default function Page() {
     queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
   }, [queryClient]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Atualizar query quando mudarmos o `timeRange`
   useEffect(() => {
     refresh();
   }, [timeRange, refresh]);
@@ -283,8 +272,7 @@ export default function Page() {
     for (let i = 1; i <= pageCount; i++) {
       const isFirstPage = i === 1;
       const isLastPage = i === pageCount;
-      const isWithinRange =
-        i >= pageIndex - neighbors && i <= pageIndex + neighbors;
+      const isWithinRange = i >= pageIndex - neighbors && i <= pageIndex + neighbors;
 
       if (isFirstPage || isLastPage || isWithinRange) {
         items.push(i);
@@ -302,7 +290,12 @@ export default function Page() {
     () =>
       pageNumbers.map((p, i) =>
         p === "ellipsis" ? (
-          <Pagination.Item key={`ellipsis-${i}`}>
+          <Pagination.Item
+            key={`ellipsis-${
+              // biome-ignore lint/suspicious/noArrayIndexKey: usar o index aqui não é um problema, já que a unica informação aparente é justamente o index
+              i
+            }`}
+          >
             <Pagination.Ellipsis />
           </Pagination.Item>
         ) : (
@@ -317,7 +310,7 @@ export default function Page() {
           </Pagination.Item>
         ),
       ),
-    [pageCount, pageIndex, table, pageNumbers],
+    [pageIndex, table, pageNumbers],
   );
 
   return (
@@ -326,15 +319,11 @@ export default function Page() {
         {/* Header */}
         <Tabs
           className="w-md justify-self-start place-self-start pt-4"
-          selectedKey={
-            timeRange === 1 ? "Day" : timeRange === 7 ? "Week" : "Month"
-          }
+          selectedKey={timeRange === 1 ? "Day" : timeRange === 7 ? "Week" : "Month"}
           onSelectionChange={(key) =>
             setTimeRange(
               timeRangeEnum.parse(
-                timeRangeEnum.enum[
-                  key as unknown as keyof typeof timeRangeEnum.enum
-                ],
+                timeRangeEnum.enum[key as unknown as keyof typeof timeRangeEnum.enum],
               ),
             )
           }
@@ -357,9 +346,7 @@ export default function Page() {
           </Tabs.ListContainer>
         </Tabs>
         <div className="mb-8 text-center flex flex-col">
-          <h1 className="text-3xl font-bold tracking-tight text-balance">
-            Armazenagens pendentes
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight text-balance">Armazenagens pendentes</h1>
           <p className="mt-2 text-muted-foreground text-pretty">
             Lista de notas com pendencias/divergências na armazenagem
           </p>
@@ -371,11 +358,7 @@ export default function Page() {
         >
           {({ isPending }) => (
             <>
-              {isPending ? (
-                <Spinner color="current" size="sm" />
-              ) : (
-                <RefreshCwIcon />
-              )}
+              {isPending ? <Spinner color="current" size="sm" /> : <RefreshCwIcon />}
               {isPending ? "Atualizando..." : "Atualizar"}
             </>
           )}
@@ -391,7 +374,7 @@ export default function Page() {
               onSortChange={(d) => setSorting(toSortingState(d))}
             >
               <Table.Header className="h-fit w-full">
-                {table.getHeaderGroups()[0]!.headers.map((header) => (
+                {table.getHeaderGroups()[0]?.headers.map((header) => (
                   <Table.Column
                     key={header.id}
                     className="h-fit"
@@ -401,10 +384,7 @@ export default function Page() {
                   >
                     {({ sortDirection }) => (
                       <SortableColumnHeader sortDirection={sortDirection}>
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
+                        {flexRender(header.column.columnDef.header, header.getContext())}
                       </SortableColumnHeader>
                     )}
                   </Table.Column>
@@ -415,9 +395,7 @@ export default function Page() {
                 renderEmptyState={() => (
                   <EmptyState className="flex h-full w-full flex-col items-center justify-center gap-4 text-center">
                     <InboxIcon className="size-6 stroke-muted" />
-                    <span className="text-sm text-muted">
-                      Nenhum resultado encontrado
-                    </span>
+                    <span className="text-sm text-muted">Nenhum resultado encontrado</span>
                   </EmptyState>
                 )}
               >
@@ -425,10 +403,7 @@ export default function Page() {
                   <Table.Row key={row.id} id={row.id} className="*:h-10 h-10">
                     {row.getVisibleCells().map((cell) => (
                       <Table.Cell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </Table.Cell>
                     ))}
                   </Table.Row>

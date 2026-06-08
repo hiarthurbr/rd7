@@ -1,76 +1,66 @@
-"use client"
+"use client";
 
-import { useMemo, useState } from "react"
+import { Card, Label, ListBox, Select } from "@heroui/react";
+import { useMemo, useState } from "react";
 import {
-  Select, Card, 
-  Label,
-  ListBox} from "@heroui/react"
-import {
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts"
-import { per_user_schema } from "./page"
-import z from "zod"
+} from "recharts";
+import type z from "zod";
+import type { per_user_schema } from "./page";
 
-const COLORS = ["#0d9488", "#14b8a6", "#2dd4bf", "#5eead4", "#99f6e4"]
+const COLORS = ["#0d9488", "#14b8a6", "#2dd4bf", "#5eead4", "#99f6e4"];
 
-export function UserDashboard({
-  data,
-}: {
-  data: z.infer<typeof per_user_schema>;
-}) {
+export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> }) {
   const userNames = useMemo(() => Object.keys(data), [data]);
-  const [selectedUser, setSelectedUser] = useState(userNames[0])
-  const userData = data[selectedUser]
+  const [selectedUser, setSelectedUser] = useState(userNames[0]);
+  const userData = data[selectedUser];
 
   const hourlyData = Object.entries(userData.por_hora)
     .map(([hour, data]) => ({
       hour: `${hour}h`,
       embalagens: data.total_embalagens,
     }))
-    .filter((item) => item.embalagens > 0)
+    .filter((item) => item.embalagens > 0);
 
   const metricsData = [
     { name: "Pedidos/Hora", value: userData.pedidos_por_hora },
     { name: "Caixas/Hora", value: userData.caixas_por_hora },
-  ]
+  ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <label className="text-sm font-medium text-muted-foreground">
-          Selecionar Usuario:
-        </label>
-          <Select
-            className="w-[256px]"
-            placeholder="Select a state"
-            value={selectedUser}
-            onChange={(value) => setSelectedUser(value as string)}
-          >
-            <Label>Usuário 1</Label>
-            <Select.Trigger>
-              <Select.Value />
-              <Select.Indicator />
-            </Select.Trigger>
-            <Select.Popover>
-              <ListBox>
-                {userNames.map((name) => (
-                  <ListBox.Item key={name} id={name} textValue={name}>
-                    {name}
-                    <ListBox.ItemIndicator />
-                  </ListBox.Item>
-                ))}
-              </ListBox>
-            </Select.Popover>
-          </Select>
+        <Select
+          className="w-[256px]"
+          placeholder="Selecionar Usuario:"
+          value={selectedUser}
+          onChange={(value) => setSelectedUser(value as string)}
+        >
+          <Label>Usuário</Label>
+          <Select.Trigger>
+            <Select.Value />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              {userNames.map((name) => (
+                <ListBox.Item key={name} id={name} textValue={name}>
+                  {name}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              ))}
+            </ListBox>
+          </Select.Popover>
+        </Select>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -100,14 +90,10 @@ export function UserDashboard({
         </Card>
         <Card>
           <Card.Header className="pb-2">
-            <Card.Title className="text-sm font-medium text-muted-foreground">
-              Duracao
-            </Card.Title>
+            <Card.Title className="text-sm font-medium text-muted-foreground">Duracao</Card.Title>
           </Card.Header>
           <Card.Content>
-            <div className="text-2xl font-bold text-teal-600">
-              {userData.duração}
-            </div>
+            <div className="text-2xl font-bold text-teal-600">{userData.duração}</div>
           </Card.Content>
         </Card>
       </div>
@@ -131,11 +117,7 @@ export function UserDashboard({
                       borderRadius: "8px",
                     }}
                   />
-                  <Bar
-                    dataKey="embalagens"
-                    fill="#0d9488"
-                    radius={[4, 4, 0, 0]}
-                  />
+                  <Bar dataKey="embalagens" fill="#0d9488" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -162,7 +144,10 @@ export function UserDashboard({
                   >
                     {metricsData.map((_, index) => (
                       <Cell
-                        key={`cell-${index}`}
+                        key={`cell-${
+                          // biome-ignore lint/suspicious/noArrayIndexKey: usar o index não é um problema, já que é a única informação que temos
+                          index
+                        }`}
                         fill={COLORS[index % COLORS.length]}
                       />
                     ))}
@@ -181,5 +166,5 @@ export function UserDashboard({
         </Card>
       </div>
     </div>
-  )
+  );
 }

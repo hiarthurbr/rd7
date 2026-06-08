@@ -1,11 +1,11 @@
 "use client";
-import { FileUploader } from "@/components/file-uploader";
 import { Button, Card, Disclosure, Spinner } from "@heroui/react";
+import Dexie, { type Table } from "dexie";
 import excel from "exceljs";
 import { DatabaseIcon, HardDriveUploadIcon } from "lucide-react";
 import { useMemo, useState } from "react";
-import Dexie, { type Table } from "dexie";
 import z from "zod";
+import { FileUploader } from "@/components/file-uploader";
 import { departamento_enum, excel_cell_value_schema, motivo_devolução_enum } from "@/lib/schemas";
 
 const DevolucaoSchema = z.codec(
@@ -32,12 +32,8 @@ const DevolucaoSchema = z.codec(
     ),
     observações: z.string(),
     valor_descarte: z.number().positive().or(z.null()).catch(null),
-    separador: z
-      .string()
-      .transform((str) => (str === "-" ? null : str.split("/"))),
-    conferente: z
-      .string()
-      .transform((str) => (str === "-" ? null : str.split("/"))),
+    separador: z.string().transform((str) => (str === "-" ? null : str.split("/"))),
+    conferente: z.string().transform((str) => (str === "-" ? null : str.split("/"))),
     notas_fiscais_origem: z.preprocess((cell) => {
       switch (typeof cell) {
         case "number":
@@ -89,8 +85,7 @@ export class Devoluções extends Dexie {
       // O primeiro campo é a chave primária (++ significa autoincremento)
       // Os campos seguintes são os índices para busca
       // Use *motivos para indexar cada item dentro do array (Multi-entry index)
-      devolucoes:
-        "++id, cliente, data_emissão, departamento, nota_fiscal_devolução, *motivos",
+      devolucoes: "++id, cliente, data_emissão, departamento, nota_fiscal_devolução, *motivos",
     });
   }
 
@@ -101,11 +96,7 @@ export class Devoluções extends Dexie {
   }
 
   buscarPorDepartamento(depto: z.infer<typeof departamento_enum>) {
-    return this.devolucoes
-      .where("departamento")
-      .equals(depto)
-      .reverse()
-      .toArray();
+    return this.devolucoes.where("departamento").equals(depto).reverse().toArray();
   }
 
   buscarPorMotivo(motivo: z.infer<typeof motivo_devolução_enum>) {
@@ -120,9 +111,7 @@ export async function parseXlsx(file: File) {
 
   console.log({ worksheets: workbook.worksheets });
 
-  const worksheet = workbook.worksheets
-    .filter((w) => w.state === "visible")
-    .pop()!;
+  const worksheet = workbook.worksheets.filter((w) => w.state === "visible").pop()!;
 
   console.log({ worksheet });
 
@@ -144,12 +133,9 @@ export default function Page() {
       <div className="container mx-auto max-w-4xl px-4 py-8 flex flex-col items-center">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-balance">
-            Comparador de Arquivos
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight text-balance">Comparador de Arquivos</h1>
           <p className="mt-2 text-muted-foreground text-pretty">
-            Compare arquivos XLSX e XML para identificar divergências de
-            produtos
+            Compare arquivos XLSX e XML para identificar divergências de produtos
           </p>
         </div>
 

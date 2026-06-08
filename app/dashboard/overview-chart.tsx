@@ -1,24 +1,24 @@
-"use client"
+"use client";
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
-import { motion } from "framer-motion"
-import z from "zod"
-import { etapa_schema } from "@/lib/schemas"
+import { motion } from "framer-motion";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import type z from "zod";
+import type { etapa_schema } from "@/lib/schemas";
 
 const COLORS = [
   "oklch(.704 .04 256.788)",
   "oklch(.627 .265 303.9)",
   "oklch(.795 .184 86.047)",
   "oklch(.768 .233 130.85)",
-]
+];
 
-export function OverviewChart({ data }: { data: Array<z.infer<typeof etapa_schema>>}) {
+export function OverviewChart({ data }: { data: Array<z.infer<typeof etapa_schema>> }) {
   const chartData = data.map((item, index) => ({
     name: item.etapa,
     value: item.valorTotal,
     progress: item.progressoGeralEtapa,
     color: COLORS[index % COLORS.length],
-  }))
+  }));
 
   return (
     <motion.div
@@ -43,13 +43,19 @@ export function OverviewChart({ data }: { data: Array<z.infer<typeof etapa_schem
             animationEasing="ease-out"
           >
             {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
+              <Cell
+                key={`cell-${
+                  // biome-ignore lint/suspicious/noArrayIndexKey: as outras informaçoes do entry podem se repetir, o index é o unico valor unico
+                  index
+                }`}
+                fill={entry.color}
+              />
             ))}
           </Pie>
           <Tooltip
             content={({ active, payload }) => {
-              if (active && payload && payload.length) {
-                const data = payload[0].payload
+              if (active && payload?.length) {
+                const data = payload[0].payload;
                 return (
                   <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-lg">
                     <p className="text-sm font-medium text-foreground">{data.name}</p>
@@ -57,13 +63,13 @@ export function OverviewChart({ data }: { data: Array<z.infer<typeof etapa_schem
                       {data.value} itens ({data.progress})
                     </p>
                   </div>
-                )
+                );
               }
-              return null
+              return null;
             }}
           />
         </PieChart>
       </ResponsiveContainer>
     </motion.div>
-  )
+  );
 }

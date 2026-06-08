@@ -1,8 +1,8 @@
 "use client";
 
 import { Table } from "@heroui/react";
-import { per_user_schema } from "./page";
-import z from "zod";
+import type z from "zod";
+import type { per_user_schema } from "./page";
 
 export function formatTime(date: Date): string {
   return date.toLocaleTimeString("pt-BR", {
@@ -11,11 +11,7 @@ export function formatTime(date: Date): string {
   });
 }
 
-export function UsersTable({
-  data,
-}: {
-  data: z.infer<typeof per_user_schema>;
-}) {
+export function UsersTable({ data }: { data: z.infer<typeof per_user_schema> }) {
   const users = Object.entries(data);
 
   return (
@@ -24,7 +20,9 @@ export function UsersTable({
         <Table.ScrollContainer>
           <Table.Content aria-label="Team members" className="min-w-150">
             <Table.Header>
-              <Table.Column className="font-semibold" isRowHeader>Nome</Table.Column>
+              <Table.Column className="font-semibold" isRowHeader>
+                Nome
+              </Table.Column>
               <Table.Column className="text-right font-semibold" isRowHeader>
                 Total Embalagens
               </Table.Column>
@@ -37,9 +35,15 @@ export function UsersTable({
               <Table.Column className="text-right font-semibold" isRowHeader>
                 Embalagens/Hora
               </Table.Column>
-              <Table.Column className="font-semibold" isRowHeader>Hora Inicio</Table.Column>
-              <Table.Column className="font-semibold" isRowHeader>Hora Fim</Table.Column>
-              <Table.Column className="font-semibold" isRowHeader>Duracao</Table.Column>
+              <Table.Column className="font-semibold" isRowHeader>
+                Hora Inicio
+              </Table.Column>
+              <Table.Column className="font-semibold" isRowHeader>
+                Hora Fim
+              </Table.Column>
+              <Table.Column className="font-semibold" isRowHeader>
+                Duracao
+              </Table.Column>
             </Table.Header>
             <Table.Body>
               {users.map(([name, data]) => (

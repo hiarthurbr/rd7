@@ -1,5 +1,5 @@
-import z from "zod";
 import { uuidv7 } from "uuidv7";
+import z from "zod";
 import { produto_titanium_schema, status_proposta_pda_schema } from "./schemas";
 import { fmt_date } from "./utils";
 
@@ -34,17 +34,14 @@ export async function getDisponivel(item: string) {
 }
 
 export async function getPropostas() {
-  return fetch(
-    "https://api-erp.rainhadassete.com.br/api/expedicao/propostas-status-pda",
-    {
-      headers: {
-        accept: "application/json, text/plain, */*",
-      },
-      referrer: "https://rainhaerp.rainhadassete.com.br/",
-      body: null,
-      method: "GET",
+  return fetch("https://api-erp.rainhadassete.com.br/api/expedicao/propostas-status-pda", {
+    headers: {
+      accept: "application/json, text/plain, */*",
     },
-  )
+    referrer: "https://rainhaerp.rainhadassete.com.br/",
+    body: null,
+    method: "GET",
+  })
     .then((r) => r.json())
     .then(status_proposta_pda_schema.array().parseAsync);
 }
@@ -86,6 +83,7 @@ export async function getVendaPerdida() {
       body: null,
       method: "GET",
     },
-  ).then((r) => r.json()).then(schema.parseAsync);
+  )
+    .then((r) => r.json())
+    .then(schema.parseAsync);
 }
-

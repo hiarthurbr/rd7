@@ -1,13 +1,12 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { useMemo } from "react"
-import z from "zod"
-import { etapa_schema } from "@/lib/schemas"
-
+import { motion } from "framer-motion";
+import { useMemo } from "react";
+import type z from "zod";
+import type { etapa_schema } from "@/lib/schemas";
 
 interface DynamicBackgroundProps {
-  etapas: z.infer<typeof etapa_schema>[]
+  etapas: z.infer<typeof etapa_schema>[];
 }
 
 const etapaColorValues: Record<string, { r: number; g: number; b: number }> = {
@@ -15,29 +14,25 @@ const etapaColorValues: Record<string, { r: number; g: number; b: number }> = {
   Picking: { r: 234, g: 179, b: 8 },
   Conferência: { r: 16, g: 185, b: 129 },
   Expedição: { r: 20, g: 184, b: 166 },
-}
-
-function parsePercentage(value: string): number {
-  return parseFloat(value.replace(",", ".").replace("%", "")) || 0
-}
+};
 
 export function DynamicBackground({ etapas }: DynamicBackgroundProps) {
   const blobData = useMemo(() => {
     return etapas.map((etapa, index) => {
-      const percentage = etapa.progressoGeralEtapa
-      const color = etapaColorValues[etapa.etapa] || { r: 100, g: 100, b: 100 }
-      
+      const percentage = etapa.progressoGeralEtapa;
+      const color = etapaColorValues[etapa.etapa] || { r: 100, g: 100, b: 100 };
+
       // Scale size based on percentage (min 200px, max 500px)
-      const size = Math.max(200, Math.min(500, 200 + percentage * 3))
-      
+      const size = Math.max(200, Math.min(500, 200 + percentage * 3));
+
       // Fixed positions in viewport - corners and edges
       const positions = [
         { left: "5%", top: "5%" },
         { right: "5%", top: "10%" },
         { left: "10%", bottom: "10%" },
         { right: "10%", bottom: "5%" },
-      ]
-      
+      ];
+
       return {
         etapa: etapa.etapa,
         percentage,
@@ -46,21 +41,18 @@ export function DynamicBackground({ etapas }: DynamicBackgroundProps) {
         position: positions[index % 4],
         duration: 20 + index * 5,
         delay: index * 0.3,
-      }
-    })
-  }, [etapas])
+      };
+    });
+  }, [etapas]);
 
   return (
-    <div 
-      className="pointer-events-none fixed inset-0" 
-      style={{ zIndex: 0 }}
-      aria-hidden="true"
-    >
+    <div className="pointer-events-none fixed inset-0" style={{ zIndex: 0 }} aria-hidden="true">
       {/* Base dark gradient */}
-      <div 
+      <div
         className="absolute inset-0"
         style={{
-          background: "linear-gradient(135deg, hsl(240 10% 10%) 0%, hsl(240 10% 6%) 50%, hsl(240 10% 8%) 100%)",
+          background:
+            "linear-gradient(135deg, hsl(240 10% 10%) 0%, hsl(240 10% 6%) 50%, hsl(240 10% 8%) 100%)",
         }}
       />
 
@@ -115,18 +107,21 @@ export function DynamicBackground({ etapas }: DynamicBackgroundProps) {
       />
 
       {/* Floating orbs */}
-      {[...Array(6)].map((_, i) => {
-        const colors = Object.values(etapaColorValues)
-        const color = colors[i % colors.length]
+      {Array.from({ length: 6 }).map((_, i) => {
+        const colors = Object.values(etapaColorValues);
+        const color = colors[i % colors.length];
         return (
           <motion.div
-            key={`orb-${i}`}
+            key={`orb-${
+              // biome-ignore lint/suspicious/noArrayIndexKey: usar o index não é um problema já que é a unica informação que temos
+              i
+            }`}
             className="absolute rounded-full"
             style={{
-              width: 8 + (i * 4),
-              height: 8 + (i * 4),
-              left: `${15 + (i * 14)}%`,
-              top: `${20 + (i * 10) % 60}%`,
+              width: 8 + i * 4,
+              height: 8 + i * 4,
+              left: `${15 + i * 14}%`,
+              top: `${20 + ((i * 10) % 60)}%`,
               background: `rgba(${color.r}, ${color.g}, ${color.b}, 0.6)`,
               boxShadow: `0 0 20px rgba(${color.r}, ${color.g}, ${color.b}, 0.4)`,
             }}
@@ -143,7 +138,7 @@ export function DynamicBackground({ etapas }: DynamicBackgroundProps) {
               ease: "easeInOut",
             }}
           />
-        )
+        );
       })}
 
       {/* Moving gradient waves */}
@@ -167,11 +162,7 @@ export function DynamicBackground({ etapas }: DynamicBackgroundProps) {
           backgroundSize: "200% 200%",
         }}
         animate={{
-          backgroundPosition: [
-            "0% 0%",
-            "100% 100%",
-            "0% 0%",
-          ],
+          backgroundPosition: ["0% 0%", "100% 100%", "0% 0%"],
         }}
         transition={{
           duration: 30,
@@ -181,7 +172,7 @@ export function DynamicBackground({ etapas }: DynamicBackgroundProps) {
       />
 
       {/* Subtle grid pattern */}
-      <div 
+      <div
         className="absolute inset-0"
         style={{
           backgroundImage: `
@@ -193,12 +184,12 @@ export function DynamicBackground({ etapas }: DynamicBackgroundProps) {
       />
 
       {/* Vignette */}
-      <div 
+      <div
         className="absolute inset-0"
         style={{
           background: "radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.4) 100%)",
         }}
       />
     </div>
-  )
+  );
 }

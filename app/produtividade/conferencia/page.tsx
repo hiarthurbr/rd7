@@ -1,27 +1,27 @@
 "use client";
 
+import {
+  Calendar,
+  DateField,
+  DatePicker,
+  Description,
+  Label,
+  ProgressBar,
+  Tabs,
+} from "@heroui/react";
+import { type DateValue, getLocalTimeZone, today } from "@internationalized/date";
+import { QueryClient, useQuery } from "@tanstack/react-query";
+import { Grid2x2XIcon } from "lucide-react";
+import { useMemo, useState } from "react";
+import { z } from "zod";
+import { Auth } from "@/components/auth";
 import { getToken } from "@/lib/pda";
 import { montagem_caixa_schema } from "@/lib/schemas";
 import { fmt_date } from "@/lib/utils";
-import { QueryClient, useQuery } from "@tanstack/react-query";
-import { useCallback, useMemo, useState } from "react";
 import skus from "./skus.json";
-import { Auth } from "@/components/auth";
-import {
-  Tabs,
-  DatePicker,
-  Label,
-  Calendar,
-  DateField,
-  Description,
-  ProgressBar,
-} from "@heroui/react";
-import { UsersTable } from "./users-table";
-import { UserDashboard } from "./user-dashboard";
 import { UserComparison } from "./user-comparison";
-import { z } from "zod";
-import { DateValue, getLocalTimeZone, today } from "@internationalized/date";
-import { Grid2x2XIcon } from "lucide-react";
+import { UserDashboard } from "./user-dashboard";
+import { UsersTable } from "./users-table";
 
 export const per_user_schema = z.record(
   z.string(),
@@ -72,9 +72,7 @@ async function get_relatorio_conferencia(date: Date) {
     .then(montagem_caixa_schema.array().parseAsync);
 }
 
-const horas_trabalhadas = [
-  7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-];
+const horas_trabalhadas = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
 const marcadores: Array<{
   label: string;
   momento: { hh: number; mm: number };
@@ -128,6 +126,7 @@ function Page() {
     queryClient,
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: usar o dataUpdatedAt é necessario, porque o data pode não atualizar no momento do refetch, se o resultado anterior for o mesmo
   const per_user: z.infer<typeof per_user_schema> = useMemo(
     () =>
       data == null
@@ -141,16 +140,13 @@ function Page() {
                   .filter(([, start]) => start <= now)
                   .map(([hour, start, end]) => [
                     hour,
-                    data.filter(
-                      (cx) => cx.montagem >= start && cx.montagem < end,
-                    ),
+                    data.filter((cx) => cx.montagem >= start && cx.montagem < end),
                   ]);
 
                 const total_embalagens = Object.entries(
                   data.reduce(
                     (obj, prod) => {
-                      if (prod.produto in obj)
-                        obj[prod.produto] += prod.quantidade;
+                      if (prod.produto in obj) obj[prod.produto] += prod.quantidade;
                       else obj[prod.produto] = prod.quantidade;
                       return obj;
                     },
@@ -163,19 +159,12 @@ function Page() {
                   )
                   .reduce((a, b) => a + b, 0);
 
-                const pedidos_conferidos = new Set(
-                  data.map((cx) => cx.codigoPedido),
-                );
+                const pedidos_conferidos = new Set(data.map((cx) => cx.codigoPedido));
 
-                const hora_inicio = Math.min(
-                  ...data.map((cx) => cx.montagem.getTime()),
-                );
-                const hora_fim = Math.max(
-                  ...data.map((cx) => cx.montagem.getTime()),
-                );
+                const hora_inicio = Math.min(...data.map((cx) => cx.montagem.getTime()));
+                const hora_fim = Math.max(...data.map((cx) => cx.montagem.getTime()));
 
-                const horas_conferidas =
-                  Math.abs(hora_fim - hora_inicio) / 3600000;
+                const horas_conferidas = Math.abs(hora_fim - hora_inicio) / 3600000;
 
                 const por_hora = per_hour.map(
                   ([hour, data]) =>
@@ -185,8 +174,7 @@ function Page() {
                         total_embalagens: Object.entries(
                           data.reduce(
                             (obj, prod) => {
-                              if (prod.produto in obj)
-                                obj[prod.produto] += prod.quantidade;
+                              if (prod.produto in obj) obj[prod.produto] += prod.quantidade;
                               else obj[prod.produto] = prod.quantidade;
                               return obj;
                             },
@@ -195,20 +183,16 @@ function Page() {
                         )
                           .map(
                             ([produto, quantidade]) =>
-                              quantidade /
-                              (skus[produto as keyof typeof skus] ?? 1),
+                              quantidade / (skus[produto as keyof typeof skus] ?? 1),
                           )
                           .reduce((a, b) => a + b, 0),
-                        pedidos_conferidos: new Set(
-                          data.map((cx) => cx.codigoPedido),
-                        ),
+                        pedidos_conferidos: new Set(data.map((cx) => cx.codigoPedido)),
                         caixas: new Set(data.map((cx) => cx.caixa)),
                       },
                     ] as const,
                 );
 
-                const pedidos_por_hora =
-                  pedidos_conferidos.size / horas_conferidas;
+                const pedidos_por_hora = pedidos_conferidos.size / horas_conferidas;
 
                 const caixas = new Set(data.map((cx) => cx.caixa));
 
@@ -226,10 +210,7 @@ function Page() {
                     embalagens_por_hora: total_embalagens / horas_conferidas,
                     hora_inicio: new Date(hora_inicio),
                     hora_fim: new Date(hora_fim),
-                    duração: duration(
-                      new Date(hora_inicio),
-                      new Date(hora_fim),
-                    ),
+                    duração: duration(new Date(hora_inicio), new Date(hora_fim)),
                   },
                 ];
               }),
@@ -246,9 +227,7 @@ function Page() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Painel de Produtividade
           </h1>
-          <p className="text-muted-foreground">
-            Visualize e compare o desempenho dos usuarios
-          </p>
+          <p className="text-muted-foreground">Visualize e compare o desempenho dos usuarios</p>
           <DatePicker
             name="date"
             value={date}
@@ -280,9 +259,7 @@ function Page() {
                   <Calendar.GridHeader>
                     {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
                   </Calendar.GridHeader>
-                  <Calendar.GridBody>
-                    {(date) => <Calendar.Cell date={date} />}
-                  </Calendar.GridBody>
+                  <Calendar.GridBody>{(date) => <Calendar.Cell date={date} />}</Calendar.GridBody>
                 </Calendar.Grid>
                 <Calendar.YearPickerGrid>
                   <Calendar.YearPickerGridBody>
@@ -296,12 +273,7 @@ function Page() {
 
         {isFetching ? (
           <div className="flex flex-col items-center pt-32">
-            <ProgressBar
-              size="lg"
-              isIndeterminate
-              aria-label="Loading"
-              className="w-64"
-            >
+            <ProgressBar size="lg" isIndeterminate aria-label="Loading" className="w-64">
               <Label className="mb-3.5 mt-5">Carregando dados</Label>
               <ProgressBar.Track>
                 <ProgressBar.Fill />
@@ -312,9 +284,7 @@ function Page() {
           <div className="flex flex-col items-center pt-32">
             <Grid2x2XIcon />
             <Label className="mb-3.5 mt-5">Nenhum dado encontrado</Label>
-            <Description className="mb-8">
-              Selecione outra data no seletor acima
-            </Description>
+            <Description className="mb-8">Selecione outra data no seletor acima</Description>
           </div>
         ) : (
           <Tabs className="min-w-full">
@@ -352,7 +322,8 @@ function Page() {
 
 export default () =>
   process.env.NODE_ENV === "development" ? (
-    <Page />
+    Page
   ) : (
-    <Auth Element={Page} hash={process.env.NEXT_PUBLIC_CONFERENCIA_HASH!} />
+    // biome-ignore lint/style/noNonNullAssertion: o valor é hash é conferido no elemento Auth para verificar se é != de null
+<Auth Element={Page} hash={process.env.NEXT_PUBLIC_CONFERENCIA_HASH!} />
   );

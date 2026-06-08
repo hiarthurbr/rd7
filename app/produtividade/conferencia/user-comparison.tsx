@@ -1,31 +1,27 @@
 "use client";
 
+import { Card, ListBox, Select } from "@heroui/react";
 import { useMemo, useState } from "react";
-import { Select, Card, ListBox } from "@heroui/react";
 import {
-  BarChart,
   Bar,
-  XAxis,
-  YAxis,
+  BarChart,
   CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
+  Label,
   Legend,
-  RadarChart,
-  PolarGrid,
   PolarAngleAxis,
+  PolarGrid,
   PolarRadiusAxis,
   Radar,
-  Label,
+  RadarChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
-import z from "zod";
-import { per_user_schema } from "./page";
+import type z from "zod";
+import type { per_user_schema } from "./page";
 
-export function UserComparison({
-  data,
-}: {
-  data: z.infer<typeof per_user_schema>;
-}) {
+export function UserComparison({ data }: { data: z.infer<typeof per_user_schema> }) {
   const userNames = useMemo(() => Object.keys(data), [data]);
   const [user1, setUser1] = useState(userNames[0]);
   const [user2, setUser2] = useState(userNames[1]);
@@ -33,7 +29,7 @@ export function UserComparison({
   const userData1 = data[user1];
   const userData2 = data[user2];
 
-  // Prepare hourly comparison data
+  // biome-ignore lint/correctness/useExhaustiveDependencies: só precisamos das informações das horas, não importa qual usuário está selecionado
   const hours = useMemo(() => Object.keys(data[user1].por_hora), [data]);
   const hourlyComparisonData = hours.map((hour) => ({
     hour: `${hour}h`,
@@ -42,22 +38,10 @@ export function UserComparison({
   }));
 
   // Normalize data for radar chart (0-100 scale)
-  const maxEmbalagens = Math.max(
-    userData1.total_embalagens,
-    userData2.total_embalagens,
-  );
-  const maxEmbalagensHora = Math.max(
-    userData1.embalagens_por_hora,
-    userData2.embalagens_por_hora,
-  );
-  const maxCaixasHora = Math.max(
-    userData1.caixas_por_hora,
-    userData2.caixas_por_hora,
-  );
-  const maxPedidosHora = Math.max(
-    userData1.pedidos_por_hora,
-    userData2.pedidos_por_hora,
-  );
+  const maxEmbalagens = Math.max(userData1.total_embalagens, userData2.total_embalagens);
+  const maxEmbalagensHora = Math.max(userData1.embalagens_por_hora, userData2.embalagens_por_hora);
+  const maxCaixasHora = Math.max(userData1.caixas_por_hora, userData2.caixas_por_hora);
+  const maxPedidosHora = Math.max(userData1.pedidos_por_hora, userData2.pedidos_por_hora);
 
   const radarData = [
     {
@@ -149,21 +133,15 @@ export function UserComparison({
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Embalagens/Hora:</span>
-              <span className="font-medium">
-                {userData1.embalagens_por_hora.toFixed(2)}
-              </span>
+              <span className="font-medium">{userData1.embalagens_por_hora.toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Caixas/Hora:</span>
-              <span className="font-medium">
-                {userData1.caixas_por_hora.toFixed(2)}
-              </span>
+              <span className="font-medium">{userData1.caixas_por_hora.toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Pedidos/Hora:</span>
-              <span className="font-medium">
-                {userData1.pedidos_por_hora.toFixed(2)}
-              </span>
+              <span className="font-medium">{userData1.pedidos_por_hora.toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Duracao:</span>
@@ -185,21 +163,15 @@ export function UserComparison({
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Embalagens/Hora:</span>
-              <span className="font-medium">
-                {userData2.embalagens_por_hora.toFixed(2)}
-              </span>
+              <span className="font-medium">{userData2.embalagens_por_hora.toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Caixas/Hora:</span>
-              <span className="font-medium">
-                {userData2.caixas_por_hora.toFixed(2)}
-              </span>
+              <span className="font-medium">{userData2.caixas_por_hora.toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Pedidos/Hora:</span>
-              <span className="font-medium">
-                {userData2.pedidos_por_hora.toFixed(2)}
-              </span>
+              <span className="font-medium">{userData2.pedidos_por_hora.toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Duracao:</span>
@@ -218,10 +190,7 @@ export function UserComparison({
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={hourlyComparisonData}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    className="stroke-muted"
-                  />
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="hour" className="text-xs" />
                   <YAxis className="text-xs" />
                   <Tooltip

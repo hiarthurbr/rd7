@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { Status } from "@/components/status";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
+import { Status } from "@/components/status";
 
 export default function Page() {
   const [queryClient] = useState(
@@ -18,7 +18,7 @@ export default function Page() {
   );
 
   return (
-    <QueryClientProvider client={queryClient}> 
+    <QueryClientProvider client={queryClient}>
       <Status />
     </QueryClientProvider>
   );

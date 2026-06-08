@@ -1,31 +1,26 @@
 "use client";
 
-import {
-  QueryClient,
-  QueryClientProvider,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import { motion, AnimatePresence, Variants } from "framer-motion";
-import {
-  RefreshCw,
-  Package,
-  ClipboardList,
-  CheckCircle2,
-  Truck,
-  AlertTriangle,
-} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@heroui/react";
+import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ClipboardList,
+  Package,
+  RefreshCw,
+  Truck,
+} from "lucide-react";
+import { useState } from "react";
+import type z from "zod";
+import { Status } from "@/components/status";
+import { get_dashboard_data } from "@/lib/pda";
+import type { etapa_schema } from "@/lib/schemas";
 import { AnimatedCounter } from "./animated-counter";
 import { CircularProgress } from "./circular-progress";
-import { StageChart } from "./stage-chart";
-import { OverviewChart } from "./overview-chart";
 import { DynamicBackground } from "./dynamic-background";
-import z from "zod";
-import { useState } from "react";
-import { etapa_schema } from "@/lib/schemas";
-import { get_dashboard_data } from "@/lib/pda";
-import { Status } from "@/components/status";
+import { OverviewChart } from "./overview-chart";
+import { StageChart } from "./stage-chart";
 
 const etapaIcons: Record<string, React.ReactNode> = {
   Pedido: <Package className="h-5 w-5" />,
@@ -63,21 +58,12 @@ const itemVariants: Variants = {
   },
 };
 
-function EtapaCard({
-  etapa,
-  index,
-}: {
-  etapa: z.infer<typeof etapa_schema>;
-  index: number;
-}) {
+function EtapaCard({ etapa, index }: { etapa: z.infer<typeof etapa_schema>; index: number }) {
   const icon = etapaIcons[etapa.etapa] || <Package className="h-5 w-5" />;
-  const colors = etapaColors[etapa.etapa]!;
+  const colors = etapaColors[etapa.etapa];
 
   return (
-    <motion.div
-      variants={itemVariants}
-      whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-    >
+    <motion.div variants={itemVariants} whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}>
       <Card className="h-full border-border backdrop-blur-sm transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 bg-slate-600/25">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
@@ -103,11 +89,7 @@ function EtapaCard({
                 transition={{ delay: 0.3 + index * 0.1 }}
               >
                 <AnimatedCounter value={etapa.valorTotal} /> (
-                <AnimatedCounter
-                  value={etapa.progressoGeralEtapa >> 0}
-                  suffix="%"
-                />
-                )
+                <AnimatedCounter value={etapa.progressoGeralEtapa >> 0} suffix="%" />)
               </motion.p>
               <p className="text-xs text-muted">do total</p>
             </div>
@@ -155,10 +137,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <motion.div
-          animate={{ scale: [1, 1.1, 1] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
+        <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }}>
           <AlertTriangle className="h-12 w-12 text-destructive" />
         </motion.div>
         <p className="text-lg text-muted-foreground">Erro ao carregar dados</p>
@@ -198,7 +177,7 @@ export default function Page() {
 function Dashboard() {
   const queryClient = useQueryClient();
 
-  const { data, error, isLoading, isFetching } = useQuery({
+  const { data, error, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: get_dashboard_data,
     refetchInterval: 1000 * 60 * 10,
@@ -262,9 +241,7 @@ function Dashboard() {
                             }
                           />
                         </motion.p>
-                        <p className="text-xs text-muted-foreground">
-                          concluido
-                        </p>
+                        <p className="text-xs text-muted-foreground">concluido</p>
                       </div>
                     </CircularProgress>
                   </div>
@@ -293,13 +270,9 @@ function Dashboard() {
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: 0.5 + index * 0.1 }}
                             >
-                              <div
-                                className={`h-3 w-3 rounded-full ${colors.bg}`}
-                              />
+                              <div className={`h-3 w-3 rounded-full ${colors.bg}`} />
                               <span className="text-sm text-muted-foreground">
-                                {etapa.etapa === "Pedido"
-                                  ? "Planejamento"
-                                  : etapa.etapa}
+                                {etapa.etapa === "Pedido" ? "Planejamento" : etapa.etapa}
                               </span>
                               <span className="text-sm font-extrabold text-foreground">
                                 {etapa.valorTotal}
@@ -316,10 +289,7 @@ function Dashboard() {
           </motion.div>
 
           {/* Etapas Grid */}
-          <motion.div
-            className="grid gap-6 md:grid-cols-2"
-            variants={containerVariants}
-          >
+          <motion.div className="grid gap-6 md:grid-cols-2" variants={containerVariants}>
             <AnimatePresence>
               {geral.etapas.map((etapa, index) => (
                 <EtapaCard key={etapa.etapa} etapa={etapa} index={index} />
