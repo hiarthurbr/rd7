@@ -4,5 +4,13 @@
     "indentStyle": "space", // default is `tab`
     "indentWidth": 2,
     "lineWidth": 100 // default is `80`
+  },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": ["app/**/*.{js,jsx,ts,tsx,json}"]
   }
 }

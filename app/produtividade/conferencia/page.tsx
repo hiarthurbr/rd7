@@ -89,11 +89,16 @@ const duration_locale = new Intl.DurationFormat("pt-BR", {
 });
 
 function duration(start: Date, end: Date) {
-  const seconds = Math.abs(start.getTime() - end.getTime()) / 1000;
+  const ms = Math.abs(start.getTime() - end.getTime());
+  const minutes_raw = Math.floor(ms / 60_000);
+  const minutes = minutes_raw % 60;
+  const hours = (minutes_raw - minutes) / 60;
+
+  console.log({ ms, minutes, hours })
 
   return duration_locale.format({
-    hours: Math.floor(seconds / 3600),
-    minutes: Math.ceil(seconds % 60),
+    hours,
+    minutes,
   });
 }
 
@@ -164,7 +169,7 @@ function Page() {
                 const hora_inicio = Math.min(...data.map((cx) => cx.montagem.getTime()));
                 const hora_fim = Math.max(...data.map((cx) => cx.montagem.getTime()));
 
-                const horas_conferidas = Math.abs(hora_fim - hora_inicio) / 3600000;
+                const horas_conferidas = Math.abs(hora_fim - hora_inicio) / 3_600_000;
 
                 const por_hora = per_hour.map(
                   ([hour, data]) =>
@@ -320,10 +325,12 @@ function Page() {
   );
 }
 
-export default () =>
-  process.env.NODE_ENV === "development" ? (
-    Page
+const isDev = process.env.NODE_ENV === "development";
+export default function Pre() {
+  return isDev ? (
+    <Page />
   ) : (
     // biome-ignore lint/style/noNonNullAssertion: o valor é hash é conferido no elemento Auth para verificar se é != de null
-<Auth Element={Page} hash={process.env.NEXT_PUBLIC_CONFERENCIA_HASH!} />
+    <Auth Element={Page} hash={process.env.NEXT_PUBLIC_CONFERENCIA_HASH!} />
   );
+}

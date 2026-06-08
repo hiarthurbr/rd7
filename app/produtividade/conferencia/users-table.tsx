@@ -1,6 +1,15 @@
 "use client";
 
-import { Table } from "@heroui/react";
+import { /* Pagination, type SortDescriptor, */ Table } from "@heroui/react";
+// import {
+//   createColumnHelper,
+//   flexRender,
+//   getCoreRowModel,
+//   getPaginationRowModel,
+//   getSortedRowModel,
+//   type SortingState,
+//   useReactTable,
+// } from "@tanstack/react-table";
 import type z from "zod";
 import type { per_user_schema } from "./page";
 
@@ -11,8 +20,25 @@ export function formatTime(date: Date): string {
   });
 }
 
+// type a = z.infer<typeof per_user_schema>[string];
+
+// const columnHelper = createColumnHelper<z.infer<typeof per_user_schema>[string]>();
+// const columns = [
+//   columnHelper.accessor("", {header: "Name"}),
+//   columnHelper.accessor("role", {header: "Role"}),
+//   columnHelper.accessor("status", {
+//     cell: (info) => (
+//       <Chip color={statusColorMap[info.getValue()]} size="sm" variant="soft">
+//         {info.getValue()}
+//       </Chip>
+//     ),
+//     header: "Status",
+//   }),
+//   columnHelper.accessor("email", {header: "Email"}),
+// ];
+
 export function UsersTable({ data }: { data: z.infer<typeof per_user_schema> }) {
-  const users = Object.entries(data);
+  const users = Object.entries(data).map(([name, data]) => ({ name, ...data }));
 
   return (
     <div className="rounded-lg border bg-card">
@@ -46,24 +72,24 @@ export function UsersTable({ data }: { data: z.infer<typeof per_user_schema> }) 
               </Table.Column>
             </Table.Header>
             <Table.Body>
-              {users.map(([name, data]) => (
-                <Table.Row key={name}>
-                  <Table.Cell className="font-medium">{name}</Table.Cell>
+              {users.map(user => (
+                <Table.Row key={user.name}>
+                  <Table.Cell className="font-medium">{user.name}</Table.Cell>
                   <Table.Cell className="text-right">
-                    {data.total_embalagens.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+                    {user.total_embalagens.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
                   </Table.Cell>
                   <Table.Cell className="text-right">
-                    {data.pedidos_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+                    {user.pedidos_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
                   </Table.Cell>
                   <Table.Cell className="text-right">
-                    {data.caixas_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+                    {user.caixas_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
                   </Table.Cell>
                   <Table.Cell className="text-right">
-                    {data.embalagens_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+                    {user.embalagens_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
                   </Table.Cell>
-                  <Table.Cell>{formatTime(data.hora_inicio)}</Table.Cell>
-                  <Table.Cell>{formatTime(data.hora_fim)}</Table.Cell>
-                  <Table.Cell>{data.duração}</Table.Cell>
+                  <Table.Cell>{formatTime(user.hora_inicio)}</Table.Cell>
+                  <Table.Cell>{formatTime(user.hora_fim)}</Table.Cell>
+                  <Table.Cell>{user.duração}</Table.Cell>
                 </Table.Row>
               ))}
             </Table.Body>
