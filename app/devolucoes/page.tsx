@@ -1,5 +1,5 @@
 "use client";
-import { Button, Card, Disclosure, Spinner } from "@heroui/react";
+import { Button, Disclosure } from "@heroui/react";
 import Dexie, { type Table } from "dexie";
 import excel from "exceljs";
 import { DatabaseIcon, HardDriveUploadIcon } from "lucide-react";
