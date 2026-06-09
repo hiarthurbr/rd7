@@ -14,13 +14,14 @@ import {
 } from "@heroui/react";
 import { type DateValue, getLocalTimeZone, today } from "@internationalized/date";
 import { QueryClient, useQuery } from "@tanstack/react-query";
-import { CheckIcon, Grid2x2XIcon, RefreshCwIcon } from "lucide-react";
+import { ChartNoAxesColumnIcon, CheckIcon, Grid2x2XIcon, RefreshCwIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { Auth } from "@/components/auth";
 import { getToken } from "@/lib/pda";
 import { montagem_caixa_schema } from "@/lib/schemas";
 import { fmt_date } from "@/lib/utils";
+import data_cache from "./03-06-2026.json";
 import skus from "./skus.json";
 import { UserComparison } from "./user-comparison";
 import { UserDashboard } from "./user-dashboard";
@@ -46,6 +47,7 @@ export const per_user_schema = z.record(
     hora_inicio: z.date(),
     hora_fim: z.date(),
     duração: z.number(),
+    meta: z.number(),
   }),
 );
 
@@ -91,6 +93,7 @@ const marcadores: Array<{
 function Page() {
   const now = useMemo(() => today(getLocalTimeZone()), []);
   const [date, setDate] = useState<DateValue>(now);
+  const [meta, setMeta] = useState(800);
 
   const [queryClient, hours_filter] = useMemo(() => {
     const today = new Date(new Date().toDateString());
@@ -109,7 +112,11 @@ function Page() {
   const { data, isFetching, dataUpdatedAt, isPending } = useQuery(
     {
       queryKey: ["relatorio_conferencia", date],
-      queryFn: () => get_relatorio_conferencia(date.toDate(getLocalTimeZone())),
+      // queryFn: async () => get_relatorio_conferencia(date.toDate(getLocalTimeZone())),
+      queryFn: async () =>
+        process.env.NODE_ENV === "development"
+          ? montagem_caixa_schema.array().parseAsync(data_cache)
+          : get_relatorio_conferencia(date.toDate(getLocalTimeZone())),
       refetchInterval: 1000 * 60 * 60,
       staleTime: 1000 * 60 * 15,
       // enabled: false,
@@ -209,11 +216,19 @@ function Page() {
                     hora_inicio: new Date(hora_inicio),
                     hora_fim: new Date(hora_fim),
                     duração: Math.floor(Math.abs(hora_inicio - hora_fim) / 60_000),
+                    meta,
                   },
                 ];
               }),
           ),
-    [data, dataUpdatedAt, hours_filter],
+    [data, dataUpdatedAt, hours_filter, meta],
+  );
+
+  const todays_average = useMemo(
+    () =>
+      Object.values(per_user).reduce((a, b) => a + b.embalagens_por_hora, 0) /
+      Object.keys(per_user).length,
+    [per_user],
   );
 
   console.log(per_user);
@@ -225,14 +240,23 @@ function Page() {
           <Button
             isPending={isFetching}
             onPress={() => queryClient.invalidateQueries({ queryKey: ["relatorio_conferencia"] })}
-            className={`justify-self-end place-self-start w-48 my-12 ${isUpdated ? "bg-lime-600 text-white" : ''}`}
+            className={`justify-self-end place-self-start w-48 my-12 ${isUpdated ? "bg-lime-600 text-white" : ""}`}
             isDisabled={isUpdated}
-
           >
             {({ isPending, isDisabled }) => (
               <>
-                {isPending ? <Spinner color="current" size="sm" /> : isDisabled ? <CheckIcon /> : <RefreshCwIcon />}
-                {isPending ? "Atualizando dados..." : isDisabled ? "Dados atualizados!" : "Atualizar dados"}
+                {isPending ? (
+                  <Spinner color="current" size="sm" />
+                ) : isDisabled ? (
+                  <CheckIcon />
+                ) : (
+                  <RefreshCwIcon />
+                )}
+                {isPending
+                  ? "Atualizando dados..."
+                  : isDisabled
+                    ? "Dados atualizados!"
+                    : "Atualizar dados"}
               </>
             )}
           </Button>
@@ -283,11 +307,13 @@ function Page() {
               </DatePicker.Popover>
             </DatePicker>
           </div>
-          <div className="col-start-6 flex items-center">
+          <div className="col-start-6 flex items-center flex-col space-y-2">
             <NumberField
               className="w-full max-w-64"
               defaultValue={800}
               minValue={0}
+              value={meta}
+              onChange={setMeta}
               step={50}
               name="meta"
             >
@@ -298,6 +324,10 @@ function Page() {
                 <NumberField.IncrementButton />
               </NumberField.Group>
             </NumberField>
+            <Button size="sm" onPress={() => setMeta(todays_average)}>
+              <ChartNoAxesColumnIcon />
+              Definir para média do dia ({todays_average.toLocaleString("pt-BR", { maximumFractionDigits: 0 })})
+            </Button>
           </div>
         </header>
 
