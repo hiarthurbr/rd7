@@ -315,7 +315,7 @@ export default function Page() {
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="mx-auto w-2/3 px-4 py-8 grid grid-flow-col grid-cols-3 items-center">
+      <div className="mx-auto container px-4 py-8 grid grid-flow-col grid-cols-3 items-center">
         {/* Header */}
         <Tabs
           className="w-md justify-self-start place-self-start pt-4"
