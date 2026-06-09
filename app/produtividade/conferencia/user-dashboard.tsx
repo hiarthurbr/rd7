@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import type z from "zod";
 import type { per_user_schema } from "./page";
+import { duration } from "./users-table";
 
 const COLORS = ["#0d9488", "#14b8a6", "#2dd4bf", "#5eead4", "#99f6e4"];
 
@@ -38,7 +39,7 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center justify-center gap-4">
         <Select
           className="w-[256px]"
           placeholder="Selecionar Usuario:"
@@ -84,16 +85,16 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
           </Card.Header>
           <Card.Content>
             <div className="text-2xl font-bold text-teal-600">
-              {userData.embalagens_por_hora.toFixed(2)}
+              {userData.embalagens_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
             </div>
           </Card.Content>
         </Card>
         <Card>
           <Card.Header className="pb-2">
-            <Card.Title className="text-sm font-medium text-muted-foreground">Duracao</Card.Title>
+            <Card.Title className="text-sm font-medium text-muted-foreground">Duração</Card.Title>
           </Card.Header>
           <Card.Content>
-            <div className="text-2xl font-bold text-teal-600">{userData.duração}</div>
+            <div className="text-2xl font-bold text-teal-600">{duration(userData.duração)}</div>
           </Card.Content>
         </Card>
       </div>
