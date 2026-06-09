@@ -1,6 +1,6 @@
 "use client";
 
-import { Pagination, type SortDescriptor, Table } from "@heroui/react";
+import { Chip, Pagination, type SortDescriptor, Table } from "@heroui/react";
 import {
   createColumnHelper,
   flexRender,
@@ -10,7 +10,7 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronUp } from "lucide-react";
+import { ArrowDownUpIcon, ChevronUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import type z from "zod";
 import { cn } from "@/lib/utils";
@@ -48,10 +48,25 @@ const columns = [
     sortingFn: "basic",
     cell: (info) => info.getValue().toLocaleString("pt-BR", { maximumFractionDigits: 1 }),
   }),
-  columnHelper.accessor("embalagens_por_hora", {
+  columnHelper.accessor(({ embalagens_por_hora, meta }) => ({ embalagens_por_hora, meta }), {
     header: "Embalagens/Hora",
     sortingFn: "basic",
-    cell: (info) => info.getValue().toLocaleString("pt-BR", { maximumFractionDigits: 1 }),
+    cell: (info) => {
+      const meta_percentage = ((info.getValue().embalagens_por_hora / info.getValue().meta) * 100) >> 0;
+      return (
+        <span className="w-full flex flex-row justify-between">
+          {info
+            .getValue()
+            .embalagens_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+          <Chip
+            variant="soft"
+            color={meta_percentage >= 100 ? "success" : meta_percentage >= 80 ? "warning" : "danger"}
+          >
+            {meta_percentage.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}%
+          </Chip>
+        </span>
+      );
+    },
   }),
   columnHelper.accessor("hora_inicio", {
     header: "Hora Inicio",
@@ -75,6 +90,7 @@ const columns = [
     header: "Duração",
     sortingFn: "basic",
     cell: (info) => duration(info.getValue()),
+    footer: "Teste",
   }),
 ];
 
@@ -105,13 +121,19 @@ function SortableColumnHeader({
   return (
     <span className="flex items-center justify-between">
       {children}
-      {!!sortDirection && (
-        <ChevronUp
-          className={cn(
-            "size-3 transform transition-transform duration-100 ease-out",
-            sortDirection === "descending" ? "rotate-180" : "",
-          )}
-        />
+      {sortDirection == null ? (
+        <Chip size="sm" variant="secondary">
+          <ArrowDownUpIcon className="stroke-neutral-400 size-3" />
+        </Chip>
+      ) : (
+        <Chip size="sm" variant="primary" color="accent">
+          <ChevronUp
+            className={cn(
+              "size-3 transform transition-transform duration-100 ease-out",
+              sortDirection === "descending" ? "rotate-180" : "",
+            )}
+          />
+        </Chip>
       )}
     </span>
   );
@@ -120,7 +142,10 @@ function SortableColumnHeader({
 const PAGE_SIZE = 14;
 export function UsersTable({ data }: { data: z.infer<typeof per_user_schema> }) {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const users = useMemo(() => Object.entries(data).map(([name, data]) => ({ name, ...data })), [data]);
+  const users = useMemo(
+    () => Object.entries(data).map(([name, data]) => ({ ...data, name })),
+    [data],
+  );
 
   const table = useReactTable({
     columns,
@@ -163,7 +188,7 @@ export function UsersTable({ data }: { data: z.infer<typeof per_user_schema> }) 
     return items;
   }, [pageCount, pageIndex]);
 
-  console.log(table.getRowModel().rows)
+  console.log(table.getRowModel().rows);
 
   return (
     <div className="rounded-lg border bg-card">
@@ -203,6 +228,13 @@ export function UsersTable({ data }: { data: z.infer<typeof per_user_schema> }) 
               )}
             </Table.Body>
           </Table.Content>
+          <Table.Footer className="grid grid-flow-col grid-cols-8">
+            {table.getFooterGroups()[0]?.headers.map((header) => (
+              <div key={header.id} style={{ width: header.column.getSize() }}>
+                {flexRender(header.column.columnDef.header, header.getContext())}
+              </div>
+            ))}
+          </Table.Footer>
         </Table.ScrollContainer>
       </Table>
     </div>
