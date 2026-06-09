@@ -1,18 +1,21 @@
 "use client";
 
 import {
+  Button,
   Calendar,
   DateField,
   DatePicker,
   Description,
   Label,
+  NumberField,
   ProgressBar,
+  Spinner,
   Tabs,
 } from "@heroui/react";
 import { type DateValue, getLocalTimeZone, today } from "@internationalized/date";
 import { QueryClient, useQuery } from "@tanstack/react-query";
-import { Grid2x2XIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CheckIcon, Grid2x2XIcon, RefreshCwIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { Auth } from "@/components/auth";
 import { getToken } from "@/lib/pda";
@@ -42,7 +45,7 @@ export const per_user_schema = z.record(
     embalagens_por_hora: z.number(),
     hora_inicio: z.date(),
     hora_fim: z.date(),
-    duração: z.string(),
+    duração: z.number(),
   }),
 );
 
@@ -84,23 +87,6 @@ const marcadores: Array<{
   { label: "Saída jantar", momento: { hh: 17, mm: 30 } },
   { label: "Volta do jantar", momento: { hh: 18, mm: 30 } },
 ];
-const duration_locale = new Intl.DurationFormat("pt-BR", {
-  style: "long",
-});
-
-function duration(start: Date, end: Date) {
-  const ms = Math.abs(start.getTime() - end.getTime());
-  const minutes_raw = Math.floor(ms / 60_000);
-  const minutes = minutes_raw % 60;
-  const hours = (minutes_raw - minutes) / 60;
-
-  console.log({ ms, minutes, hours })
-
-  return duration_locale.format({
-    hours,
-    minutes,
-  });
-}
 
 function Page() {
   const now = useMemo(() => today(getLocalTimeZone()), []);
@@ -120,7 +106,7 @@ function Page() {
       ),
     ];
   }, []);
-  const { data, isFetching, dataUpdatedAt } = useQuery(
+  const { data, isFetching, dataUpdatedAt, isPending } = useQuery(
     {
       queryKey: ["relatorio_conferencia", date],
       queryFn: () => get_relatorio_conferencia(date.toDate(getLocalTimeZone())),
@@ -130,6 +116,13 @@ function Page() {
     },
     queryClient,
   );
+  const [isUpdated, setIsUpdated] = useState(false);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: precisamos atualizar o estado do botão de refresh toda vez que atualizamos os dados, por isso usamos o dataUpdatedAt
+  useEffect(() => {
+    setIsUpdated(true);
+    setTimeout(() => setIsUpdated(false), 5000);
+  }, [dataUpdatedAt]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: usar o dataUpdatedAt é necessario, porque o data pode não atualizar no momento do refetch, se o resultado anterior for o mesmo
   const per_user: z.infer<typeof per_user_schema> = useMemo(
@@ -215,7 +208,7 @@ function Page() {
                     embalagens_por_hora: total_embalagens / horas_conferidas,
                     hora_inicio: new Date(hora_inicio),
                     hora_fim: new Date(hora_fim),
-                    duração: duration(new Date(hora_inicio), new Date(hora_fim)),
+                    duração: Math.floor(Math.abs(hora_inicio - hora_fim) / 60_000),
                   },
                 ];
               }),
@@ -228,55 +221,87 @@ function Page() {
   return (
     <main className="min-h-screen bg-background p-6 flex flex-col items-center">
       <div className="space-y-6">
-        <header className="space-y-2 container flex flex-col items-center">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Painel de Produtividade
-          </h1>
-          <p className="text-muted-foreground">Visualize e compare o desempenho dos usuarios</p>
-          <DatePicker
-            name="date"
-            value={date}
-            onChange={(date) => date != null && setDate(date)}
-            className="w-64"
+        <header className="space-x-8 container grid grid-flow-col grid-cols-6 place-items-center">
+          <Button
+            isPending={isFetching}
+            onPress={() => queryClient.invalidateQueries({ queryKey: ["relatorio_conferencia"] })}
+            className={`justify-self-end place-self-start w-48 my-12 ${isUpdated ? "bg-lime-600 text-white" : ''}`}
+            isDisabled={isUpdated}
+
           >
-            <Label>Produtividade do dia</Label>
-            <DateField.Group fullWidth>
-              <DateField.Input>
-                {(segment) => <DateField.Segment segment={segment} />}
-              </DateField.Input>
-              <DateField.Suffix>
-                <DatePicker.Trigger>
-                  <DatePicker.TriggerIndicator />
-                </DatePicker.Trigger>
-              </DateField.Suffix>
-            </DateField.Group>
-            <DatePicker.Popover>
-              <Calendar aria-label="Event date" maxValue={now}>
-                <Calendar.Header>
-                  <Calendar.YearPickerTrigger>
-                    <Calendar.YearPickerTriggerHeading />
-                    <Calendar.YearPickerTriggerIndicator />
-                  </Calendar.YearPickerTrigger>
-                  <Calendar.NavButton slot="previous" />
-                  <Calendar.NavButton slot="next" />
-                </Calendar.Header>
-                <Calendar.Grid>
-                  <Calendar.GridHeader>
-                    {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
-                  </Calendar.GridHeader>
-                  <Calendar.GridBody>{(date) => <Calendar.Cell date={date} />}</Calendar.GridBody>
-                </Calendar.Grid>
-                <Calendar.YearPickerGrid>
-                  <Calendar.YearPickerGridBody>
-                    {({ year }) => <Calendar.YearPickerCell year={year} />}
-                  </Calendar.YearPickerGridBody>
-                </Calendar.YearPickerGrid>
-              </Calendar>
-            </DatePicker.Popover>
-          </DatePicker>
+            {({ isPending, isDisabled }) => (
+              <>
+                {isPending ? <Spinner color="current" size="sm" /> : isDisabled ? <CheckIcon /> : <RefreshCwIcon />}
+                {isPending ? "Atualizando dados..." : isDisabled ? "Dados atualizados!" : "Atualizar dados"}
+              </>
+            )}
+          </Button>
+          <div className="flex flex-col items-center mx-auto col-start-2 col-span-4">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+              Painel de Produtividade
+            </h1>
+            <p className="text-muted-foreground">Visualize e compare o desempenho dos usuarios</p>
+            <DatePicker
+              name="date"
+              value={date}
+              onChange={(date) => date != null && setDate(date)}
+              className="w-64"
+            >
+              <Label>Produtividade do dia</Label>
+              <DateField.Group fullWidth>
+                <DateField.Input>
+                  {(segment) => <DateField.Segment segment={segment} />}
+                </DateField.Input>
+                <DateField.Suffix>
+                  <DatePicker.Trigger>
+                    <DatePicker.TriggerIndicator />
+                  </DatePicker.Trigger>
+                </DateField.Suffix>
+              </DateField.Group>
+              <DatePicker.Popover>
+                <Calendar aria-label="Event date" maxValue={now}>
+                  <Calendar.Header>
+                    <Calendar.YearPickerTrigger>
+                      <Calendar.YearPickerTriggerHeading />
+                      <Calendar.YearPickerTriggerIndicator />
+                    </Calendar.YearPickerTrigger>
+                    <Calendar.NavButton slot="previous" />
+                    <Calendar.NavButton slot="next" />
+                  </Calendar.Header>
+                  <Calendar.Grid>
+                    <Calendar.GridHeader>
+                      {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
+                    </Calendar.GridHeader>
+                    <Calendar.GridBody>{(date) => <Calendar.Cell date={date} />}</Calendar.GridBody>
+                  </Calendar.Grid>
+                  <Calendar.YearPickerGrid>
+                    <Calendar.YearPickerGridBody>
+                      {({ year }) => <Calendar.YearPickerCell year={year} />}
+                    </Calendar.YearPickerGridBody>
+                  </Calendar.YearPickerGrid>
+                </Calendar>
+              </DatePicker.Popover>
+            </DatePicker>
+          </div>
+          <div className="col-start-6 flex items-center">
+            <NumberField
+              className="w-full max-w-64"
+              defaultValue={800}
+              minValue={0}
+              step={50}
+              name="meta"
+            >
+              <Label>Meta por Hora</Label>
+              <NumberField.Group>
+                <NumberField.DecrementButton />
+                <NumberField.Input className="w-30" />
+                <NumberField.IncrementButton />
+              </NumberField.Group>
+            </NumberField>
+          </div>
         </header>
 
-        {isFetching ? (
+        {isPending ? (
           <div className="flex flex-col items-center pt-32">
             <ProgressBar size="lg" isIndeterminate aria-label="Loading" className="w-64">
               <Label className="mb-3.5 mt-5">Carregando dados</Label>
