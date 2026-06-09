@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, ListBox, Select } from "@heroui/react";
+import { Card, Chip, ListBox, Select } from "@heroui/react";
 import { useMemo, useState } from "react";
 import {
   Bar,
@@ -20,6 +20,22 @@ import {
 } from "recharts";
 import type z from "zod";
 import type { per_user_schema } from "./page";
+import { duration } from "./users-table";
+
+const EmbalagemPorHora = ({ user }: { user: z.infer<typeof per_user_schema>[string] }) => {
+  const meta_percentage = ((user.embalagens_por_hora / user.meta) * 100) >> 0;
+  return (
+    <span className="w-full flex flex-row space-x-2 items-center justify-end">
+      <Chip
+        variant="soft"
+        color={meta_percentage >= 100 ? "success" : meta_percentage >= 80 ? "warning" : "danger"}
+      >
+        {meta_percentage.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}%
+      </Chip>
+      <span>{user.embalagens_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</span>
+    </span>
+  );
+};
 
 export function UserComparison({ data }: { data: z.infer<typeof per_user_schema> }) {
   const userNames = useMemo(() => Object.keys(data), [data]);
@@ -133,15 +149,15 @@ export function UserComparison({ data }: { data: z.infer<typeof per_user_schema>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Embalagens/Hora:</span>
-              <span className="font-medium">{userData1.embalagens_por_hora.toFixed(2)}</span>
+              <EmbalagemPorHora user={userData1} />
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Caixas/Hora:</span>
-              <span className="font-medium">{userData1.caixas_por_hora.toFixed(2)}</span>
+              <span className="font-medium">{userData1.caixas_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Pedidos/Hora:</span>
-              <span className="font-medium">{userData1.pedidos_por_hora.toFixed(2)}</span>
+              <span className="font-medium">{userData1.pedidos_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Duracao:</span>
@@ -163,19 +179,19 @@ export function UserComparison({ data }: { data: z.infer<typeof per_user_schema>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Embalagens/Hora:</span>
-              <span className="font-medium">{userData2.embalagens_por_hora.toFixed(2)}</span>
+              <EmbalagemPorHora user={userData2} />
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Caixas/Hora:</span>
-              <span className="font-medium">{userData2.caixas_por_hora.toFixed(2)}</span>
+              <span className="font-medium">{userData2.caixas_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Pedidos/Hora:</span>
-              <span className="font-medium">{userData2.pedidos_por_hora.toFixed(2)}</span>
+              <span className="font-medium">{userData2.pedidos_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Duracao:</span>
-              <span className="font-medium">{userData2.duração}</span>
+              <span className="font-medium">{duration(userData2.duração)}</span>
             </div>
           </Card.Content>
         </Card>

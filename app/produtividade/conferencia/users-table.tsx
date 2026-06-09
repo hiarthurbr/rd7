@@ -50,6 +50,8 @@ const columns = [
   }),
   columnHelper.accessor(({ embalagens_por_hora, meta }) => ({ embalagens_por_hora, meta }), {
     header: "Embalagens/Hora",
+    id: "emb_p_hora",
+    sortDescFirst: true,
     sortingFn: (a, b) =>
       a.original.embalagens_por_hora > b.original.embalagens_por_hora
         ? 1
@@ -149,7 +151,12 @@ function SortableColumnHeader({
 
 const PAGE_SIZE = 14;
 export function UsersTable({ data }: { data: z.infer<typeof per_user_schema> }) {
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>([
+    {
+      id: "emb_p_hora",
+      desc: true,
+    },
+  ]);
   const users = useMemo(
     () => Object.entries(data).map(([name, data]) => ({ ...data, name })),
     [data],
@@ -161,7 +168,9 @@ export function UsersTable({ data }: { data: z.infer<typeof per_user_schema> }) 
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    initialState: { pagination: { pageSize: PAGE_SIZE } },
+    initialState: {
+      pagination: { pageSize: PAGE_SIZE },
+    },
     onSortingChange: setSorting,
     state: { sorting },
   });
