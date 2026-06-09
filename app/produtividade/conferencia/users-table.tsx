@@ -50,9 +50,15 @@ const columns = [
   }),
   columnHelper.accessor(({ embalagens_por_hora, meta }) => ({ embalagens_por_hora, meta }), {
     header: "Embalagens/Hora",
-    sortingFn: "basic",
+    sortingFn: (a, b) =>
+      a.original.embalagens_por_hora > b.original.embalagens_por_hora
+        ? 1
+        : a.original.embalagens_por_hora < b.original.embalagens_por_hora
+          ? -1
+          : 0,
     cell: (info) => {
-      const meta_percentage = ((info.getValue().embalagens_por_hora / info.getValue().meta) * 100) >> 0;
+      const meta_percentage =
+        ((info.getValue().embalagens_por_hora / info.getValue().meta) * 100) >> 0;
       return (
         <span className="w-full flex flex-row justify-between">
           {info
@@ -60,7 +66,9 @@ const columns = [
             .embalagens_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
           <Chip
             variant="soft"
-            color={meta_percentage >= 100 ? "success" : meta_percentage >= 80 ? "warning" : "danger"}
+            color={
+              meta_percentage >= 100 ? "success" : meta_percentage >= 80 ? "warning" : "danger"
+            }
           >
             {meta_percentage.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}%
           </Chip>

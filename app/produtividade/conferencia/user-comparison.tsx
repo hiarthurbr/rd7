@@ -68,7 +68,7 @@ export function UserComparison({ data }: { data: z.infer<typeof per_user_schema>
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4 justify-center">
         <div className="flex items-center gap-2">
           <Select
             className="w-[256px]"
@@ -120,7 +120,7 @@ export function UserComparison({ data }: { data: z.infer<typeof per_user_schema>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="border-l-4 border-l-teal-500">
+        <Card className="border-l-4 border-l-teal-500 max-w-72 min-w-max w-full place-self-end">
           <Card.Header className="pb-2">
             <Card.Title className="text-lg">{user1}</Card.Title>
           </Card.Header>
@@ -150,7 +150,7 @@ export function UserComparison({ data }: { data: z.infer<typeof per_user_schema>
           </Card.Content>
         </Card>
 
-        <Card className="border-l-4 border-l-amber-500">
+        <Card className="border-l-4 border-l-amber-500 max-w-72 min-w-max w-full place-self-start">
           <Card.Header className="pb-2">
             <Card.Title className="text-lg">{user2}</Card.Title>
           </Card.Header>
