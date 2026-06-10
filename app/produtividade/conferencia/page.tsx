@@ -6,11 +6,13 @@ import {
   DateField,
   DatePicker,
   Description,
+  type Key,
   Label,
   NumberField,
   ProgressBar,
   Spinner,
   Tabs,
+  useFilter,
 } from "@heroui/react";
 import { type DateValue, getLocalTimeZone, today } from "@internationalized/date";
 import { QueryClient, useQuery } from "@tanstack/react-query";
@@ -224,12 +226,11 @@ function Page() {
     [data, dataUpdatedAt, hours_filter, meta],
   );
 
-  const todays_average = useMemo(
-    () =>
-      Object.values(per_user).reduce((a, b) => a + b.embalagens_por_hora, 0) /
-      Object.keys(per_user).length,
-    [per_user],
-  );
+  const todays_average = useMemo(() => {
+    const values = Object.values(per_user).filter((v) => Number.isFinite(v.embalagens_por_hora));
+
+    return values.reduce((a, b) => a + b.embalagens_por_hora, 0) / values.length;
+  }, [per_user]);
 
   console.log(per_user);
 
@@ -237,29 +238,31 @@ function Page() {
     <main className="min-h-screen bg-background p-6 flex flex-col items-center">
       <div className="space-y-6">
         <header className="space-x-8 container grid grid-flow-col grid-cols-6 place-items-center">
-          <Button
-            isPending={isFetching}
-            onPress={() => queryClient.invalidateQueries({ queryKey: ["relatorio_conferencia"] })}
-            className={`justify-self-end place-self-start w-48 my-12 ${isUpdated ? "bg-lime-600 text-white" : ""}`}
-            isDisabled={isUpdated}
-          >
-            {({ isPending, isDisabled }) => (
-              <>
-                {isPending ? (
-                  <Spinner color="current" size="sm" />
-                ) : isDisabled ? (
-                  <CheckIcon />
-                ) : (
-                  <RefreshCwIcon />
-                )}
-                {isPending
-                  ? "Atualizando dados..."
-                  : isDisabled
-                    ? "Dados atualizados!"
-                    : "Atualizar dados"}
-              </>
-            )}
-          </Button>
+          <div>
+            <Button
+              isPending={isFetching}
+              onPress={() => queryClient.invalidateQueries({ queryKey: ["relatorio_conferencia"] })}
+              className={`justify-self-end place-self-start w-48 my-12 ${isUpdated ? "bg-lime-600 text-white" : ""}`}
+              isDisabled={isUpdated}
+            >
+              {({ isPending, isDisabled }) => (
+                <>
+                  {isPending ? (
+                    <Spinner color="current" size="sm" />
+                  ) : isDisabled ? (
+                    <CheckIcon />
+                  ) : (
+                    <RefreshCwIcon />
+                  )}
+                  {isPending
+                    ? "Atualizando dados..."
+                    : isDisabled
+                      ? "Dados atualizados!"
+                      : "Atualizar dados"}
+                </>
+              )}
+            </Button>
+          </div>
           <div className="flex flex-col items-center mx-auto col-start-2 col-span-4">
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
               Painel de Produtividade
@@ -316,6 +319,7 @@ function Page() {
               onChange={setMeta}
               step={50}
               name="meta"
+              isDisabled={isFetching}
             >
               <Label>Meta por Hora</Label>
               <NumberField.Group>
@@ -324,9 +328,12 @@ function Page() {
                 <NumberField.IncrementButton />
               </NumberField.Group>
             </NumberField>
-            <Button size="sm" onPress={() => setMeta(todays_average)}>
+            <Button size="sm" onPress={() => setMeta(todays_average)} isPending={isFetching}>
               <ChartNoAxesColumnIcon />
-              Definir para média do dia ({todays_average.toLocaleString("pt-BR", { maximumFractionDigits: 0 })})
+              Definir para média do dia
+              {isFetching
+                ? ""
+                : ` (${todays_average.toLocaleString("pt-BR", { maximumFractionDigits: 0 })})`}
             </Button>
           </div>
         </header>

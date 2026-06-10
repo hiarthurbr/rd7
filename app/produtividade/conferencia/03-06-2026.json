@@ -40381,6 +40381,18 @@
   },
   {
     "endereco": "Inbound",
+    "codigoCaixa": 0,
+    "caixa": "CX0000000",
+    "produto": "0000",
+    "descricaoProduto": "produto inexistente",
+    "quantidade": 1,
+    "usuario": "Usuário Teste",
+    "montagem": "2026-06-03T15:51:43.893",
+    "codigoPedido": "00000",
+    "descTipoCaixa": "CAIXA PADRÃO"
+  },
+  {
+    "endereco": "Inbound",
     "codigoCaixa": 3807959,
     "caixa": "CX0158547",
     "produto": "9887",

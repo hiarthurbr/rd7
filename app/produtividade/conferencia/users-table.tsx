@@ -1,6 +1,15 @@
 "use client";
 
-import { Chip, Pagination, type SortDescriptor, Table } from "@heroui/react";
+import {
+  Button,
+  Chip,
+  Pagination,
+  Separator,
+  Skeleton,
+  type SortDescriptor,
+  Table,
+  Tooltip,
+} from "@heroui/react";
 import {
   createColumnHelper,
   flexRender,
@@ -10,13 +19,19 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowDownUpIcon, ChevronUp } from "lucide-react";
-import { useMemo, useState } from "react";
+import { resize } from "framer-motion";
+import { ArrowDownUpIcon, ChevronUp, InfoIcon } from "lucide-react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type z from "zod";
 import { cn } from "@/lib/utils";
 import type { per_user_schema } from "./page";
 
+const duration_locale = new Intl.DurationFormat("pt-BR", {
+  style: "long",
+});
+
 export function duration(minutes_raw: number) {
+  if (minutes_raw < 1) return "<1 minuto";
   const minutes = minutes_raw % 60;
   const hours = (minutes_raw - minutes) / 60;
 
@@ -36,24 +51,42 @@ const columns = [
   columnHelper.accessor("total_embalagens", {
     header: "Total Embalagens",
     sortingFn: "basic",
-    cell: (info) => info.getValue().toLocaleString("pt-BR", { maximumFractionDigits: 1 }),
+    cell: (info) =>
+      Number.isFinite(info.getValue()) ? (
+        info.getValue().toLocaleString("pt-BR", { maximumFractionDigits: 1 })
+      ) : (
+        <Skeleton className="h-3 w-full rounded-lg" />
+      ),
   }),
   columnHelper.accessor("pedidos_por_hora", {
     header: "Pedidos/Hora",
     sortingFn: "basic",
-    cell: (info) => info.getValue().toLocaleString("pt-BR", { maximumFractionDigits: 1 }),
+
+    cell: (info) =>
+      Number.isFinite(info.getValue()) ? (
+        info.getValue().toLocaleString("pt-BR", { maximumFractionDigits: 1 })
+      ) : (
+        <Skeleton className="h-3 w-full rounded-lg" />
+      ),
   }),
   columnHelper.accessor("caixas_por_hora", {
     header: "Caixas/Hora",
     sortingFn: "basic",
-    cell: (info) => info.getValue().toLocaleString("pt-BR", { maximumFractionDigits: 1 }),
+    cell: (info) =>
+      Number.isFinite(info.getValue()) ? (
+        info.getValue().toLocaleString("pt-BR", { maximumFractionDigits: 1 })
+      ) : (
+        <Skeleton className="h-3 w-full rounded-lg" />
+      ),
   }),
   columnHelper.accessor(({ embalagens_por_hora, meta }) => ({ embalagens_por_hora, meta }), {
     header: "Embalagens/Hora",
     id: "emb_p_hora",
     sortDescFirst: true,
     sortingFn: (a, b) =>
-      a.original.embalagens_por_hora > b.original.embalagens_por_hora
+      a.original.embalagens_por_hora > b.original.embalagens_por_hora &&
+      Number.isFinite(a.original.embalagens_por_hora) &&
+      Number.isFinite(b.original.embalagens_por_hora)
         ? 1
         : a.original.embalagens_por_hora < b.original.embalagens_por_hora
           ? -1
@@ -61,20 +94,39 @@ const columns = [
     cell: (info) => {
       const meta_percentage =
         ((info.getValue().embalagens_por_hora / info.getValue().meta) * 100) >> 0;
-      return (
-        <span className="w-full flex flex-row justify-between">
-          {info
-            .getValue()
-            .embalagens_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
-          <Chip
-            variant="soft"
-            color={
-              meta_percentage >= 100 ? "success" : meta_percentage >= 80 ? "warning" : "danger"
-            }
-          >
-            {meta_percentage.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}%
-          </Chip>
+      return Number.isFinite(info.getValue().embalagens_por_hora) ? (
+        <span className="w-full flex flex-row justify-between items-center">
+          <span>
+            {info
+              .getValue()
+              .embalagens_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+          </span>
+          <span className="flex flex-row items-center">
+            {info.row.original.duração <= 60 && (
+              <Tooltip delay={0}>
+                <Button isIconOnly variant="tertiary" size="sm" className="scale-80">
+                  <InfoIcon />
+                </Button>
+                <Tooltip.Content>
+                  <p className="break-normal">
+                    Esse usuário está conferindo a menos de 1 hora; Como resultado disso, essa média
+                    é uma previsão, baseada nos dados até o momento.
+                  </p>
+                </Tooltip.Content>
+              </Tooltip>
+            )}
+            <Chip
+              variant="soft"
+              color={
+                meta_percentage >= 100 ? "success" : meta_percentage >= 80 ? "warning" : "danger"
+              }
+            >
+              {meta_percentage.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}%
+            </Chip>
+          </span>
         </span>
+      ) : (
+        <Skeleton className="h-3 w-full rounded-lg" />
       );
     },
   }),
@@ -100,13 +152,8 @@ const columns = [
     header: "Duração",
     sortingFn: "basic",
     cell: (info) => duration(info.getValue()),
-    footer: "Teste",
   }),
 ];
-
-const duration_locale = new Intl.DurationFormat("pt-BR", {
-  style: "long",
-});
 
 function toSortDescriptor(sorting: SortingState): SortDescriptor | undefined {
   const first = sorting[0];
@@ -130,7 +177,7 @@ function SortableColumnHeader({
 }) {
   return (
     <span className="flex items-center justify-between">
-      {children}
+      <span>{children}</span>
       {sortDirection == null ? (
         <Chip size="sm" variant="secondary">
           <ArrowDownUpIcon className="stroke-neutral-400 size-3" />
@@ -205,10 +252,23 @@ export function UsersTable({ data }: { data: z.infer<typeof per_user_schema> }) 
     return items;
   }, [pageCount, pageIndex]);
 
-  console.log(table.getRowModel().rows);
+  const get_footer_offset = useCallback((key: string) => {
+    const _table = document.querySelector("table");
+    const column = document.querySelector(`th[data-key=${key}]`);
+    if (_table == null || column == null) return 0;
+
+    return column.getBoundingClientRect().x - _table.getBoundingClientRect().x;
+  }, []);
+
+  console.log(table.getHeaderGroups()[0].headers.map((h) => h.id));
+
+  const footer_values = useMemo(() => {
+    const rows = table.getRowModel().rows.map(row => row.getVisibleCells().map(cell => cell.getValue()))
+    const headers = table.getHeaderGroups()[0].headers
+  }, [table])
 
   return (
-    <div className="rounded-lg border bg-card">
+    <div>
       <Table>
         <Table.ScrollContainer>
           <Table.Content
@@ -245,12 +305,21 @@ export function UsersTable({ data }: { data: z.infer<typeof per_user_schema> }) 
               )}
             </Table.Body>
           </Table.Content>
-          <Table.Footer className="grid grid-flow-col grid-cols-8">
-            {table.getFooterGroups()[0]?.headers.map((header) => (
-              <div key={header.id} style={{ width: header.column.getSize() }}>
-                {flexRender(header.column.columnDef.header, header.getContext())}
-              </div>
-            ))}
+          <Table.Footer className="relative h-6">
+            {document.querySelector('table') == null ? (
+              <Skeleton className="w-full h-4 rounded-2xl" />
+            ) : (
+              table.getHeaderGroups()[0]?.headers.map((header) => (
+                <div
+                  key={header.id}
+                  className="absolute flex flex-row items-center space-x-2"
+                  style={{ left: get_footer_offset(header.id) }}
+                >
+                  <Separator orientation="vertical" />
+                  
+                </div>
+              ))
+            )}
           </Table.Footer>
         </Table.ScrollContainer>
       </Table>

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import z from "zod";
 
 export function Auth({ Element, hash }: { Element: () => React.ReactNode; hash: string }) {
-  z.string().min(8).parse(hash);
+  z.base64().min(8).parse(hash);
   const [passwd, setPasswd] = useState(null);
   const [hashing, setHashing] = useState(false);
   const [error, setError] = useState<null | string>(null);
@@ -56,6 +56,7 @@ export function Auth({ Element, hash }: { Element: () => React.ReactNode; hash: 
           type="password"
           onComplete={(value) => setPasswd(value)}
           isInvalid={!!error}
+          isDisabled={hashing}
           autoFocus
         >
           <InputOTP.Group>
