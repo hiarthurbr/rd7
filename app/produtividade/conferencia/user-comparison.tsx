@@ -161,7 +161,7 @@ export function UserComparison({ data }: { data: z.infer<typeof per_user_schema>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Duracao:</span>
-              <span className="font-medium">{userData1.duração}</span>
+              <span className="font-medium">{duration(userData1.duração)}</span>
             </div>
           </Card.Content>
         </Card>

@@ -2,6 +2,7 @@ import excel from "exceljs";
 import { XMLParser } from "fast-xml-parser";
 import z from "zod";
 import type { ComparisonResult } from "./types";
+import { NumberParser } from "@internationalized/number";
 
 function get_propostas(xml: string) {
   return new Set(
@@ -13,20 +14,42 @@ function get_propostas(xml: string) {
   );
 }
 
+const number_parser = new NumberParser("pt-BR", { style: "decimal" });
+const try_parse_number = (n: unknown) => {
+  switch (typeof n) {
+    case "number":
+      return n;
+    case "string":
+      return (
+        z.coerce.number().safeParse(n).data ??
+        z.number().safeParse(number_parser.parse(n)).data
+      );
+    default:
+      return n;
+  }
+};
+
 export async function parseXlsx(buffer: ArrayBuffer) {
   const workbook = new excel.Workbook();
   await workbook.xlsx.load(buffer);
 
   console.log({ worksheets: workbook.worksheets });
 
-  const worksheet = workbook.worksheets.filter((w) => w.state === "visible").pop()!;
+  const worksheet = workbook.worksheets
+    .filter((w) => w.state === "visible")
+    .pop()!;
   console.log({ worksheet });
   const prods: { [key: string]: [number, number] } = {};
   worksheet.eachRow({ includeEmpty: true }, (row) => {
-    if (Array.isArray(row.values) && row.values.length > 0 && row.values[1] != null) {
+    if (
+      Array.isArray(row.values) &&
+      row.values.length > 0 &&
+      row.values[1] != null
+    ) {
       const prod = row.values[1],
-        qntd = z.coerce.number().safeParse(row.values[2]),
-        peso_uni = z.coerce.number().safeParse(row.values[3]);
+        qntd = z.number().safeParse(try_parse_number(row.values[2])),
+        peso_uni = z.coerce.number().safeParse(try_parse_number(row.values[3]));
+
       if (typeof prod === "string" && qntd.success && peso_uni.success) {
         const v = {
           prod,
@@ -71,7 +94,11 @@ export function parseXml(xmlString: string) {
   // @ts-expect-error
   jObj.NFe.infNFe.det.forEach((prod, nItem) => {
     if (prods_nfe[prod.prod.cProd] != null) {
-      prods_nfe[prod.prod.cProd].ids.push([nItem + 1, prod.prod.qCom, prod.prod.qTrib]);
+      prods_nfe[prod.prod.cProd].ids.push([
+        nItem + 1,
+        prod.prod.qCom,
+        prod.prod.qTrib,
+      ]);
       prods_nfe[prod.prod.cProd].res[0] += prod.prod.qCom;
       prods_nfe[prod.prod.cProd].res[1] += prod.prod.qTrib;
     } else
@@ -105,7 +132,10 @@ export function compareFiles(
     if (result.same_sku[prod] == null) result.same_sku[prod] = [];
     result.same_sku[prod] = prod_nfe?.ids;
 
-    if (prod_pl?.[0] === prod_nfe?.res[0] && Math.abs(prod_pl?.[1] - prod_nfe?.res[1]) < 0.0001)
+    if (
+      prod_pl?.[0] === prod_nfe?.res[0] &&
+      Math.abs(prod_pl?.[1] - prod_nfe?.res[1]) < 0.0001
+    )
       result.eq[prod] = [
         [prod_pl?.[0] ?? 0, prod_pl?.[1] ?? 0],
         [prod_nfe?.res[0] ?? 0, prod_nfe?.res[1] ?? 0],
