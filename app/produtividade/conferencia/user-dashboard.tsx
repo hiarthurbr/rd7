@@ -1,14 +1,21 @@
 "use client";
 
-import { Card, Label, ListBox, Select } from "@heroui/react";
+import { Button, Card, Chip, Label, ListBox, Select, Tooltip as UITooltip } from "@heroui/react";
+import { TriangleAlertIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   Pie,
   PieChart,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -25,6 +32,8 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
   const [selectedUser, setSelectedUser] = useState(userNames[0]);
   const userData = data[selectedUser];
 
+  const meta_percentage = ((userData.embalagens_por_hora / userData.meta) * 100) >> 0;
+
   const hourlyData = Object.entries(userData.por_hora)
     .map(([hour, data]) => ({
       hour: `${hour}h`,
@@ -36,6 +45,63 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
     { name: "Pedidos/Hora", value: userData.pedidos_por_hora },
     { name: "Caixas/Hora", value: userData.caixas_por_hora },
   ];
+
+  console.log(
+    Object.values(data)
+      .filter((x) => Number.isFinite(x.caixas_por_hora))
+      .reduce(
+        ([min, max], curr) => [
+          Math.min(min, curr.caixas_por_hora),
+          Math.max(max, curr.caixas_por_hora),
+        ],
+        [Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
+      ),
+  );
+
+  const radarData = useMemo(
+    () => [
+      {
+        name: "Caixas/Hora",
+        value: userData.caixas_por_hora,
+        range: Object.values(data)
+          .filter((x) => Number.isFinite(x.caixas_por_hora))
+          .reduce(
+            ([min, max], curr) => [
+              Math.min(min, curr.caixas_por_hora),
+              Math.max(max, curr.caixas_por_hora),
+            ],
+            [Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
+          ),
+      },
+      {
+        name: "Pedidos/Hora",
+        value: userData.pedidos_por_hora,
+        range: Object.values(data)
+          .filter((x) => Number.isFinite(x.pedidos_por_hora))
+          .reduce(
+            ([min, max], curr) => [
+              Math.min(min, curr.pedidos_por_hora),
+              Math.max(max, curr.pedidos_por_hora),
+            ],
+            [Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
+          ),
+      },
+      {
+        name: "Embalagens/Hora",
+        value: userData.embalagens_por_hora,
+        range: Object.values(data)
+          .filter((x) => Number.isFinite(x.embalagens_por_hora))
+          .reduce(
+            ([min, max], curr) => [
+              Math.min(min, curr.embalagens_por_hora),
+              Math.max(max, curr.embalagens_por_hora),
+            ],
+            [Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
+          ),
+      },
+    ],
+    [userData, data],
+  );
 
   return (
     <div className="space-y-6">
@@ -84,8 +150,32 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
             </Card.Title>
           </Card.Header>
           <Card.Content>
-            <div className="text-2xl font-bold text-teal-600">
-              {userData.embalagens_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+            <div className="text-2xl font-bold text-teal-600 flex flex-row items-center space-x-2">
+              <span className="-translate-y-0.5">
+                {userData.embalagens_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+              </span>
+              {userData.duração < 60 && (
+                <UITooltip delay={0}>
+                  <Button isIconOnly variant="tertiary" size="sm" className="scale-80">
+                    <TriangleAlertIcon />
+                  </Button>
+                  <UITooltip.Content>
+                    <p className="break-normal">
+                      Esse usuário está conferindo a menos de 1 hora; Como resultado disso, essa
+                      média é uma previsão, baseada nos dados até o momento.
+                    </p>
+                  </UITooltip.Content>
+                </UITooltip>
+              )}
+              <Chip
+                size="lg"
+                variant="soft"
+                color={
+                  meta_percentage >= 100 ? "success" : meta_percentage >= 80 ? "warning" : "danger"
+                }
+              >
+                {meta_percentage.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}% da meta
+              </Chip>
             </div>
           </Card.Content>
         </Card>
@@ -132,27 +222,18 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
           <Card.Content>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={metricsData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${value.toFixed(2)}`}
-                    outerRadius={100}
-                    fill="#8884d8"
+                <RadarChart data={radarData}>
+                  <PolarGrid />
+                  <PolarAngleAxis dataKey="name" className="text-xs" />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} />
+                  <Radar
+                    name={selectedUser}
                     dataKey="value"
-                  >
-                    {metricsData.map((_, index) => (
-                      <Cell
-                        key={`cell-${
-                          // biome-ignore lint/suspicious/noArrayIndexKey: usar o index não é um problema, já que é a única informação que temos
-                          index
-                        }`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
-                    ))}
-                  </Pie>
+                    stroke="#0d9488"
+                    fill="#0d9488"
+                    fillOpacity={0.3}
+                  />
+                  <Legend />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "hsl(var(--card))",
@@ -160,7 +241,7 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
                       borderRadius: "8px",
                     }}
                   />
-                </PieChart>
+                </RadarChart>
               </ResponsiveContainer>
             </div>
           </Card.Content>

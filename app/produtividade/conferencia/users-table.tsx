@@ -3,6 +3,7 @@
 import {
   Button,
   Chip,
+  Description,
   Pagination,
   Separator,
   Skeleton,
@@ -19,9 +20,8 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { resize } from "framer-motion";
-import { ArrowDownUpIcon, ChevronUp, InfoIcon } from "lucide-react";
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ArrowDownUpIcon, ChevronUp, DiffIcon, TriangleAlertIcon } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 import type z from "zod";
 import { cn } from "@/lib/utils";
 import type { per_user_schema } from "./page";
@@ -58,10 +58,9 @@ const columns = [
         <Skeleton className="h-3 w-full rounded-lg" />
       ),
   }),
-  columnHelper.accessor("pedidos_por_hora", {
-    header: "Pedidos/Hora",
+  columnHelper.accessor("caixas_por_hora", {
+    header: "Caixas/Hora",
     sortingFn: "basic",
-
     cell: (info) =>
       Number.isFinite(info.getValue()) ? (
         info.getValue().toLocaleString("pt-BR", { maximumFractionDigits: 1 })
@@ -69,9 +68,10 @@ const columns = [
         <Skeleton className="h-3 w-full rounded-lg" />
       ),
   }),
-  columnHelper.accessor("caixas_por_hora", {
-    header: "Caixas/Hora",
+  columnHelper.accessor("pedidos_por_hora", {
+    header: "Pedidos/Hora",
     sortingFn: "basic",
+
     cell: (info) =>
       Number.isFinite(info.getValue()) ? (
         info.getValue().toLocaleString("pt-BR", { maximumFractionDigits: 1 })
@@ -105,7 +105,7 @@ const columns = [
             {info.row.original.duração <= 60 && (
               <Tooltip delay={0}>
                 <Button isIconOnly variant="tertiary" size="sm" className="scale-80">
-                  <InfoIcon />
+                  <TriangleAlertIcon />
                 </Button>
                 <Tooltip.Content>
                   <p className="break-normal">
@@ -130,6 +130,11 @@ const columns = [
       );
     },
   }),
+  columnHelper.accessor("duração", {
+    header: "Duração",
+    sortingFn: "basic",
+    cell: (info) => duration(info.getValue()),
+  }),
   columnHelper.accessor("hora_inicio", {
     header: "Hora Inicio",
     sortingFn: "datetime",
@@ -147,11 +152,6 @@ const columns = [
         hour: "2-digit",
         minute: "2-digit",
       }),
-  }),
-  columnHelper.accessor("duração", {
-    header: "Duração",
-    sortingFn: "basic",
-    cell: (info) => duration(info.getValue()),
   }),
 ];
 
@@ -197,7 +197,13 @@ function SortableColumnHeader({
 }
 
 const PAGE_SIZE = 14;
-export function UsersTable({ data }: { data: z.infer<typeof per_user_schema> }) {
+export function UsersTable({
+  data,
+  avg,
+}: {
+  data: z.infer<typeof per_user_schema>;
+  avg: { mean: number; median: number };
+}) {
   const [sorting, setSorting] = useState<SortingState>([
     {
       id: "emb_p_hora",
@@ -263,9 +269,33 @@ export function UsersTable({ data }: { data: z.infer<typeof per_user_schema> }) 
   console.log(table.getHeaderGroups()[0].headers.map((h) => h.id));
 
   const footer_values = useMemo(() => {
-    const rows = table.getRowModel().rows.map(row => row.getVisibleCells().map(cell => cell.getValue()))
-    const headers = table.getHeaderGroups()[0].headers
-  }, [table])
+    const arr = Object.values(data)
+      .map((x) => x.embalagens_por_hora)
+      .filter((x) => Number.isFinite(x));
+    const mad = arr.reduce((sum, val) => sum + Math.abs(val - avg.median), 0) / arr.length;
+    console.log({ arr, mad });
+
+    type keys =
+      | "name"
+      | "total_embalagens"
+      | "pedidos_por_hora"
+      | "caixas_por_hora"
+      | "emb_p_hora"
+      | "hora_inicio"
+      | "hora_fim"
+      | "duração";
+
+    return {
+      emb_p_hora: (
+        <Description className="flex flex-row space-x-1 items-center">
+          <span>Media geral:</span>
+          <span>{avg.mean.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+          <DiffIcon className="size-2.5" />
+          <span>{mad.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+        </Description>
+      ),
+    } satisfies { [key in keys]?: React.ReactNode };
+  }, [data, avg]);
 
   return (
     <div>
@@ -306,17 +336,17 @@ export function UsersTable({ data }: { data: z.infer<typeof per_user_schema> }) 
             </Table.Body>
           </Table.Content>
           <Table.Footer className="relative h-6">
-            {document.querySelector('table') == null ? (
+            {document.querySelector("table") == null ? (
               <Skeleton className="w-full h-4 rounded-2xl" />
             ) : (
-              table.getHeaderGroups()[0]?.headers.map((header) => (
+              table.getHeaderGroups()[0]?.headers.map((header, i) => (
                 <div
                   key={header.id}
-                  className="absolute flex flex-row items-center space-x-2"
+                  className="absolute flex flex-row items-center space-x-2 pt-0.5"
                   style={{ left: get_footer_offset(header.id) }}
                 >
-                  <Separator orientation="vertical" />
-                  
+                  {i > 0 && <Separator orientation="vertical" className="mt-1.5 mb-1" />}
+                  <span>{footer_values[header.id as keyof typeof footer_values]}</span>
                 </div>
               ))
             )}

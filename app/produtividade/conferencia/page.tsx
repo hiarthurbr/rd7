@@ -2,6 +2,7 @@
 
 import {
   Button,
+  ButtonGroup,
   Calendar,
   DateField,
   DatePicker,
@@ -92,6 +93,18 @@ const marcadores: Array<{
   { label: "Volta do jantar", momento: { hh: 18, mm: 30 } },
 ];
 
+function getMedian(arr: number[]) {
+  if (arr.length === 0) return undefined;
+
+  // Create a copy and sort numerically in ascending order
+  const sorted = [...arr].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+
+  // If odd length, return the middle element
+  // If even length, return the average of the two middle elements
+  return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
 function Page() {
   const now = useMemo(() => today(getLocalTimeZone()), []);
   const [date, setDate] = useState<DateValue>(now);
@@ -120,6 +133,8 @@ function Page() {
           ? montagem_caixa_schema.array().parseAsync(data_cache)
           : get_relatorio_conferencia(date.toDate(getLocalTimeZone())),
       refetchInterval: 1000 * 60 * 60,
+      refetchOnReconnect: true,
+      refetchOnWindowFocus: true,
       staleTime: 1000 * 60 * 15,
       // enabled: false,
     },
@@ -227,9 +242,17 @@ function Page() {
   );
 
   const todays_average = useMemo(() => {
-    const values = Object.values(per_user).filter((v) => Number.isFinite(v.embalagens_por_hora));
+    const values = Object.values(per_user)
+      .filter((v) => Number.isFinite(v.embalagens_por_hora))
+      .map((x) => x.embalagens_por_hora);
 
-    return values.reduce((a, b) => a + b.embalagens_por_hora, 0) / values.length;
+    const sorted = values.sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+
+    return {
+      mean: values.reduce((a, b) => a + b, 0) / values.length,
+      median: sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2,
+    };
   }, [per_user]);
 
   console.log(per_user);
@@ -328,13 +351,24 @@ function Page() {
                 <NumberField.IncrementButton />
               </NumberField.Group>
             </NumberField>
-            <Button size="sm" onPress={() => setMeta(todays_average)} isPending={isFetching}>
-              <ChartNoAxesColumnIcon />
-              Definir para média do dia
-              {isFetching
-                ? ""
-                : ` (${todays_average.toLocaleString("pt-BR", { maximumFractionDigits: 0 })})`}
-            </Button>
+            <div className="flex flex-col gap-2">
+              <p className="text-sm text-muted">Definir para:</p>
+              <ButtonGroup variant="primary" isDisabled={isFetching} size="sm">
+                <Button onPress={() => setMeta(todays_average.mean)}>
+                  Média
+                  {isFetching
+                    ? ""
+                    : ` (${todays_average.mean.toLocaleString("pt-BR", { maximumFractionDigits: 0 })})`}
+                </Button>
+                <Button onPress={() => setMeta(todays_average.median)}>
+                  <ButtonGroup.Separator />
+                  Mediana
+                  {isFetching
+                    ? ""
+                    : ` (${todays_average.median.toLocaleString("pt-BR", { maximumFractionDigits: 0 })})`}
+                </Button>
+              </ButtonGroup>
+            </div>
           </div>
         </header>
 
@@ -372,7 +406,7 @@ function Page() {
               </Tabs.List>
             </Tabs.ListContainer>
             <Tabs.Panel className="pt-4" id="overview">
-              <UsersTable data={per_user} />
+              <UsersTable data={per_user} avg={todays_average}/>
             </Tabs.Panel>
             <Tabs.Panel className="pt-4" id="analytics">
               <UserDashboard data={per_user} />
