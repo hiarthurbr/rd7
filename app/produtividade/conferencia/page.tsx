@@ -7,17 +7,15 @@ import {
   DateField,
   DatePicker,
   Description,
-  type Key,
   Label,
   NumberField,
   ProgressBar,
   Spinner,
   Tabs,
-  useFilter,
 } from "@heroui/react";
 import { type DateValue, getLocalTimeZone, today } from "@internationalized/date";
 import { QueryClient, useQuery } from "@tanstack/react-query";
-import { ChartNoAxesColumnIcon, CheckIcon, Grid2x2XIcon, RefreshCwIcon } from "lucide-react";
+import { CheckIcon, Grid2x2XIcon, RefreshCwIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { Auth } from "@/components/auth";
@@ -88,7 +86,7 @@ async function get_relatorio_conferencia(date: Date) {
 }
 
 const horas_trabalhadas = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
-const marcadores: Array<{
+export const marcadores: Array<{
   label: string;
   momento: { hh: number; mm: number };
 }> = [
@@ -100,21 +98,8 @@ const marcadores: Array<{
   { label: "Volta do jantar", momento: { hh: 18, mm: 30 } },
 ];
 
-function getMedian(arr: number[]) {
-  if (arr.length === 0) return undefined;
-
-  // Create a copy and sort numerically in ascending order
-  const sorted = [...arr].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-
-  // If odd length, return the middle element
-  // If even length, return the average of the two middle elements
-  return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-}
-
 function Page() {
-  const now = useMemo(() => today(getLocalTimeZone()), []);
-  const [date, setDate] = useState<DateValue>(now);
+  const [date, setDate] = useState<DateValue>(today(getLocalTimeZone()));
   const [meta, setMeta] = useState(800);
 
   const [queryClient, hours_filter] = useMemo(() => {
@@ -323,7 +308,7 @@ function Page() {
                 </DateField.Suffix>
               </DateField.Group>
               <DatePicker.Popover>
-                <Calendar aria-label="Event date" maxValue={now}>
+                <Calendar aria-label="Event date" maxValue={today(getLocalTimeZone())}>
                   <Calendar.Header>
                     <Calendar.YearPickerTrigger>
                       <Calendar.YearPickerTriggerHeading />
