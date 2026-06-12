@@ -44,6 +44,13 @@ export const per_user_schema = z.record(
         caixas: z.set(z.string()),
       }),
     ),
+    produtos: z.array(
+      z.object({
+        sku: z.string(),
+        quantidade_pre: z.number(),
+        multiplo: z.number().optional().nullable(),
+      }),
+    ),
     pedidos_por_hora: z.number(),
     caixas_por_hora: z.number(),
     embalagens_por_hora: z.number(),
@@ -165,7 +172,7 @@ function Page() {
                     data.filter((cx) => cx.montagem >= start && cx.montagem < end),
                   ]);
 
-                const total_embalagens = Object.entries(
+                const produtos = Object.entries(
                   data.reduce(
                     (obj, prod) => {
                       if (prod.produto in obj) obj[prod.produto] += prod.quantidade;
@@ -174,10 +181,16 @@ function Page() {
                     },
                     {} as Record<string, number>,
                   ),
-                )
+                ).map(([sku, quantidade_pre]) => ({
+                      sku,
+                      quantidade_pre,
+                      multiplo: skus[sku as keyof typeof skus],
+                    }));
+
+                const total_embalagens = produtos
                   .map(
-                    ([produto, quantidade]) =>
-                      quantidade / (skus[produto as keyof typeof skus] ?? 1),
+                    ({ quantidade_pre, multiplo }) =>
+                      quantidade_pre / (multiplo ?? 1),
                   )
                   .reduce((a, b) => a + b, 0);
 
@@ -234,6 +247,7 @@ function Page() {
                     hora_fim: new Date(hora_fim),
                     duração: Math.floor(Math.abs(hora_inicio - hora_fim) / 60_000),
                     meta,
+                    produtos,
                   },
                 ];
               }),
@@ -406,7 +420,7 @@ function Page() {
               </Tabs.List>
             </Tabs.ListContainer>
             <Tabs.Panel className="pt-4" id="overview">
-              <UsersTable data={per_user} avg={todays_average}/>
+              <UsersTable data={per_user} avg={todays_average} />
             </Tabs.Panel>
             <Tabs.Panel className="pt-4" id="analytics">
               <UserDashboard data={per_user} />

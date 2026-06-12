@@ -8,7 +8,6 @@ import {
   Label,
   Pagination,
   ProgressBar,
-  type SortDescriptor,
   Spinner,
   Table,
   Tabs,
@@ -26,12 +25,12 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronUpIcon, InboxIcon, RefreshCwIcon } from "lucide-react";
+import { InboxIcon, RefreshCwIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import z from "zod";
 import { getToken } from "@/lib/pda";
 import { recebimento_schema } from "@/lib/schemas";
-import { cn, fmt_date } from "@/lib/utils";
+import { fmt_date, SortableColumnHeader, toSortDescriptor, toSortingState } from "@/lib/utils";
 
 const timeRangeEnum = z.enum({
   Day: 1,
@@ -147,46 +146,6 @@ const columns = [
       (b.getValue(id) as [number, number])[0] / (b.getValue(id) as [number, number])[1],
   }),
 ];
-
-function toSortDescriptor(sorting: SortingState): SortDescriptor | undefined {
-  const first = sorting[0];
-  if (!first) return undefined;
-  return {
-    column: first.id,
-    direction: first.desc ? "descending" : "ascending",
-  };
-}
-// Convert React Aria SortDescriptor → TanStack SortingState
-function toSortingState(descriptor: SortDescriptor): SortingState {
-  return [
-    {
-      desc: descriptor.direction === "descending",
-      id: descriptor.column as string,
-    },
-  ];
-}
-
-function SortableColumnHeader({
-  children,
-  sortDirection,
-}: {
-  children: React.ReactNode;
-  sortDirection?: "ascending" | "descending";
-}) {
-  return (
-    <span className="flex items-center justify-between">
-      {children}
-      {!!sortDirection && (
-        <ChevronUpIcon
-          className={cn(
-            "size-3 transform transition-transform duration-100 ease-out",
-            sortDirection === "descending" ? "rotate-180" : "",
-          )}
-        />
-      )}
-    </span>
-  );
-}
 
 const PAGE_SIZE = 13;
 

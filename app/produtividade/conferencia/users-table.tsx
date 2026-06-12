@@ -4,10 +4,10 @@ import {
   Button,
   Chip,
   Description,
+  Modal,
   Pagination,
   Separator,
   Skeleton,
-  type SortDescriptor,
   Table,
   Tooltip,
 } from "@heroui/react";
@@ -20,27 +20,175 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowDownUpIcon, ChevronUp, DiffIcon, TriangleAlertIcon } from "lucide-react";
+import { DiffIcon, SearchIcon, TriangleAlertIcon } from "lucide-react";
+import type React from "react";
 import { useCallback, useMemo, useState } from "react";
 import type z from "zod";
-import { cn } from "@/lib/utils";
+import { duration, SortableColumnHeader, toSortDescriptor, toSortingState } from "@/lib/utils";
 import type { per_user_schema } from "./page";
 
-const duration_locale = new Intl.DurationFormat("pt-BR", {
-  style: "long",
-});
+type ProductsTableData = z.infer<typeof per_user_schema>[string]["produtos"];
+const columnHelperProducts = createColumnHelper<ProductsTableData[number]>();
 
-export function duration(minutes_raw: number) {
-  if (minutes_raw < 1) return "<1 minuto";
-  const minutes = minutes_raw % 60;
-  const hours = (minutes_raw - minutes) / 60;
+const columnsProducts = [
+  columnHelperProducts.accessor("sku", { header: "SKU" }),
+  columnHelperProducts.accessor("quantidade_pre", {
+    header: "Qntd",
+    sortDescFirst: true,
+    sortingFn: "basic",
+    cell: (info) => info.getValue().toLocaleString("pt-BR"),
+  }),
+  columnHelperProducts.accessor("multiplo", {
+    cell: (info) => info.getValue()?.toLocaleString("pt-BR") ?? "N/D",
+    header: "Multiplo",
+    sortDescFirst: true,
+    sortingFn: "alphanumeric",
+  }),
+  columnHelperProducts.accessor(
+    (row) => (row.quantidade_pre / (row.multiplo ?? 1)).toLocaleString("pt-BR"),
+    { header: "Valor final", sortDescFirst: true, sortingFn: "basic" },
+  ),
+];
 
-  // console.log({ minutes_raw, minutes, hours });
-
-  return duration_locale.format({
-    hours,
-    minutes,
+function ProdutsTable({ data }: { data: ProductsTableData }) {
+  const PAGE_SIZE = useMemo(() => 15, []);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const table = useReactTable({
+    columns: columnsProducts,
+    data,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    initialState: { pagination: { pageSize: PAGE_SIZE } },
+    onSortingChange: setSorting,
+    state: { sorting },
   });
+
+  const sortDescriptor = useMemo(() => toSortDescriptor(sorting), [sorting]);
+  const { pageIndex } = table.getState().pagination;
+  const pageCount = table.getPageCount();
+  const start = pageIndex * PAGE_SIZE + 1;
+  const end = useMemo(
+    () => Math.min((pageIndex + 1) * PAGE_SIZE, data.length),
+    [pageIndex, data.length, PAGE_SIZE],
+  );
+  const pageNumbers = useMemo(() => {
+    const neighbors = 1; // Number of pages to show on each side of current page
+    const items: (number | "ellipsis")[] = [];
+
+    for (let i = 1; i <= pageCount; i++) {
+      const isFirstPage = i === 1;
+      const isLastPage = i === pageCount;
+      const isWithinRange = i >= pageIndex - neighbors && i <= pageIndex + neighbors;
+
+      if (isFirstPage || isLastPage || isWithinRange) {
+        items.push(i);
+      } else if (
+        (i === pageIndex - neighbors - 1 || i === pageIndex + neighbors + 1) &&
+        items[items.length - 1] !== "ellipsis"
+      ) {
+        items.push("ellipsis");
+      }
+    }
+
+    return items;
+  }, [pageCount, pageIndex]);
+  const pages = useMemo(
+    () =>
+      pageNumbers.map((p, i) =>
+        p === "ellipsis" ? (
+          <Pagination.Item
+            key={`ellipsis-${
+              // biome-ignore lint/suspicious/noArrayIndexKey: usar o index aqui não é um problema, já que a unica informação aparente é justamente o index
+              i
+            }`}
+          >
+            <Pagination.Ellipsis />
+          </Pagination.Item>
+        ) : (
+          <Pagination.Item key={p}>
+            <Pagination.Link
+              isActive={p === pageIndex + 1}
+              onPress={() => table.setPageIndex(p - 1)}
+              className="data-[active=true]:bg-accent data-[active=true]:text-accent-foreground"
+            >
+              {p}
+            </Pagination.Link>
+          </Pagination.Item>
+        ),
+      ),
+    [pageIndex, table, pageNumbers],
+  );
+
+  return (
+    <Table>
+      <Table.ScrollContainer>
+        <Table.Content
+          aria-label="Team members"
+          className="min-w-fit"
+          sortDescriptor={sortDescriptor}
+          onSortChange={(d) => setSorting(toSortingState(d))}
+        >
+          <Table.Header>
+            {table.getHeaderGroups()[0]?.headers.map((header) => (
+              <Table.Column
+                key={header.id}
+                allowsSorting={header.column.getCanSort()}
+                id={header.id}
+                isRowHeader
+              >
+                {({ sortDirection }) => (
+                  <SortableColumnHeader sortDirection={sortDirection}>
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                  </SortableColumnHeader>
+                )}
+              </Table.Column>
+            ))}
+          </Table.Header>
+          <Table.Body items={table.getRowModel().rows}>
+            {(row) => (
+              <Table.Row key={row.id} id={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <Table.Cell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </Table.Cell>
+                ))}
+              </Table.Row>
+            )}
+          </Table.Body>
+        </Table.Content>
+      </Table.ScrollContainer>
+      <Table.Footer className="flex items-center justify-between px-4 space-x-8">
+        <Pagination size="sm">
+          <Pagination.Summary>
+            {start} to {end} of {data.length} results
+          </Pagination.Summary>
+          <Pagination.Content>
+            <Pagination.Item>
+              <Pagination.Previous
+                isDisabled={!table.getCanPreviousPage()}
+                onPress={() => table.previousPage()}
+              >
+                <Pagination.PreviousIcon />
+                Prev
+              </Pagination.Previous>
+            </Pagination.Item>
+            {pages}
+            <Pagination.Item>
+              <Pagination.Next
+                isDisabled={!table.getCanNextPage()}
+                onPress={() => table.nextPage()}
+              >
+                Next
+                <Pagination.NextIcon />
+              </Pagination.Next>
+            </Pagination.Item>
+          </Pagination.Content>
+        </Pagination>
+      </Table.Footer>
+    </Table>
+  );
 }
 
 const columnHelper = createColumnHelper<
@@ -51,12 +199,33 @@ const columns = [
   columnHelper.accessor("total_embalagens", {
     header: "Total Embalagens",
     sortingFn: "basic",
-    cell: (info) =>
-      Number.isFinite(info.getValue()) ? (
-        info.getValue().toLocaleString("pt-BR", { maximumFractionDigits: 1 })
+    cell: (info) => {
+      return Number.isFinite(info.getValue()) ? (
+        <Modal>
+          <div className="flex flex-row items-center space-x-2">
+            <Button variant="secondary" size="sm" className="scale-80" isIconOnly>
+              <SearchIcon />
+            </Button>
+            <span>{info.getValue().toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</span>
+          </div>
+          <Modal.Backdrop>
+            <Modal.Container placement="center" size="lg">
+              <Modal.Dialog className="max-w-2xl">
+                <Modal.CloseTrigger />
+                <Modal.Header>
+                  <Modal.Heading>Produtos conferidos por {info.row.original.name}</Modal.Heading>
+                </Modal.Header>
+                <Modal.Body>
+                  <ProdutsTable data={info.row.original.produtos} />
+                </Modal.Body>
+              </Modal.Dialog>
+            </Modal.Container>
+          </Modal.Backdrop>
+        </Modal>
       ) : (
         <Skeleton className="h-3 w-full rounded-lg" />
-      ),
+      );
+    },
   }),
   columnHelper.accessor("caixas_por_hora", {
     header: "Caixas/Hora",
@@ -109,8 +278,8 @@ const columns = [
                 </Button>
                 <Tooltip.Content>
                   <p className="break-normal">
-                    Esse usuário está conferindo a menos de 1 hora; Como resultado disso, essa média
-                    é uma previsão, baseada nos dados até o momento.
+                    Esse usuário conferiu por menos de 1 hora; Como resultado disso, essa média é
+                    uma previsão, baseada nos dados até o momento.
                   </p>
                 </Tooltip.Content>
               </Tooltip>
@@ -154,47 +323,6 @@ const columns = [
       }),
   }),
 ];
-
-function toSortDescriptor(sorting: SortingState): SortDescriptor | undefined {
-  const first = sorting[0];
-  if (!first) return undefined;
-  return {
-    column: first.id,
-    direction: first.desc ? "descending" : "ascending",
-  };
-}
-
-function toSortingState(descriptor: SortDescriptor): SortingState {
-  return [{ desc: descriptor.direction === "descending", id: descriptor.column as string }];
-}
-
-function SortableColumnHeader({
-  children,
-  sortDirection,
-}: {
-  children: React.ReactNode;
-  sortDirection?: "ascending" | "descending";
-}) {
-  return (
-    <span className="flex items-center justify-between">
-      <span>{children}</span>
-      {sortDirection == null ? (
-        <Chip size="sm" variant="secondary">
-          <ArrowDownUpIcon className="stroke-neutral-400 size-3" />
-        </Chip>
-      ) : (
-        <Chip size="sm" variant="primary" color="accent">
-          <ChevronUp
-            className={cn(
-              "size-3 transform transition-transform duration-100 ease-out",
-              sortDirection === "descending" ? "rotate-180" : "",
-            )}
-          />
-        </Chip>
-      )}
-    </span>
-  );
-}
 
 const PAGE_SIZE = 14;
 export function UsersTable({
@@ -297,6 +425,25 @@ export function UsersTable({
     } satisfies { [key in keys]?: React.ReactNode };
   }, [data, avg]);
 
+  const [footer, setFooter] = useState<React.ReactNode>(
+    <Skeleton className="w-full h-4 rounded-2xl" />,
+  );
+
+  const footer_content = useMemo(
+    () =>
+      table.getHeaderGroups()[0]?.headers.map((header, i) => (
+        <div
+          key={header.id}
+          className="absolute flex flex-row items-center space-x-2 pt-0.5"
+          style={{ left: get_footer_offset(header.id) }}
+        >
+          {i > 0 && <Separator orientation="vertical" className="mt-1.5 mb-1" />}
+          <span>{footer_values[header.id as keyof typeof footer_values]}</span>
+        </div>
+      )),
+    [footer_values, get_footer_offset, table.getHeaderGroups],
+  );
+
   return (
     <div>
       <Table>
@@ -324,33 +471,20 @@ export function UsersTable({
               ))}
             </Table.Header>
             <Table.Body items={table.getRowModel().rows}>
-              {(row) => (
-                <Table.Row key={row.id} id={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <Table.Cell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </Table.Cell>
-                  ))}
-                </Table.Row>
-              )}
+              {(row) =>
+                (setFooter(footer_content) as undefined) || (
+                  <Table.Row key={row.id} id={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                      <Table.Cell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </Table.Cell>
+                    ))}
+                  </Table.Row>
+                )
+              }
             </Table.Body>
           </Table.Content>
-          <Table.Footer className="relative h-6">
-            {document.querySelector("table") == null ? (
-              <Skeleton className="w-full h-4 rounded-2xl" />
-            ) : (
-              table.getHeaderGroups()[0]?.headers.map((header, i) => (
-                <div
-                  key={header.id}
-                  className="absolute flex flex-row items-center space-x-2 pt-0.5"
-                  style={{ left: get_footer_offset(header.id) }}
-                >
-                  {i > 0 && <Separator orientation="vertical" className="mt-1.5 mb-1" />}
-                  <span>{footer_values[header.id as keyof typeof footer_values]}</span>
-                </div>
-              ))
-            )}
-          </Table.Footer>
+          <Table.Footer className="relative h-6">{footer}</Table.Footer>
         </Table.ScrollContainer>
       </Table>
     </div>
