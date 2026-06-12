@@ -22,7 +22,7 @@ import {
 } from "@tanstack/react-table";
 import { DiffIcon, SearchIcon, TriangleAlertIcon } from "lucide-react";
 import type React from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type z from "zod";
 import { duration, SortableColumnHeader, toSortDescriptor, toSortingState } from "@/lib/utils";
 import type { per_user_schema } from "./page";
@@ -299,11 +299,6 @@ const columns = [
       );
     },
   }),
-  columnHelper.accessor("duração", {
-    header: "Duração",
-    sortingFn: "basic",
-    cell: (info) => duration(info.getValue()),
-  }),
   columnHelper.accessor("hora_inicio", {
     header: "Hora Inicio",
     sortingFn: "datetime",
@@ -321,6 +316,11 @@ const columns = [
         hour: "2-digit",
         minute: "2-digit",
       }),
+  }),
+  columnHelper.accessor("duração", {
+    header: "Duração",
+    sortingFn: "basic",
+    cell: (info) => duration(info.getValue()),
   }),
 ];
 
@@ -365,7 +365,7 @@ export function UsersTable({
     [pageIndex, users.length],
   );
   const pageNumbers = useMemo(() => {
-    const neighbors = 3; // Number of pages to show on each side of current page
+    const neighbors = 1; // Number of pages to show on each side of current page
     const items: (number | "ellipsis")[] = [];
 
     for (let i = 1; i <= pageCount; i++) {
@@ -385,6 +385,32 @@ export function UsersTable({
 
     return items;
   }, [pageCount, pageIndex]);
+  const pages = useMemo(
+    () =>
+      pageNumbers.map((p, i) =>
+        p === "ellipsis" ? (
+          <Pagination.Item
+            key={`ellipsis-${
+              // biome-ignore lint/suspicious/noArrayIndexKey: usar o index aqui não é um problema, já que a unica informação aparente é justamente o index
+              i
+            }`}
+          >
+            <Pagination.Ellipsis />
+          </Pagination.Item>
+        ) : (
+          <Pagination.Item key={p}>
+            <Pagination.Link
+              isActive={p === pageIndex + 1}
+              onPress={() => table.setPageIndex(p - 1)}
+              className="data-[active=true]:bg-accent data-[active=true]:text-accent-foreground"
+            >
+              {p}
+            </Pagination.Link>
+          </Pagination.Item>
+        ),
+      ),
+    [pageIndex, table, pageNumbers],
+  );
 
   const get_footer_offset = useCallback((key: string) => {
     const _table = document.querySelector("table");
@@ -416,33 +442,81 @@ export function UsersTable({
     return {
       emb_p_hora: (
         <Description className="flex flex-row space-x-1 items-center">
-          <span>Media geral:</span>
+          <span>Media de emb/hora:</span>
           <span>{avg.mean.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
           <DiffIcon className="size-2.5" />
           <span>{mad.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
         </Description>
       ),
+      hora_fim: (
+        <Pagination size="sm">
+          <Pagination.Summary>
+            {start} to {end} of {users.length} results
+          </Pagination.Summary>
+          <Pagination.Content>
+            <Pagination.Item>
+              <Pagination.Previous
+                isDisabled={!table.getCanPreviousPage()}
+                onPress={() => table.previousPage()}
+              >
+                <Pagination.PreviousIcon />
+                Prev
+              </Pagination.Previous>
+            </Pagination.Item>
+            {pages}
+            <Pagination.Item>
+              <Pagination.Next
+                isDisabled={!table.getCanNextPage()}
+                onPress={() => table.nextPage()}
+              >
+                Next
+                <Pagination.NextIcon />
+              </Pagination.Next>
+            </Pagination.Item>
+          </Pagination.Content>
+        </Pagination>
+      ),
     } satisfies { [key in keys]?: React.ReactNode };
-  }, [data, avg]);
+  }, [
+    data,
+    avg,
+    end,
+    start,
+    table.getCanNextPage,
+    table.getCanPreviousPage,
+    table.nextPage,
+    table.previousPage,
+    users.length,
+    pages,
+  ]);
 
   const [footer, setFooter] = useState<React.ReactNode>(
     <Skeleton className="w-full h-4 rounded-2xl" />,
   );
 
-  const footer_content = useMemo(
-    () =>
-      table.getHeaderGroups()[0]?.headers.map((header, i) => (
-        <div
-          key={header.id}
-          className="absolute flex flex-row items-center space-x-2 pt-0.5"
-          style={{ left: get_footer_offset(header.id) }}
-        >
-          {i > 0 && <Separator orientation="vertical" className="mt-1.5 mb-1" />}
-          <span>{footer_values[header.id as keyof typeof footer_values]}</span>
-        </div>
-      )),
-    [footer_values, get_footer_offset, table.getHeaderGroups],
-  );
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (document.querySelector("th") != null) {
+        setFooter(
+          table.getHeaderGroups()[0]?.headers.map((header, i) => (
+            <div
+              key={header.id}
+              className="absolute flex flex-row items-center space-x-2 pt-0.5"
+              style={{ left: get_footer_offset(header.id) }}
+            >
+              {i > 0 && footer_values[header.id as keyof typeof footer_values] != null && (
+                <Separator variant="tertiary" orientation="vertical" className="h-4.5 my-auto" />
+              )}
+              <span>{footer_values[header.id as keyof typeof footer_values]}</span>
+            </div>
+          )),
+        );
+        clearInterval(id);
+      }
+    }, 100);
+
+    return () => clearInterval(id);
+  }, [footer_values, get_footer_offset, table.getHeaderGroups]);
 
   return (
     <div>
@@ -471,20 +545,18 @@ export function UsersTable({
               ))}
             </Table.Header>
             <Table.Body items={table.getRowModel().rows}>
-              {(row) =>
-                (setFooter(footer_content) as undefined) || (
-                  <Table.Row key={row.id} id={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                      <Table.Cell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </Table.Cell>
-                    ))}
-                  </Table.Row>
-                )
-              }
+              {(row) => (
+                <Table.Row key={row.id} id={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <Table.Cell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </Table.Cell>
+                  ))}
+                </Table.Row>
+              )}
             </Table.Body>
           </Table.Content>
-          <Table.Footer className="relative h-6">{footer}</Table.Footer>
+          <Table.Footer className="relative h-10">{footer}</Table.Footer>
         </Table.ScrollContainer>
       </Table>
     </div>
