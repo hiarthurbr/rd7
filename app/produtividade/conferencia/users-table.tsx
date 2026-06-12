@@ -23,6 +23,7 @@ import {
 import { DiffIcon, SearchIcon, TriangleAlertIcon } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Area, AreaChart, CartesianGrid, Tooltip as ChartTooltip, XAxis, YAxis } from "recharts";
 import type z from "zod";
 import { duration, SortableColumnHeader, toSortDescriptor, toSortingState } from "@/lib/utils";
 import type { per_user_schema } from "./page";
@@ -420,14 +421,12 @@ export function UsersTable({
     return column.getBoundingClientRect().x - _table.getBoundingClientRect().x;
   }, []);
 
-  console.log(table.getHeaderGroups()[0].headers.map((h) => h.id));
 
   const footer_values = useMemo(() => {
     const arr = Object.values(data)
       .map((x) => x.embalagens_por_hora)
       .filter((x) => Number.isFinite(x));
     const mad = arr.reduce((sum, val) => sum + Math.abs(val - avg.median), 0) / arr.length;
-    console.log({ arr, mad });
 
     type keys =
       | "name"
@@ -518,8 +517,81 @@ export function UsersTable({
     return () => clearInterval(id);
   }, [footer_values, get_footer_offset, table.getHeaderGroups]);
 
+  console.log(Object.values(data)
+          .map((x) => x.por_hora))
+  const graph_data = useMemo(
+    () =>
+      Object.entries(
+        Object.values(data)
+          .map((x) => x.por_hora)
+          .reduce((a, b) => {
+            console.log({a, b})
+            for (const key in a) {
+              a[key].caixas.union(b[key].caixas);
+              a[key].pedidos_conferidos.union(b[key].pedidos_conferidos);
+              a[key].total_embalagens += b[key].total_embalagens;
+            }
+
+            return a;
+          }),
+      ).map(([hora, { caixas, pedidos_conferidos, total_embalagens }]) => ({
+        hora: `${hora}h`,
+        caixas: caixas.size,
+        pedidos_conferidos: pedidos_conferidos.size,
+        total_embalagens,
+      })),
+    [data],
+  );
+
+  console.log(graph_data)
+
   return (
-    <div>
+    <div className="flex flex-col justify-center">
+      <AreaChart
+        style={{ width: "100%", maxWidth: "700px", maxHeight: "70vh", aspectRatio: 1.618 }}
+        responsive
+        data={graph_data}
+        margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
+      >
+        <defs>
+          <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+            <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+          </linearGradient>
+          <linearGradient id="colorPv" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
+            <stop offset="95%" stopColor="#82ca9d" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="hora" />
+        <YAxis width="auto" />
+        <ChartTooltip />
+        <Area
+          type="monotone"
+          dataKey="caixas"
+          stroke="#8884d8"
+          fillOpacity={1}
+          fill="url(#colorUv)"
+          isAnimationActive
+        />
+        <Area
+          type="monotone"
+          dataKey="pedidos_conferidos"
+          stroke="#82ca9d"
+          fillOpacity={1}
+          fill="url(#colorPv)"
+          isAnimationActive
+        />
+        <Area
+          type="monotone"
+          dataKey="total_embalagens"
+          stroke="#63cad8"
+          fillOpacity={1}
+          fill="url(#colorPv)"
+          isAnimationActive
+        />
+      </AreaChart>
       <Table>
         <Table.ScrollContainer>
           <Table.Content
