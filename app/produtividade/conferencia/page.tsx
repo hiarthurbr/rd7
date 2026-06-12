@@ -13,7 +13,7 @@ import {
   Spinner,
   Tabs,
 } from "@heroui/react";
-import { type DateValue, getLocalTimeZone, today } from "@internationalized/date";
+import { type DateValue, fromDate, getLocalTimeZone, today } from "@internationalized/date";
 import { QueryClient, useQuery } from "@tanstack/react-query";
 import { CheckIcon, Grid2x2XIcon, RefreshCwIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -85,7 +85,7 @@ async function get_relatorio_conferencia(date: Date) {
     .then(montagem_caixa_schema.array().parseAsync);
 }
 
-const horas_trabalhadas = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
+export const horas_trabalhadas = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
 export const marcadores: Array<{
   label: string;
   momento: { hh: number; mm: number };
@@ -99,31 +99,34 @@ export const marcadores: Array<{
 ];
 
 function Page() {
-  const [date, setDate] = useState<DateValue>(today(getLocalTimeZone()));
+  const timezone = useMemo(() => getLocalTimeZone(), []);
+  const [date, setDate] = useState<DateValue>(
+    process.env.NODE_ENV === "development"
+      ? fromDate(new Date("03-06-2026"), timezone)
+      : today(timezone),
+  );
   const [meta, setMeta] = useState(800);
 
-  const [queryClient, hours_filter] = useMemo(() => {
-    const today = new Date(new Date().toDateString());
-    return [
-      new QueryClient(),
+  const queryClient = useMemo(() => new QueryClient(), []);
+  const hours_filter = useMemo(
+    () =>
       horas_trabalhadas.map(
         (h) =>
           [
             h,
-            new Date(today.getTime() + h * 1000 * 60 * 60),
-            new Date(today.getTime() + (h + 1) * 1000 * 60 * 60),
+            new Date(date.toDate(timezone).getTime() + h * 1000 * 60 * 60),
+            new Date(date.toDate(timezone).getTime() + (h + 1) * 1000 * 60 * 60),
           ] as const,
       ),
-    ];
-  }, []);
+    [date, timezone],
+  );
   const { data, isFetching, dataUpdatedAt, isPending } = useQuery(
     {
       queryKey: ["relatorio_conferencia", date],
-      // queryFn: async () => get_relatorio_conferencia(date.toDate(getLocalTimeZone())),
       queryFn: async () =>
         process.env.NODE_ENV === "development"
           ? montagem_caixa_schema.array().parseAsync(data_cache)
-          : get_relatorio_conferencia(date.toDate(getLocalTimeZone())),
+          : get_relatorio_conferencia(date.toDate(timezone)),
       refetchInterval: 1000 * 60 * 60,
       refetchOnReconnect: true,
       refetchOnWindowFocus: true,
@@ -167,16 +170,13 @@ function Page() {
                     {} as Record<string, number>,
                   ),
                 ).map(([sku, quantidade_pre]) => ({
-                      sku,
-                      quantidade_pre,
-                      multiplo: skus[sku as keyof typeof skus],
-                    }));
+                  sku,
+                  quantidade_pre,
+                  multiplo: skus[sku as keyof typeof skus],
+                }));
 
                 const total_embalagens = produtos
-                  .map(
-                    ({ quantidade_pre, multiplo }) =>
-                      quantidade_pre / (multiplo ?? 1),
-                  )
+                  .map(({ quantidade_pre, multiplo }) => quantidade_pre / (multiplo ?? 1))
                   .reduce((a, b) => a + b, 0);
 
                 const pedidos_conferidos = new Set(data.map((cx) => cx.codigoPedido));
@@ -211,6 +211,8 @@ function Page() {
                       },
                     ] as const,
                 );
+
+                console.log(data[0].usuario, per_hour, por_hora, Object.fromEntries(por_hora));
 
                 const pedidos_por_hora = pedidos_conferidos.size / horas_conferidas;
 
@@ -308,7 +310,7 @@ function Page() {
                 </DateField.Suffix>
               </DateField.Group>
               <DatePicker.Popover>
-                <Calendar aria-label="Event date" maxValue={today(getLocalTimeZone())}>
+                <Calendar aria-label="Event date" maxValue={today(timezone)}>
                   <Calendar.Header>
                     <Calendar.YearPickerTrigger>
                       <Calendar.YearPickerTriggerHeading />
