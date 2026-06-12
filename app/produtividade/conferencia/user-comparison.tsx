@@ -19,8 +19,8 @@ import {
   YAxis,
 } from "recharts";
 import type z from "zod";
+import { duration } from "@/lib/utils";
 import type { per_user_schema } from "./page";
-import { duration } from "./users-table";
 
 const EmbalagemPorHora = ({ user }: { user: z.infer<typeof per_user_schema>[string] }) => {
   const meta_percentage = ((user.embalagens_por_hora / user.meta) * 100) >> 0;
@@ -153,11 +153,15 @@ export function UserComparison({ data }: { data: z.infer<typeof per_user_schema>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Caixas/Hora:</span>
-              <span className="font-medium">{userData1.caixas_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</span>
+              <span className="font-medium">
+                {userData1.caixas_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Pedidos/Hora:</span>
-              <span className="font-medium">{userData1.pedidos_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</span>
+              <span className="font-medium">
+                {userData1.pedidos_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Duracao:</span>
@@ -183,11 +187,15 @@ export function UserComparison({ data }: { data: z.infer<typeof per_user_schema>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Caixas/Hora:</span>
-              <span className="font-medium">{userData2.caixas_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</span>
+              <span className="font-medium">
+                {userData2.caixas_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Pedidos/Hora:</span>
-              <span className="font-medium">{userData2.pedidos_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</span>
+              <span className="font-medium">
+                {userData2.pedidos_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Duracao:</span>

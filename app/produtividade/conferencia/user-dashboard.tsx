@@ -22,8 +22,8 @@ import {
   YAxis,
 } from "recharts";
 import type z from "zod";
+import { duration } from "@/lib/utils";
 import type { per_user_schema } from "./page";
-import { duration } from "./users-table";
 
 const COLORS = ["#0d9488", "#14b8a6", "#2dd4bf", "#5eead4", "#99f6e4"];
 
@@ -161,8 +161,8 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
                   </Button>
                   <UITooltip.Content>
                     <p className="break-normal">
-                      Esse usuário está conferindo a menos de 1 hora; Como resultado disso, essa
-                      média é uma previsão, baseada nos dados até o momento.
+                      Esse usuário conferiu por menos de 1 hora; Como resultado disso, essa média é
+                      uma previsão, baseada nos dados até o momento.
                     </p>
                   </UITooltip.Content>
                 </UITooltip>
