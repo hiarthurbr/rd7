@@ -315,9 +315,61 @@ export const montagem_caixa_schema = z.object({
   caixa: z.string(),
   produto: z.string(),
   descricaoProduto: z.string(),
-  quantidade: z.number(),
+  quantidade: z.number().positive(),
   usuario: z.string(),
   montagem: z.coerce.date().or(z.date()),
   codigoPedido: z.string(),
   descTipoCaixa: z.string(),
+});
+
+export const per_user_schema = z.record(
+  z.string(),
+  z.object({
+    total_embalagens: z.number(),
+    pedidos_conferidos: z.set(z.string()),
+    caixas: z.set(z.string()),
+    por_hora: z.record(
+      z.string(),
+      z.object({
+        total_embalagens: z.number(),
+        pedidos_conferidos: z.set(z.string()),
+        caixas: z.set(z.string()),
+      }),
+    ),
+    produtos: z.array(
+      z.object({
+        sku: z.string(),
+        quantidade_pre: z.number(),
+        multiplo: z.number().optional().nullable(),
+      }),
+    ),
+    pedidos_por_hora: z.number(),
+    caixas_por_hora: z.number(),
+    embalagens_por_hora: z.number(),
+    hora_inicio: z.date(),
+    hora_fim: z.date(),
+    duração: z.number(),
+    meta: z.number(),
+  }),
+);
+
+export const per_hour_schema = z.record(
+  z.string(),
+  z.object({
+    total_embalagens: z.number(),
+    pedidos_conferidos: z.set(z.string()),
+    caixas: z.set(z.string()),
+  }),
+);
+
+export const produtividade_conferencia_schema = z.object({
+  per_user: per_user_schema,
+  per_hour: per_hour_schema,
+  meta: z.number(),
+  avg: z
+    .object({
+      mean: z.number(),
+      median: z.number(),
+    })
+    .nullable(),
 });

@@ -548,7 +548,7 @@ export function UsersTable({
   return (
     <div className="flex flex-col justify-center">
       <AreaChart
-        style={{ width: "100%", maxWidth: "700px", maxHeight: "70vh", aspectRatio: 1.618 }}
+        style={{ width: "100%", maxWidth: "2000px", maxHeight: "30vh", aspectRatio: 2 }}
         responsive
         data={graph_data}
         margin={{ top: 10, right: 0, left: 0, bottom: 0 }}

@@ -13,20 +13,22 @@ import {
   Spinner,
   Tabs,
 } from "@heroui/react";
-import { type DateValue, fromDate, getLocalTimeZone, today } from "@internationalized/date";
+import { type DateValue, fromDate, getLocalTimeZone, now, today } from "@internationalized/date";
 import { QueryClient, useQuery } from "@tanstack/react-query";
 import { CheckIcon, Grid2x2XIcon, RefreshCwIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { Auth } from "@/components/auth";
 import { getToken } from "@/lib/pda";
-import { montagem_caixa_schema } from "@/lib/schemas";
+import { montagem_caixa_schema, produtividade_conferencia_schema } from "@/lib/schemas";
 import { fmt_date } from "@/lib/utils";
-import data_cache from "./03-06-2026.json";
-import skus from "./skus.json";
+import data_cache from "./2026-06-15.json";
+import skus_pre from "./skus.json";
 import { UserComparison } from "./user-comparison";
 import { UserDashboard } from "./user-dashboard";
 import { UsersTable } from "./users-table";
+
+const skus = z.record(z.string(), z.number().positive().catch(1)).parse(skus_pre);
 
 export const per_user_schema = z.record(
   z.string(),
@@ -98,11 +100,16 @@ export const marcadores: Array<{
   { label: "Volta do jantar", momento: { hh: 18, mm: 30 } },
 ];
 
+const data_processing_schema = produtividade_conferencia_schema
+  .omit({ avg: true, meta: true })
+  .or(z.object({ per_user: z.null(), per_hour: z.null() }));
+
 function Page() {
   const timezone = useMemo(() => getLocalTimeZone(), []);
+  console.log({ timezone });
   const [date, setDate] = useState<DateValue>(
     process.env.NODE_ENV === "development"
-      ? fromDate(new Date("03-06-2026"), timezone)
+      ? fromDate(new Date("2026-06-15"), timezone)
       : today(timezone),
   );
   const [meta, setMeta] = useState(800);
@@ -144,106 +151,145 @@ function Page() {
   }, [dataUpdatedAt]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: usar o dataUpdatedAt é necessario, porque o data pode não atualizar no momento do refetch, se o resultado anterior for o mesmo
-  const per_user: z.infer<typeof per_user_schema> = useMemo(
-    () =>
-      data == null
-        ? {}
-        : Object.fromEntries(
-            Array.from(new Set(data.map((e) => e.usuario)))
-              .map((user) => data.filter((cx) => cx.usuario === user))
-              .map((data) => {
-                const now = new Date();
-                const per_hour: [number, typeof data][] = hours_filter
-                  .filter(([, start]) => start <= now)
-                  .map(([hour, start, end]) => [
+  const { per_user, per_hour }: z.infer<typeof data_processing_schema> = useMemo(() => {
+    if (data == null) return { per_hour: null, per_user: null };
+    const now_ = now(timezone).toDate();
+
+    return {
+      per_user: Object.fromEntries(
+        Array.from(new Set(data.map((e) => e.usuario)))
+          .map((user) => data.filter((cx) => cx.usuario === user))
+          .map((data) => {
+            const produtos = Object.entries(
+              data.reduce(
+                (obj, prod) => {
+                  if (prod.produto in obj) obj[prod.produto] += prod.quantidade;
+                  else obj[prod.produto] = prod.quantidade;
+                  return obj;
+                },
+                {} as Record<string, number>,
+              ),
+            ).map(([sku, quantidade_pre]) => ({
+              sku,
+              quantidade_pre,
+              multiplo: skus[sku as keyof typeof skus],
+            }));
+
+            const total_embalagens = produtos
+              .map(({ quantidade_pre, multiplo }) => quantidade_pre / (multiplo ?? 1))
+              .reduce((a, b) => a + b, 0);
+
+            const pedidos_conferidos = new Set(data.map((cx) => cx.codigoPedido));
+
+            const hora_inicio = Math.min(...data.map((cx) => cx.montagem.getTime()));
+            const hora_fim = Math.max(...data.map((cx) => cx.montagem.getTime()));
+
+            const horas_conferidas = Math.abs(hora_fim - hora_inicio) / 3_600_000;
+
+            const por_hora = hours_filter
+              .filter(([, start]) => start <= now_)
+              .map(
+                ([hour, start, end]) =>
+                  [
                     hour,
-                    data.filter((cx) => cx.montagem >= start && cx.montagem < end),
-                  ]);
-
-                const produtos = Object.entries(
-                  data.reduce(
-                    (obj, prod) => {
-                      if (prod.produto in obj) obj[prod.produto] += prod.quantidade;
-                      else obj[prod.produto] = prod.quantidade;
-                      return obj;
-                    },
-                    {} as Record<string, number>,
-                  ),
-                ).map(([sku, quantidade_pre]) => ({
-                  sku,
-                  quantidade_pre,
-                  multiplo: skus[sku as keyof typeof skus],
-                }));
-
-                const total_embalagens = produtos
-                  .map(({ quantidade_pre, multiplo }) => quantidade_pre / (multiplo ?? 1))
-                  .reduce((a, b) => a + b, 0);
-
-                const pedidos_conferidos = new Set(data.map((cx) => cx.codigoPedido));
-
-                const hora_inicio = Math.min(...data.map((cx) => cx.montagem.getTime()));
-                const hora_fim = Math.max(...data.map((cx) => cx.montagem.getTime()));
-
-                const horas_conferidas = Math.abs(hora_fim - hora_inicio) / 3_600_000;
-
-                const por_hora = per_hour.map(
-                  ([hour, data]) =>
-                    [
-                      hour,
-                      {
-                        total_embalagens: Object.entries(
-                          data.reduce(
-                            (obj, prod) => {
-                              if (prod.produto in obj) obj[prod.produto] += prod.quantidade;
-                              else obj[prod.produto] = prod.quantidade;
-                              return obj;
-                            },
-                            {} as Record<string, number>,
-                          ),
+                    data.filter(
+                      (cx) =>
+                        fromDate(cx.montagem, timezone).compare(fromDate(start, timezone)) > 0 &&
+                        fromDate(cx.montagem, timezone).compare(fromDate(end, timezone)) < 0,
+                    ),
+                  ] as const,
+              )
+              .map(
+                ([hour, data]) =>
+                  [
+                    hour,
+                    {
+                      total_embalagens: Object.entries(
+                        data.reduce(
+                          (obj, prod) => {
+                            if (prod.produto in obj) obj[prod.produto] += prod.quantidade;
+                            else obj[prod.produto] = prod.quantidade;
+                            return obj;
+                          },
+                          {} as Record<string, number>,
+                        ),
+                      )
+                        .map(
+                          ([produto, quantidade]) =>
+                            quantidade / (skus[produto as keyof typeof skus] ?? 1),
                         )
-                          .map(
-                            ([produto, quantidade]) =>
-                              quantidade / (skus[produto as keyof typeof skus] ?? 1),
-                          )
-                          .reduce((a, b) => a + b, 0),
-                        pedidos_conferidos: new Set(data.map((cx) => cx.codigoPedido)),
-                        caixas: new Set(data.map((cx) => cx.caixa)),
+                        .reduce((a, b) => a + b, 0),
+                      pedidos_conferidos: new Set(data.map((cx) => cx.codigoPedido)),
+                      caixas: new Set(data.map((cx) => cx.caixa)),
+                    },
+                  ] as const,
+              );
+
+            const pedidos_por_hora = pedidos_conferidos.size / horas_conferidas;
+
+            const caixas = new Set(data.map((cx) => cx.caixa));
+
+            const caixas_por_hora = caixas.size / horas_conferidas;
+
+            return [
+              data[0].usuario,
+              {
+                total_embalagens,
+                pedidos_conferidos,
+                caixas,
+                por_hora: Object.fromEntries(por_hora),
+                pedidos_por_hora,
+                caixas_por_hora,
+                embalagens_por_hora: total_embalagens / horas_conferidas,
+                hora_inicio: new Date(hora_inicio),
+                hora_fim: new Date(hora_fim),
+                duração: Math.floor(Math.abs(hora_inicio - hora_fim) / 60_000),
+                produtos,
+                meta,
+              },
+            ];
+          }),
+      ),
+      per_hour: Object.fromEntries(
+        hours_filter
+          .filter(([, start]) => start <= now_)
+          .map(
+            ([hour, start, end]) =>
+              [hour, data.filter((cx) => cx.montagem >= start && cx.montagem < end)] as const,
+          )
+          .map(
+            ([hour, data]) =>
+              [
+                hour,
+                {
+                  total_embalagens: Object.entries(
+                    data.reduce(
+                      (obj, prod) => {
+                        if (prod.produto in obj) obj[prod.produto] += prod.quantidade;
+                        else obj[prod.produto] = prod.quantidade;
+                        return obj;
                       },
-                    ] as const,
-                );
-
-                console.log(data[0].usuario, per_hour, por_hora, Object.fromEntries(por_hora));
-
-                const pedidos_por_hora = pedidos_conferidos.size / horas_conferidas;
-
-                const caixas = new Set(data.map((cx) => cx.caixa));
-
-                const caixas_por_hora = caixas.size / horas_conferidas;
-
-                return [
-                  data[0].usuario,
-                  {
-                    total_embalagens,
-                    pedidos_conferidos,
-                    caixas,
-                    por_hora: Object.fromEntries(por_hora),
-                    pedidos_por_hora,
-                    caixas_por_hora,
-                    embalagens_por_hora: total_embalagens / horas_conferidas,
-                    hora_inicio: new Date(hora_inicio),
-                    hora_fim: new Date(hora_fim),
-                    duração: Math.floor(Math.abs(hora_inicio - hora_fim) / 60_000),
-                    meta,
-                    produtos,
-                  },
-                ];
-              }),
+                      {} as Record<string, number>,
+                    ),
+                  )
+                    .map(
+                      ([produto, quantidade]) =>
+                        quantidade / (skus[produto as keyof typeof skus] ?? 1),
+                    )
+                    .reduce((a, b) => a + b, 0),
+                  pedidos_conferidos: new Set(data.map((cx) => cx.codigoPedido)),
+                  caixas: new Set(data.map((cx) => cx.caixa)),
+                },
+              ] as const,
           ),
-    [data, dataUpdatedAt, hours_filter, meta],
-  );
+      ),
+    };
+  }, [data, dataUpdatedAt, hours_filter, meta]);
+
+  console.log({ per_user, per_hour });
 
   const todays_average = useMemo(() => {
-    const values = Object.values(per_user)
+    const values = Object.values(per_user ?? {})
       .filter((v) => Number.isFinite(v.embalagens_por_hora))
       .map((x) => x.embalagens_por_hora);
 
@@ -382,7 +428,7 @@ function Page() {
               </ProgressBar.Track>
             </ProgressBar>
           </div>
-        ) : Object.keys(per_user).length === 0 ? (
+        ) : Object.keys(per_user ?? {}).length === 0 ? (
           <div className="flex flex-col items-center pt-32">
             <Grid2x2XIcon />
             <Label className="mb-3.5 mt-5">Nenhum dado encontrado</Label>
@@ -407,13 +453,13 @@ function Page() {
               </Tabs.List>
             </Tabs.ListContainer>
             <Tabs.Panel className="pt-4" id="overview">
-              <UsersTable data={per_user} avg={todays_average} />
+              <UsersTable data={per_user ?? {}} avg={todays_average} />
             </Tabs.Panel>
             <Tabs.Panel className="pt-4" id="analytics">
-              <UserDashboard data={per_user} />
+              <UserDashboard data={per_user ?? {}} />
             </Tabs.Panel>
             <Tabs.Panel className="pt-4" id="reports">
-              <UserComparison data={per_user} />
+              <UserComparison data={per_user ?? {}} />
             </Tabs.Panel>
           </Tabs>
         )}
