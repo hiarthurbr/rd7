@@ -13,7 +13,7 @@ import {
   Spinner,
   Tabs,
 } from "@heroui/react";
-import { type DateValue, fromDate, getLocalTimeZone, now, today } from "@internationalized/date";
+import { type DateValue, fromDate, now, today } from "@internationalized/date";
 import { QueryClient, useQuery } from "@tanstack/react-query";
 import { CheckIcon, Grid2x2XIcon, RefreshCwIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -104,12 +104,17 @@ const data_processing_schema = produtividade_conferencia_schema
   .omit({ avg: true, meta: true })
   .or(z.object({ per_user: z.null(), per_hour: z.null() }));
 
+export const NAME_KEYS = {
+  total_embalagens: 'Média de embalagens por hora',
+  caixas: 'N° de caixas',
+  pedidos_conferidos: 'N° de pedidos conferidos'
+} as const
+
+const timezone = "Etc/GMT-3";
 function Page() {
-  const timezone = useMemo(() => getLocalTimeZone(), []);
-  console.log({ timezone });
   const [date, setDate] = useState<DateValue>(
     process.env.NODE_ENV === "development"
-      ? fromDate(new Date("2026-06-15"), timezone)
+      ? fromDate(new Date("2026-06-15T00:00:00.000"), timezone)
       : today(timezone),
   );
   const [meta, setMeta] = useState(800);
@@ -125,7 +130,7 @@ function Page() {
             new Date(date.toDate(timezone).getTime() + (h + 1) * 1000 * 60 * 60),
           ] as const,
       ),
-    [date, timezone],
+    [date],
   );
   const { data, isFetching, dataUpdatedAt, isPending } = useQuery(
     {
@@ -259,28 +264,31 @@ function Page() {
           )
           .map(
             ([hour, data]) =>
-              [
+              (console.log({ hour }, new Set(data.map((cx) => cx.usuario)).size) as undefined) ||
+              ([
                 hour,
                 {
-                  total_embalagens: Object.entries(
-                    data.reduce(
-                      (obj, prod) => {
-                        if (prod.produto in obj) obj[prod.produto] += prod.quantidade;
-                        else obj[prod.produto] = prod.quantidade;
-                        return obj;
-                      },
-                      {} as Record<string, number>,
-                    ),
-                  )
-                    .map(
-                      ([produto, quantidade]) =>
-                        quantidade / (skus[produto as keyof typeof skus] ?? 1),
+                  total_embalagens:
+                    Math.round(Object.entries(
+                      data.reduce(
+                        (obj, prod) => {
+                          if (prod.produto in obj) obj[prod.produto] += prod.quantidade;
+                          else obj[prod.produto] = prod.quantidade;
+                          return obj;
+                        },
+                        {} as Record<string, number>,
+                      ),
                     )
-                    .reduce((a, b) => a + b, 0),
+                      .map(
+                        ([produto, quantidade]) =>
+                          quantidade / (skus[produto as keyof typeof skus] ?? 1),
+                      )
+                      .reduce((a, b) => a + b, 0) /
+                    Math.max(1, new Set(data.map((cx) => cx.usuario)).size)),
                   pedidos_conferidos: new Set(data.map((cx) => cx.codigoPedido)),
                   caixas: new Set(data.map((cx) => cx.caixa)),
                 },
-              ] as const,
+              ] as const),
           ),
       ),
     };
@@ -341,6 +349,7 @@ function Page() {
             <DatePicker
               name="date"
               value={date}
+              granularity="day"
               onChange={(date) => date != null && setDate(date)}
               className="w-64"
             >
@@ -453,7 +462,7 @@ function Page() {
               </Tabs.List>
             </Tabs.ListContainer>
             <Tabs.Panel className="pt-4" id="overview">
-              <UsersTable data={per_user ?? {}} avg={todays_average} />
+              <UsersTable data={{ per_user, per_hour, meta, avg: todays_average }} />
             </Tabs.Panel>
             <Tabs.Panel className="pt-4" id="analytics">
               <UserDashboard data={per_user ?? {}} />

@@ -25,8 +25,9 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, Tooltip as ChartTooltip, XAxis, YAxis } from "recharts";
 import type z from "zod";
+import type { produtividade_conferencia_schema } from "@/lib/schemas";
 import { duration, SortableColumnHeader, toSortDescriptor, toSortingState } from "@/lib/utils";
-import type { per_user_schema } from "./page";
+import { NAME_KEYS, type per_user_schema } from "./page";
 
 type ProductsTableData = z.infer<typeof per_user_schema>[string]["produtos"];
 const columnHelperProducts = createColumnHelper<ProductsTableData[number]>();
@@ -327,11 +328,9 @@ const columns = [
 
 const PAGE_SIZE = 14;
 export function UsersTable({
-  data,
-  avg,
+  data: { avg, ...data },
 }: {
-  data: z.infer<typeof per_user_schema>;
-  avg: { mean: number; median: number };
+  data: z.infer<typeof produtividade_conferencia_schema>;
 }) {
   const [sorting, setSorting] = useState<SortingState>([
     {
@@ -340,8 +339,8 @@ export function UsersTable({
     },
   ]);
   const users = useMemo(
-    () => Object.entries(data).map(([name, data]) => ({ ...data, name })),
-    [data],
+    () => Object.entries(data.per_user ?? {}).map(([name, data]) => ({ ...data, name })),
+    [data.per_user],
   );
 
   const table = useReactTable({
@@ -421,12 +420,14 @@ export function UsersTable({
     return column.getBoundingClientRect().x - _table.getBoundingClientRect().x;
   }, []);
 
-
   const footer_values = useMemo(() => {
-    const arr = Object.values(data)
+    const arr = Object.values(data.per_user ?? {})
       .map((x) => x.embalagens_por_hora)
       .filter((x) => Number.isFinite(x));
-    const mad = arr.reduce((sum, val) => sum + Math.abs(val - avg.median), 0) / arr.length;
+    const mad =
+      avg == null
+        ? NaN
+        : arr.reduce((sum, val) => sum + Math.abs(val - avg.median), 0) / arr.length;
 
     type keys =
       | "name"
@@ -442,9 +443,13 @@ export function UsersTable({
       emb_p_hora: (
         <Description className="flex flex-row space-x-1 items-center">
           <span>Media de emb/hora:</span>
-          <span>{avg.mean.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
-          <DiffIcon className="size-2.5" />
-          <span>{mad.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+          {avg != null && (
+            <>
+              <span>{avg.mean.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+              <DiffIcon className="size-2.5" />
+              <span>{mad.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+            </>
+          )}
         </Description>
       ),
       hora_fim: (
@@ -477,7 +482,7 @@ export function UsersTable({
       ),
     } satisfies { [key in keys]?: React.ReactNode };
   }, [
-    data,
+    data.per_user,
     avg,
     end,
     start,
@@ -517,33 +522,21 @@ export function UsersTable({
     return () => clearInterval(id);
   }, [footer_values, get_footer_offset, table.getHeaderGroups]);
 
-  console.log(Object.values(data)
-          .map((x) => x.por_hora))
+  console.log(Object.values(data.per_user ?? {}).map((x) => x.por_hora));
   const graph_data = useMemo(
     () =>
-      Object.entries(
-        Object.values(data)
-          .map((x) => x.por_hora)
-          .reduce((a, b) => {
-            console.log({a, b})
-            for (const key in a) {
-              a[key].caixas.union(b[key].caixas);
-              a[key].pedidos_conferidos.union(b[key].pedidos_conferidos);
-              a[key].total_embalagens += b[key].total_embalagens;
-            }
-
-            return a;
-          }),
-      ).map(([hora, { caixas, pedidos_conferidos, total_embalagens }]) => ({
-        hora: `${hora}h`,
-        caixas: caixas.size,
-        pedidos_conferidos: pedidos_conferidos.size,
-        total_embalagens,
-      })),
-    [data],
+      Object.entries(data.per_hour ?? {}).map(
+        ([hora, { caixas, pedidos_conferidos, total_embalagens }]) => ({
+          hora: `${hora}h`,
+          [NAME_KEYS.caixas]: caixas.size,
+          [NAME_KEYS.pedidos_conferidos]: pedidos_conferidos.size,
+          [NAME_KEYS.total_embalagens]: total_embalagens,
+        }),
+      ),
+    [data.per_hour],
   );
 
-  console.log(graph_data)
+  console.log(graph_data);
 
   return (
     <div className="flex flex-col justify-center">
@@ -569,7 +562,7 @@ export function UsersTable({
         <ChartTooltip />
         <Area
           type="monotone"
-          dataKey="caixas"
+          dataKey={NAME_KEYS.caixas}
           stroke="#8884d8"
           fillOpacity={1}
           fill="url(#colorUv)"
@@ -577,7 +570,7 @@ export function UsersTable({
         />
         <Area
           type="monotone"
-          dataKey="pedidos_conferidos"
+          dataKey={NAME_KEYS.pedidos_conferidos}
           stroke="#82ca9d"
           fillOpacity={1}
           fill="url(#colorPv)"
@@ -585,7 +578,7 @@ export function UsersTable({
         />
         <Area
           type="monotone"
-          dataKey="total_embalagens"
+          dataKey={NAME_KEYS.total_embalagens}
           stroke="#63cad8"
           fillOpacity={1}
           fill="url(#colorPv)"

@@ -363,8 +363,8 @@ export const per_hour_schema = z.record(
 );
 
 export const produtividade_conferencia_schema = z.object({
-  per_user: per_user_schema,
-  per_hour: per_hour_schema,
+  per_user: per_user_schema.nullable(),
+  per_hour: per_hour_schema.nullable(),
   meta: z.number(),
   avg: z
     .object({
