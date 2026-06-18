@@ -15,7 +15,13 @@ import { useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, Tooltip as ChartTooltip, XAxis, YAxis } from "recharts";
 import type z from "zod";
 import { duration } from "@/lib/utils";
-import { NAME_KEYS, type per_user_schema } from "./page";
+import type { per_user_schema } from "./page";
+
+const NAME_KEYS = {
+  total_embalagens: "N° de embalagens",
+  caixas: "N° de caixas",
+  pedidos_conferidos: "N° de pedidos",
+} as const;
 
 export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> }) {
   const [graphKey, setGraphKey] = useState("total_embalagens");
@@ -132,6 +138,18 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
           </Card.Header>
           <Card.Content>
             <div className="text-2xl font-bold text-teal-600">{duration(userData.duração)}</div>
+          </Card.Content>
+        </Card>
+        <Card>
+          <Card.Header className="pb-2">
+            <Card.Title className="text-sm font-medium text-muted-foreground">
+              Pedidos/Hora
+            </Card.Title>
+          </Card.Header>
+          <Card.Content>
+            <div className="text-2xl font-bold text-teal-600">
+              {userData.pedidos_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+            </div>
           </Card.Content>
         </Card>
       </div>

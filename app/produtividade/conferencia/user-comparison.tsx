@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import type z from "zod";
 import { duration } from "@/lib/utils";
-import { horas_trabalhadas, NAME_KEYS, type per_user_schema } from "./page";
+import { horas_trabalhadas, type per_user_schema } from "./page";
 
 const EmbalagemPorHora = ({ user }: { user: z.infer<typeof per_user_schema>[string] }) => {
   const meta_percentage = ((user.embalagens_por_hora / user.meta) * 100) >> 0;
@@ -29,6 +29,12 @@ const EmbalagemPorHora = ({ user }: { user: z.infer<typeof per_user_schema>[stri
     </span>
   );
 };
+
+const NAME_KEYS = {
+  total_embalagens: 'N° de embalagens',
+  caixas: 'N° de caixas',
+  pedidos_conferidos: 'N° de pedidos'
+} as const
 
 export function UserComparison({ data }: { data: z.infer<typeof per_user_schema> }) {
   const [graphKey, setGraphKey] = useState("total_embalagens");

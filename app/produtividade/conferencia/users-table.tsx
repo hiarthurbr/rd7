@@ -259,7 +259,9 @@ const columns = [
       Number.isFinite(a.original.embalagens_por_hora) &&
       Number.isFinite(b.original.embalagens_por_hora)
         ? 1
-        : a.original.embalagens_por_hora < b.original.embalagens_por_hora
+        : a.original.embalagens_por_hora < b.original.embalagens_por_hora ||
+            !Number.isFinite(a.original.embalagens_por_hora) ||
+            !Number.isFinite(b.original.embalagens_por_hora)
           ? -1
           : 0,
     cell: (info) => {
