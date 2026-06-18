@@ -13,7 +13,7 @@ import {
   Spinner,
   Tabs,
 } from "@heroui/react";
-import { type DateValue, fromDate, now, today } from "@internationalized/date";
+import { type DateValue, fromDate, getLocalTimeZone, now, today } from "@internationalized/date";
 import { QueryClient, useQuery } from "@tanstack/react-query";
 import { CheckIcon, Grid2x2XIcon, RefreshCwIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -110,8 +110,8 @@ export const NAME_KEYS = {
   pedidos_conferidos: 'N° de pedidos conferidos'
 } as const
 
-const timezone = "Etc/GMT-3";
 function Page() {
+  const timezone = useMemo(() => getLocalTimeZone(), []);
   const [date, setDate] = useState<DateValue>(
     process.env.NODE_ENV === "development"
       ? fromDate(new Date("2026-06-15T00:00:00.000"), timezone)
@@ -130,7 +130,7 @@ function Page() {
             new Date(date.toDate(timezone).getTime() + (h + 1) * 1000 * 60 * 60),
           ] as const,
       ),
-    [date],
+    [date, timezone],
   );
   const { data, isFetching, dataUpdatedAt, isPending } = useQuery(
     {
@@ -292,7 +292,7 @@ function Page() {
           ),
       ),
     };
-  }, [data, dataUpdatedAt, hours_filter, meta]);
+  }, [data, dataUpdatedAt, hours_filter, meta, timezone]);
 
   console.log({ per_user, per_hour });
 

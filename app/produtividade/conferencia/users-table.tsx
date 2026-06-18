@@ -547,13 +547,17 @@ export function UsersTable({
         margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
       >
         <defs>
-          <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-            <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+          <linearGradient id="color04e762" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#04e762" stopOpacity={0.8} />
+            <stop offset="95%" stopColor="#04e762" stopOpacity={0} />
           </linearGradient>
-          <linearGradient id="colorPv" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
-            <stop offset="95%" stopColor="#82ca9d" stopOpacity={0} />
+          <linearGradient id="colordc0073" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#dc0073" stopOpacity={0.8} />
+            <stop offset="95%" stopColor="#dc0073" stopOpacity={0} />
+          </linearGradient>
+          <linearGradient id="colorf5b700" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#f5b700" stopOpacity={0.8} />
+            <stop offset="95%" stopColor="#f5b700" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" />
@@ -563,25 +567,25 @@ export function UsersTable({
         <Area
           type="monotone"
           dataKey={NAME_KEYS.caixas}
-          stroke="#8884d8"
+          stroke="#dc0073"
           fillOpacity={1}
-          fill="url(#colorUv)"
+          fill="url(#colordc0073)"
           isAnimationActive
         />
         <Area
           type="monotone"
           dataKey={NAME_KEYS.pedidos_conferidos}
-          stroke="#82ca9d"
+          stroke="#f5b700"
           fillOpacity={1}
-          fill="url(#colorPv)"
+          fill="url(#colorf5b700)"
           isAnimationActive
         />
         <Area
           type="monotone"
           dataKey={NAME_KEYS.total_embalagens}
-          stroke="#63cad8"
+          stroke="04e762"
           fillOpacity={1}
-          fill="url(#colorPv)"
+          fill="url(#color04e762)"
           isAnimationActive
         />
       </AreaChart>
