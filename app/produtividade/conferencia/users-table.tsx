@@ -564,10 +564,12 @@ export function UsersTable({
         </defs>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="hora" />
-        <YAxis width="auto" />
+        <YAxis width="auto" yAxisId="left" />
+        <YAxis width="auto" yAxisId="right" orientation="right" />
         <ChartTooltip />
         <Area
           type="monotone"
+          yAxisId="right"
           dataKey={NAME_KEYS.caixas}
           stroke="#dc0073"
           fillOpacity={1}
@@ -576,6 +578,7 @@ export function UsersTable({
         />
         <Area
           type="monotone"
+          yAxisId="right"
           dataKey={NAME_KEYS.pedidos_conferidos}
           stroke="#f5b700"
           fillOpacity={1}
@@ -584,6 +587,7 @@ export function UsersTable({
         />
         <Area
           type="monotone"
+          yAxisId="left"
           dataKey={NAME_KEYS.total_embalagens}
           stroke="04e762"
           fillOpacity={1}

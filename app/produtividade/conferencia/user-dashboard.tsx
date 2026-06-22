@@ -161,65 +161,123 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
           </Card.Header>
           <Card.Content>
             <div className="h-80">
-              <AreaChart
-                style={{ width: "100%", maxWidth: "2000px", maxHeight: "30vh", aspectRatio: 2 }}
-                responsive
-                data={hourlyData}
-                margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="color04e762" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#04e762" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#04e762" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorf5b700" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f5b700" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#f5b700" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="color00a1e4" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#00a1e4" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#00a1e4" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="hour" />
-                <YAxis width="auto" />
-                <ChartTooltip />
-                {
+              {graphKey === "geral" ? (
+                <AreaChart
+                  style={{ width: "100%", maxWidth: "2000px", maxHeight: "30vh", aspectRatio: 2 }}
+                  responsive
+                  data={hourlyData}
+                  margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="color04e762" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#04e762" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#04e762" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorf5b700" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f5b700" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#f5b700" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="color00a1e4" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#00a1e4" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#00a1e4" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="hour" />
+                  <YAxis width="auto" />
+                  <ChartTooltip />
+                  <YAxis width="auto" yAxisId="left" />
+                  <YAxis width="auto" yAxisId="right" orientation="right" />
+                  <ChartTooltip />
+                  <Area
+                    type="monotone"
+                    yAxisId="right"
+                    dataKey={NAME_KEYS.caixas}
+                    stroke="#04e762"
+                    fillOpacity={1}
+                    fill="url(#color04e762)"
+                    isAnimationActive
+                  />
+                  <Area
+                    type="monotone"
+                    yAxisId="right"
+                    dataKey={NAME_KEYS.pedidos_conferidos}
+                    stroke="#f5b700"
+                    fillOpacity={1}
+                    fill="url(#colorf5b700)"
+                    isAnimationActive
+                  />
+                  <Area
+                    type="monotone"
+                    yAxisId="left"
+                    dataKey={NAME_KEYS.total_embalagens}
+                    stroke="00a1e4"
+                    fillOpacity={1}
+                    fill="url(#color00a1e4)"
+                    isAnimationActive
+                  />
+                </AreaChart>
+              ) : (
+                <AreaChart
+                  style={{ width: "100%", maxWidth: "2000px", maxHeight: "30vh", aspectRatio: 2 }}
+                  responsive
+                  data={hourlyData}
+                  margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="color04e762" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#04e762" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#04e762" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorf5b700" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f5b700" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#f5b700" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="color00a1e4" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#00a1e4" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#00a1e4" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="hour" />
+                  <YAxis width="auto" />
+                  <ChartTooltip />
                   {
-                    [NAME_KEYS.caixas]: (
-                      <Area
-                        type="monotone"
-                        dataKey={NAME_KEYS.caixas}
-                        stroke="#04e762"
-                        fillOpacity={1}
-                        fill="url(#color04e762)"
-                        isAnimationActive
-                      />
-                    ),
-                    [NAME_KEYS.pedidos_conferidos]: (
-                      <Area
-                        type="monotone"
-                        dataKey={NAME_KEYS.pedidos_conferidos}
-                        stroke="#f5b700"
-                        fillOpacity={1}
-                        fill="url(#colorf5b700)"
-                        isAnimationActive
-                      />
-                    ),
-                    [NAME_KEYS.total_embalagens]: (
-                      <Area
-                        type="monotone"
-                        dataKey={NAME_KEYS.total_embalagens}
-                        stroke="#00a1e4"
-                        fillOpacity={1}
-                        fill="url(#color00a1e4)"
-                        isAnimationActive
-                      />
-                    ),
-                  }[NAME_KEYS[graphKey as keyof typeof NAME_KEYS]]
-                }
-              </AreaChart>
+                    {
+                      [NAME_KEYS.caixas]: (
+                        <Area
+                          type="monotone"
+                          dataKey={NAME_KEYS.caixas}
+                          stroke="#04e762"
+                          fillOpacity={1}
+                          fill="url(#color04e762)"
+                          isAnimationActive
+                        />
+                      ),
+                      [NAME_KEYS.pedidos_conferidos]: (
+                        <Area
+                          type="monotone"
+                          dataKey={NAME_KEYS.pedidos_conferidos}
+                          stroke="#f5b700"
+                          fillOpacity={1}
+                          fill="url(#colorf5b700)"
+                          isAnimationActive
+                        />
+                      ),
+                      [NAME_KEYS.total_embalagens]: (
+                        <Area
+                          type="monotone"
+                          dataKey={NAME_KEYS.total_embalagens}
+                          stroke="#00a1e4"
+                          fillOpacity={1}
+                          fill="url(#color00a1e4)"
+                          isAnimationActive
+                        />
+                      ),
+                    }[NAME_KEYS[graphKey as keyof typeof NAME_KEYS]]
+                  }
+                </AreaChart>
+              )}
             </div>
           </Card.Content>
         </Card>
@@ -232,6 +290,10 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
         >
           <Tabs.ListContainer>
             <Tabs.List aria-label="Vertical tabs" className="space-y-6">
+              <Tabs.Tab id="geral" className="py-4">
+                Geral
+                <Tabs.Indicator />
+              </Tabs.Tab>
               {Object.entries(NAME_KEYS).map(([key, value]) => (
                 <Tabs.Tab key={key} id={key} className="py-4">
                   {value}
