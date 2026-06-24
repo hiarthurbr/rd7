@@ -1,26 +1,19 @@
 "use client";
 
-import { Card, Chip, ListBox, Select } from "@heroui/react";
+import { Card, Chip, ListBox, Select, Tabs } from "@heroui/react";
 import { useMemo, useState } from "react";
 import {
-  Bar,
-  BarChart,
+  Area,
+  AreaChart,
   CartesianGrid,
+  Tooltip as ChartTooltip,
   Label,
-  Legend,
-  PolarAngleAxis,
-  PolarGrid,
-  PolarRadiusAxis,
-  Radar,
-  RadarChart,
-  ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import type z from "zod";
 import { duration } from "@/lib/utils";
-import type { per_user_schema } from "./page";
+import { horas_trabalhadas, type per_user_schema } from "./page";
 
 const EmbalagemPorHora = ({ user }: { user: z.infer<typeof per_user_schema>[string] }) => {
   const meta_percentage = ((user.embalagens_por_hora / user.meta) * 100) >> 0;
@@ -37,7 +30,14 @@ const EmbalagemPorHora = ({ user }: { user: z.infer<typeof per_user_schema>[stri
   );
 };
 
+const NAME_KEYS = {
+  total_embalagens: 'N° de embalagens',
+  caixas: 'N° de caixas',
+  pedidos_conferidos: 'N° de pedidos'
+} as const
+
 export function UserComparison({ data }: { data: z.infer<typeof per_user_schema> }) {
+  const [graphKey, setGraphKey] = useState("total_embalagens");
   const userNames = useMemo(() => Object.keys(data), [data]);
   const [user1, setUser1] = useState(userNames[0]);
   const [user2, setUser2] = useState(userNames[1]);
@@ -45,12 +45,29 @@ export function UserComparison({ data }: { data: z.infer<typeof per_user_schema>
   const userData1 = data[user1];
   const userData2 = data[user2];
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: só precisamos das informações das horas, não importa qual usuário está selecionado
-  const hours = useMemo(() => Object.keys(data[user1].por_hora), [data]);
+  const startDate = new Date(
+    Math.min(userData1.hora_inicio.getTime(), userData2.hora_inicio.getTime()),
+  );
+  const endDate = new Date(Math.max(userData1.hora_fim.getTime(), userData2.hora_fim.getTime()));
+  const hours = horas_trabalhadas.filter(
+    (hour) => hour >= startDate.getHours() && hour <= endDate.getHours(),
+  );
   const hourlyComparisonData = hours.map((hour) => ({
-    hour: `${hour}h`,
-    [user1]: userData1.por_hora[hour]?.total_embalagens || 0,
-    [user2]: userData2.por_hora[hour]?.total_embalagens || 0,
+    [NAME_KEYS.caixas]: {
+      hour: `${hour}h`,
+      [user1]: userData1.por_hora[hour]?.caixas.size || 0,
+      [user2]: userData2.por_hora[hour]?.caixas.size || 0,
+    },
+    [NAME_KEYS.pedidos_conferidos]: {
+      hour: `${hour}h`,
+      [user1]: userData1.por_hora[hour]?.pedidos_conferidos.size || 0,
+      [user2]: userData2.por_hora[hour]?.pedidos_conferidos.size || 0,
+    },
+    [NAME_KEYS.total_embalagens]: {
+      hour: `${hour}h`,
+      [user1]: userData1.por_hora[hour]?.total_embalagens || 0,
+      [user2]: userData2.por_hora[hour]?.total_embalagens || 0,
+    },
   }));
 
   // Normalize data for radar chart (0-100 scale)
@@ -136,7 +153,7 @@ export function UserComparison({ data }: { data: z.infer<typeof per_user_schema>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="border-l-4 border-l-teal-500 max-w-72 min-w-max w-full place-self-end">
+        <Card className="border-l-4 border-l-[#b100e8] max-w-72 min-w-max w-full place-self-end">
           <Card.Header className="pb-2">
             <Card.Title className="text-lg">{user1}</Card.Title>
           </Card.Header>
@@ -170,7 +187,7 @@ export function UserComparison({ data }: { data: z.infer<typeof per_user_schema>
           </Card.Content>
         </Card>
 
-        <Card className="border-l-4 border-l-amber-500 max-w-72 min-w-max w-full place-self-start">
+        <Card className="border-l-4 border-l-[#ff7b00] max-w-72 min-w-max w-full place-self-start">
           <Card.Header className="pb-2">
             <Card.Title className="text-lg">{user2}</Card.Title>
           </Card.Header>
@@ -205,72 +222,73 @@ export function UserComparison({ data }: { data: z.infer<typeof per_user_schema>
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
+      <div className="flex flex-row space-x-4">
+        <Card className="w-full">
           <Card.Header>
-            <Card.Title>Comparacao por Hora</Card.Title>
+            <Card.Title>{NAME_KEYS[graphKey as keyof typeof NAME_KEYS]}</Card.Title>
           </Card.Header>
           <Card.Content>
             <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={hourlyComparisonData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="hour" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                  />
-                  <Legend />
-                  <Bar dataKey={user1} fill="#0d9488" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey={user2} fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <AreaChart
+                style={{ width: "100%", maxWidth: "2000px", maxHeight: "30vh", aspectRatio: 2 }}
+                responsive
+                data={hourlyComparisonData.map(
+                  (data) => data[NAME_KEYS[graphKey as keyof typeof NAME_KEYS]],
+                )}
+                margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="colorb100e8" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#b100e8" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#b100e8" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorff7b00" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ff7b00" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#ff7b00" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="hour" />
+                <YAxis width="auto" />
+                <ChartTooltip />
+                <Area
+                  type="monotone"
+                  dataKey={user1}
+                  stroke="#b100e8"
+                  fillOpacity={1}
+                  fill="url(#colorb100e8)"
+                  isAnimationActive
+                />
+                <Area
+                  type="monotone"
+                  dataKey={user2}
+                  stroke="#ff7b00"
+                  fillOpacity={1}
+                  fill="url(#colorff7b00)"
+                  isAnimationActive
+                />
+              </AreaChart>
             </div>
           </Card.Content>
         </Card>
-
-        <Card>
-          <Card.Header>
-            <Card.Title>Comparacao de Metricas</Card.Title>
-          </Card.Header>
-          <Card.Content>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={radarData}>
-                  <PolarGrid />
-                  <PolarAngleAxis dataKey="metric" className="text-xs" />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} />
-                  <Radar
-                    name={user1}
-                    dataKey={user1}
-                    stroke="#0d9488"
-                    fill="#0d9488"
-                    fillOpacity={0.3}
-                  />
-                  <Radar
-                    name={user2}
-                    dataKey={user2}
-                    stroke="#f59e0b"
-                    fill="#f59e0b"
-                    fillOpacity={0.3}
-                  />
-                  <Legend />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-          </Card.Content>
-        </Card>
+        <Tabs
+          className="w-56"
+          orientation="vertical"
+          variant="secondary"
+          onSelectionChange={(key) => setGraphKey(key as string)}
+          selectedKey={graphKey}
+        >
+          <Tabs.ListContainer>
+            <Tabs.List aria-label="Vertical tabs" className="space-y-6">
+              {Object.entries(NAME_KEYS).map(([key, value]) => (
+                <Tabs.Tab key={key} id={key} className="py-4">
+                  {value}
+                  <Tabs.Indicator />
+                </Tabs.Tab>
+              ))}
+            </Tabs.List>
+          </Tabs.ListContainer>
+        </Tabs>
       </div>
     </div>
   );

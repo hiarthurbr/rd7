@@ -1,50 +1,59 @@
 "use client";
 
-import { Button, Card, Chip, Label, ListBox, Select, Tooltip as UITooltip } from "@heroui/react";
-import { TriangleAlertIcon } from "lucide-react";
-import { useMemo, useState } from "react";
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  PolarAngleAxis,
-  PolarGrid,
-  PolarRadiusAxis,
-  Radar,
-  RadarChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+  Button,
+  Card,
+  Chip,
+  Label,
+  ListBox,
+  Select,
+  Tabs,
+  Tooltip as UITooltip,
+} from "@heroui/react";
+import { TriangleAlertIcon } from "lucide-react";
+import { useContext, useEffect, useMemo, useState } from "react";
+import { Area, AreaChart, CartesianGrid, Tooltip as ChartTooltip, XAxis, YAxis } from "recharts";
 import type z from "zod";
 import { duration } from "@/lib/utils";
-import type { per_user_schema } from "./page";
+import { type per_user_schema, SelectedUserContext } from "./page";
 
-const COLORS = ["#0d9488", "#14b8a6", "#2dd4bf", "#5eead4", "#99f6e4"];
+const NAME_KEYS = {
+  total_embalagens: "N° de embalagens",
+  caixas: "N° de caixas",
+  pedidos_conferidos: "N° de pedidos",
+} as const;
 
 export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> }) {
+  const [graphKey, setGraphKey] = useState("total_embalagens");
   const userNames = useMemo(() => Object.keys(data), [data]);
-  const [selectedUser, setSelectedUser] = useState(userNames[0]);
+  const selectedUserState = useContext(SelectedUserContext);
+
+  useEffect(() => {
+    if (selectedUserState != null && selectedUserState[0] == null) {
+      selectedUserState[1](userNames[0]);
+    }
+  }, [selectedUserState, userNames[0]]);
+
+  if (selectedUserState == null || selectedUserState[0] == null) return null;
+
+  const [selectedUser, setSelectedUser] = selectedUserState;
+
   const userData = data[selectedUser];
 
   const meta_percentage = ((userData.embalagens_por_hora / userData.meta) * 100) >> 0;
 
   const hourlyData = Object.entries(userData.por_hora)
+    .filter(
+      ([hour]) =>
+        Number(hour) >= userData.hora_inicio.getHours() &&
+        Number(hour) <= userData.hora_fim.getHours(),
+    )
     .map(([hour, data]) => ({
       hour: `${hour}h`,
-      embalagens: data.total_embalagens,
-    }))
-    .filter((item) => item.embalagens > 0);
-
-  const metricsData = [
-    { name: "Pedidos/Hora", value: userData.pedidos_por_hora },
-    { name: "Caixas/Hora", value: userData.caixas_por_hora },
-  ];
+      [NAME_KEYS.total_embalagens]: data.total_embalagens,
+      [NAME_KEYS.caixas]: data.caixas.size,
+      [NAME_KEYS.pedidos_conferidos]: data.pedidos_conferidos.size,
+    }));
 
   console.log(
     Object.values(data)
@@ -56,51 +65,6 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
         ],
         [Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
       ),
-  );
-
-  const radarData = useMemo(
-    () => [
-      {
-        name: "Caixas/Hora",
-        value: userData.caixas_por_hora,
-        range: Object.values(data)
-          .filter((x) => Number.isFinite(x.caixas_por_hora))
-          .reduce(
-            ([min, max], curr) => [
-              Math.min(min, curr.caixas_por_hora),
-              Math.max(max, curr.caixas_por_hora),
-            ],
-            [Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
-          ),
-      },
-      {
-        name: "Pedidos/Hora",
-        value: userData.pedidos_por_hora,
-        range: Object.values(data)
-          .filter((x) => Number.isFinite(x.pedidos_por_hora))
-          .reduce(
-            ([min, max], curr) => [
-              Math.min(min, curr.pedidos_por_hora),
-              Math.max(max, curr.pedidos_por_hora),
-            ],
-            [Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
-          ),
-      },
-      {
-        name: "Embalagens/Hora",
-        value: userData.embalagens_por_hora,
-        range: Object.values(data)
-          .filter((x) => Number.isFinite(x.embalagens_por_hora))
-          .reduce(
-            ([min, max], curr) => [
-              Math.min(min, curr.embalagens_por_hora),
-              Math.max(max, curr.embalagens_por_hora),
-            ],
-            [Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
-          ),
-      },
-    ],
-    [userData, data],
   );
 
   return (
@@ -138,7 +102,7 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
             </Card.Title>
           </Card.Header>
           <Card.Content>
-            <div className="text-2xl font-bold text-teal-600">
+            <div className="text-2xl font-bold text-slate-800">
               {userData.total_embalagens.toLocaleString("pt-BR")}
             </div>
           </Card.Content>
@@ -150,7 +114,7 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
             </Card.Title>
           </Card.Header>
           <Card.Content>
-            <div className="text-2xl font-bold text-teal-600 flex flex-row items-center space-x-2">
+            <div className="text-2xl font-bold text-cyan-500 flex flex-row items-center space-x-2">
               <span className="-translate-y-0.5">
                 {userData.embalagens_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
               </span>
@@ -184,68 +148,172 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
             <Card.Title className="text-sm font-medium text-muted-foreground">Duração</Card.Title>
           </Card.Header>
           <Card.Content>
-            <div className="text-2xl font-bold text-teal-600">{duration(userData.duração)}</div>
+            <div className="text-2xl font-bold text-slate-800">{duration(userData.duração)}</div>
+          </Card.Content>
+        </Card>
+        <Card>
+          <Card.Header className="pb-2">
+            <Card.Title className="text-sm font-medium text-muted-foreground">
+              Pedidos/Hora
+            </Card.Title>
+          </Card.Header>
+          <Card.Content>
+            <div className="text-2xl font-bold text-amber-500">
+              {userData.pedidos_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+            </div>
           </Card.Content>
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
+      <div className="flex flex-row space-x-4">
+        <Card className="w-full">
           <Card.Header>
-            <Card.Title>Embalagens por Hora</Card.Title>
+            <Card.Title>{NAME_KEYS[graphKey as keyof typeof NAME_KEYS]}</Card.Title>
           </Card.Header>
           <Card.Content>
             <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={hourlyData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="hour" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
+              {graphKey === "geral" ? (
+                <AreaChart
+                  style={{ width: "100%", maxWidth: "2000px", maxHeight: "30vh", aspectRatio: 2 }}
+                  responsive
+                  data={hourlyData}
+                  margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="colord946ef" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#d946ef" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#d946ef" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorfacc15" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#facc15" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#facc15" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="color06b6d4" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="hour" />
+                  <YAxis width="auto" />
+                  <ChartTooltip />
+                  <YAxis width="auto" yAxisId="left" />
+                  <YAxis width="auto" yAxisId="right" orientation="right" />
+                  <ChartTooltip />
+                  <Area
+                    type="monotone"
+                    yAxisId="left"
+                    dataKey={NAME_KEYS.total_embalagens}
+                    stroke="#06b6d4"
+                    fillOpacity={1}
+                    fill="url(#color06b6d4)"
+                    isAnimationActive
                   />
-                  <Bar dataKey="embalagens" fill="#0d9488" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+                  <Area
+                    type="monotone"
+                    yAxisId="right"
+                    dataKey={NAME_KEYS.caixas}
+                    stroke="#d946ef"
+                    fillOpacity={1}
+                    fill="url(#colord946ef)"
+                    isAnimationActive
+                  />
+                  <Area
+                    type="monotone"
+                    yAxisId="right"
+                    dataKey={NAME_KEYS.pedidos_conferidos}
+                    stroke="#facc15"
+                    fillOpacity={1}
+                    fill="url(#colorfacc15)"
+                    isAnimationActive
+                  />
+                </AreaChart>
+              ) : (
+                <AreaChart
+                  style={{ width: "100%", maxWidth: "2000px", maxHeight: "30vh", aspectRatio: 2 }}
+                  responsive
+                  data={hourlyData}
+                  margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="colord946ef" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#d946ef" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#d946ef" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorfacc15" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#facc15" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#facc15" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="color06b6d4" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="hour" />
+                  <YAxis width="auto" />
+                  <ChartTooltip />
+                  {
+                    {
+                      [NAME_KEYS.caixas]: (
+                        <Area
+                          type="monotone"
+                          dataKey={NAME_KEYS.caixas}
+                          stroke="#d946ef"
+                          fillOpacity={1}
+                          fill="url(#colord946ef)"
+                          isAnimationActive
+                        />
+                      ),
+                      [NAME_KEYS.pedidos_conferidos]: (
+                        <Area
+                          type="monotone"
+                          dataKey={NAME_KEYS.pedidos_conferidos}
+                          stroke="#facc15"
+                          fillOpacity={1}
+                          fill="url(#colorfacc15)"
+                          isAnimationActive
+                        />
+                      ),
+                      [NAME_KEYS.total_embalagens]: (
+                        <Area
+                          type="monotone"
+                          dataKey={NAME_KEYS.total_embalagens}
+                          stroke="#06b6d4"
+                          fillOpacity={1}
+                          fill="url(#color06b6d4)"
+                          isAnimationActive
+                        />
+                      ),
+                    }[NAME_KEYS[graphKey as keyof typeof NAME_KEYS]]
+                  }
+                </AreaChart>
+              )}
             </div>
           </Card.Content>
         </Card>
-
-        <Card>
-          <Card.Header>
-            <Card.Title>Metricas de Produtividade</Card.Title>
-          </Card.Header>
-          <Card.Content>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={radarData}>
-                  <PolarGrid />
-                  <PolarAngleAxis dataKey="name" className="text-xs" />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} />
-                  <Radar
-                    name={selectedUser}
-                    dataKey="value"
-                    stroke="#0d9488"
-                    fill="#0d9488"
-                    fillOpacity={0.3}
-                  />
-                  <Legend />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-          </Card.Content>
-        </Card>
+        <Tabs
+          className="w-56"
+          orientation="vertical"
+          variant="secondary"
+          onSelectionChange={(key) => setGraphKey(key as string)}
+          selectedKey={graphKey}
+        >
+          <Tabs.ListContainer>
+            <Tabs.List aria-label="Vertical tabs" className="space-y-6">
+              <Tabs.Tab id="geral" className="py-4">
+                Geral
+                <Tabs.Indicator />
+              </Tabs.Tab>
+              {Object.entries(NAME_KEYS).map(([key, value]) => (
+                <Tabs.Tab key={key} id={key} className="py-4">
+                  {value}
+                  <Tabs.Indicator />
+                </Tabs.Tab>
+              ))}
+            </Tabs.List>
+          </Tabs.ListContainer>
+        </Tabs>
       </div>
     </div>
   );

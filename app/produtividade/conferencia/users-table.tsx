@@ -20,13 +20,19 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { DiffIcon, SearchIcon, TriangleAlertIcon } from "lucide-react";
+import { DiffIcon, LogsIcon, SearchIcon, TriangleAlertIcon } from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, Tooltip as ChartTooltip, XAxis, YAxis } from "recharts";
 import type z from "zod";
+import type { produtividade_conferencia_schema } from "@/lib/schemas";
 import { duration, SortableColumnHeader, toSortDescriptor, toSortingState } from "@/lib/utils";
-import type { per_user_schema } from "./page";
+import {
+  NAME_KEYS,
+  type per_user_schema,
+  SelectedSectionContext,
+  SelectedUserContext,
+} from "./page";
 
 type ProductsTableData = z.infer<typeof per_user_schema>[string]["produtos"];
 const columnHelperProducts = createColumnHelper<ProductsTableData[number]>();
@@ -196,7 +202,41 @@ const columnHelper = createColumnHelper<
   z.infer<typeof per_user_schema>[string] & { name: string }
 >();
 const columns = [
-  columnHelper.accessor("name", { header: "Nome", sortingFn: "text" }),
+  columnHelper.accessor("name", {
+    header: "Nome",
+    sortingFn: "text",
+    cell: (info) => {
+      const selectedSectionState = useContext(SelectedSectionContext);
+      const selectedUserState = useContext(SelectedUserContext);
+
+      return (
+        <div className="flex flex-row items-center space-x-2">
+          {selectedUserState?.[1] != null && selectedSectionState != null && (
+            <Tooltip delay={0}>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="scale-80"
+                isIconOnly
+                onPress={() => {
+                  selectedUserState[1](info.getValue());
+                  selectedSectionState[1]("analytics");
+                }}
+              >
+                <SearchIcon />
+              </Button>
+              <Tooltip.Content>
+                <p className="break-normal">
+                  Ver métricas do usuário
+                </p>
+              </Tooltip.Content>
+            </Tooltip>
+          )}
+          <span>{info.getValue()}</span>
+        </div>
+      );
+    },
+  }),
   columnHelper.accessor("total_embalagens", {
     header: "Total Embalagens",
     sortingFn: "basic",
@@ -204,9 +244,11 @@ const columns = [
       return Number.isFinite(info.getValue()) ? (
         <Modal>
           <div className="flex flex-row items-center space-x-2">
-            <Button variant="secondary" size="sm" className="scale-80" isIconOnly>
-              <SearchIcon />
-            </Button>
+            {new URLSearchParams(window.location.search).get("debug") === "true" && (
+              <Button variant="secondary" size="sm" className="scale-80" isIconOnly>
+                <LogsIcon />
+              </Button>
+            )}
             <span>{info.getValue().toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</span>
           </div>
           <Modal.Backdrop>
@@ -258,7 +300,9 @@ const columns = [
       Number.isFinite(a.original.embalagens_por_hora) &&
       Number.isFinite(b.original.embalagens_por_hora)
         ? 1
-        : a.original.embalagens_por_hora < b.original.embalagens_por_hora
+        : a.original.embalagens_por_hora < b.original.embalagens_por_hora ||
+            !Number.isFinite(a.original.embalagens_por_hora) ||
+            !Number.isFinite(b.original.embalagens_por_hora)
           ? -1
           : 0,
     cell: (info) => {
@@ -327,11 +371,9 @@ const columns = [
 
 const PAGE_SIZE = 14;
 export function UsersTable({
-  data,
-  avg,
+  data: { avg, ...data },
 }: {
-  data: z.infer<typeof per_user_schema>;
-  avg: { mean: number; median: number };
+  data: z.infer<typeof produtividade_conferencia_schema>;
 }) {
   const [sorting, setSorting] = useState<SortingState>([
     {
@@ -340,8 +382,8 @@ export function UsersTable({
     },
   ]);
   const users = useMemo(
-    () => Object.entries(data).map(([name, data]) => ({ ...data, name })),
-    [data],
+    () => Object.entries(data.per_user ?? {}).map(([name, data]) => ({ ...data, name })),
+    [data.per_user],
   );
 
   const table = useReactTable({
@@ -421,12 +463,14 @@ export function UsersTable({
     return column.getBoundingClientRect().x - _table.getBoundingClientRect().x;
   }, []);
 
-
   const footer_values = useMemo(() => {
-    const arr = Object.values(data)
+    const arr = Object.values(data.per_user ?? {})
       .map((x) => x.embalagens_por_hora)
       .filter((x) => Number.isFinite(x));
-    const mad = arr.reduce((sum, val) => sum + Math.abs(val - avg.median), 0) / arr.length;
+    const mad =
+      avg == null
+        ? NaN
+        : arr.reduce((sum, val) => sum + Math.abs(val - avg.median), 0) / arr.length;
 
     type keys =
       | "name"
@@ -442,9 +486,13 @@ export function UsersTable({
       emb_p_hora: (
         <Description className="flex flex-row space-x-1 items-center">
           <span>Media de emb/hora:</span>
-          <span>{avg.mean.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
-          <DiffIcon className="size-2.5" />
-          <span>{mad.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+          {avg != null && (
+            <>
+              <span>{avg.mean.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+              <DiffIcon className="size-2.5" />
+              <span>{mad.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+            </>
+          )}
         </Description>
       ),
       hora_fim: (
@@ -477,7 +525,7 @@ export function UsersTable({
       ),
     } satisfies { [key in keys]?: React.ReactNode };
   }, [
-    data,
+    data.per_user,
     avg,
     end,
     start,
@@ -517,78 +565,74 @@ export function UsersTable({
     return () => clearInterval(id);
   }, [footer_values, get_footer_offset, table.getHeaderGroups]);
 
-  console.log(Object.values(data)
-          .map((x) => x.por_hora))
+  console.log(Object.values(data.per_user ?? {}).map((x) => x.por_hora));
   const graph_data = useMemo(
     () =>
-      Object.entries(
-        Object.values(data)
-          .map((x) => x.por_hora)
-          .reduce((a, b) => {
-            console.log({a, b})
-            for (const key in a) {
-              a[key].caixas.union(b[key].caixas);
-              a[key].pedidos_conferidos.union(b[key].pedidos_conferidos);
-              a[key].total_embalagens += b[key].total_embalagens;
-            }
-
-            return a;
-          }),
-      ).map(([hora, { caixas, pedidos_conferidos, total_embalagens }]) => ({
-        hora: `${hora}h`,
-        caixas: caixas.size,
-        pedidos_conferidos: pedidos_conferidos.size,
-        total_embalagens,
-      })),
-    [data],
+      Object.entries(data.per_hour ?? {}).map(
+        ([hora, { caixas, pedidos_conferidos, total_embalagens }]) => ({
+          hora: `${hora}h`,
+          [NAME_KEYS.caixas]: caixas.size,
+          [NAME_KEYS.pedidos_conferidos]: pedidos_conferidos.size,
+          [NAME_KEYS.total_embalagens]: total_embalagens,
+        }),
+      ),
+    [data.per_hour],
   );
 
-  console.log(graph_data)
+  console.log(graph_data);
 
   return (
     <div className="flex flex-col justify-center">
       <AreaChart
-        style={{ width: "100%", maxWidth: "700px", maxHeight: "70vh", aspectRatio: 1.618 }}
+        style={{ width: "100%", maxWidth: "2000px", maxHeight: "30vh", aspectRatio: 2 }}
         responsive
         data={graph_data}
         margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
       >
         <defs>
-          <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-            <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+          <linearGradient id="color06b6d4" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8} />
+            <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
           </linearGradient>
-          <linearGradient id="colorPv" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
-            <stop offset="95%" stopColor="#82ca9d" stopOpacity={0} />
+          <linearGradient id="colord946ef" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#d946ef" stopOpacity={0.8} />
+            <stop offset="95%" stopColor="#d946ef" stopOpacity={0} />
+          </linearGradient>
+          <linearGradient id="colorfacc15" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#facc15" stopOpacity={0.8} />
+            <stop offset="95%" stopColor="#facc15" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="hora" />
-        <YAxis width="auto" />
+        <YAxis width="auto" yAxisId="left" />
+        <YAxis width="auto" yAxisId="right" orientation="right" />
         <ChartTooltip />
         <Area
           type="monotone"
-          dataKey="caixas"
-          stroke="#8884d8"
+          yAxisId="left"
+          dataKey={NAME_KEYS.total_embalagens}
+          stroke="#06b6d4"
           fillOpacity={1}
-          fill="url(#colorUv)"
+          fill="url(#color06b6d4)"
           isAnimationActive
         />
         <Area
           type="monotone"
-          dataKey="pedidos_conferidos"
-          stroke="#82ca9d"
+          yAxisId="right"
+          dataKey={NAME_KEYS.caixas}
+          stroke="#d946ef"
           fillOpacity={1}
-          fill="url(#colorPv)"
+          fill="url(#colord946ef)"
           isAnimationActive
         />
         <Area
           type="monotone"
-          dataKey="total_embalagens"
-          stroke="#63cad8"
+          yAxisId="right"
+          dataKey={NAME_KEYS.pedidos_conferidos}
+          stroke="#facc15"
           fillOpacity={1}
-          fill="url(#colorPv)"
+          fill="url(#colorfacc15)"
           isAnimationActive
         />
       </AreaChart>
