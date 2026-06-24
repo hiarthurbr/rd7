@@ -175,6 +175,7 @@ export const status_pedido_pda_enum = z.enum([
   "Ressuprimento",
   "Estoque Insuficiente",
   "Aguardando Integração",
+  "Finalizado c/divergência",
 ]);
 
 export const relatorio_conferencia_schema = z.object({

@@ -20,14 +20,19 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { DiffIcon, SearchIcon, TriangleAlertIcon } from "lucide-react";
+import { DiffIcon, LogsIcon, SearchIcon, TriangleAlertIcon } from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, Tooltip as ChartTooltip, XAxis, YAxis } from "recharts";
 import type z from "zod";
 import type { produtividade_conferencia_schema } from "@/lib/schemas";
 import { duration, SortableColumnHeader, toSortDescriptor, toSortingState } from "@/lib/utils";
-import { NAME_KEYS, type per_user_schema } from "./page";
+import {
+  NAME_KEYS,
+  type per_user_schema,
+  SelectedSectionContext,
+  SelectedUserContext,
+} from "./page";
 
 type ProductsTableData = z.infer<typeof per_user_schema>[string]["produtos"];
 const columnHelperProducts = createColumnHelper<ProductsTableData[number]>();
@@ -197,7 +202,41 @@ const columnHelper = createColumnHelper<
   z.infer<typeof per_user_schema>[string] & { name: string }
 >();
 const columns = [
-  columnHelper.accessor("name", { header: "Nome", sortingFn: "text" }),
+  columnHelper.accessor("name", {
+    header: "Nome",
+    sortingFn: "text",
+    cell: (info) => {
+      const selectedSectionState = useContext(SelectedSectionContext);
+      const selectedUserState = useContext(SelectedUserContext);
+
+      return (
+        <div className="flex flex-row items-center space-x-2">
+          {selectedUserState?.[1] != null && selectedSectionState != null && (
+            <Tooltip delay={0}>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="scale-80"
+                isIconOnly
+                onPress={() => {
+                  selectedUserState[1](info.getValue());
+                  selectedSectionState[1]("analytics");
+                }}
+              >
+                <SearchIcon />
+              </Button>
+              <Tooltip.Content>
+                <p className="break-normal">
+                  Ver métricas do usuário
+                </p>
+              </Tooltip.Content>
+            </Tooltip>
+          )}
+          <span>{info.getValue()}</span>
+        </div>
+      );
+    },
+  }),
   columnHelper.accessor("total_embalagens", {
     header: "Total Embalagens",
     sortingFn: "basic",
@@ -205,9 +244,11 @@ const columns = [
       return Number.isFinite(info.getValue()) ? (
         <Modal>
           <div className="flex flex-row items-center space-x-2">
-            <Button variant="secondary" size="sm" className="scale-80" isIconOnly>
-              <SearchIcon />
-            </Button>
+            {new URLSearchParams(window.location.search).get("debug") === "true" && (
+              <Button variant="secondary" size="sm" className="scale-80" isIconOnly>
+                <LogsIcon />
+              </Button>
+            )}
             <span>{info.getValue().toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</span>
           </div>
           <Modal.Backdrop>

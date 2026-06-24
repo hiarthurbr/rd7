@@ -16,7 +16,14 @@ import {
 import { type DateValue, fromDate, getLocalTimeZone, now, today } from "@internationalized/date";
 import { QueryClient, useQuery } from "@tanstack/react-query";
 import { CheckIcon, Grid2x2XIcon, RefreshCwIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  type Dispatch,
+  type SetStateAction,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { z } from "zod";
 import { Auth } from "@/components/auth";
 import { getToken } from "@/lib/pda";
@@ -105,10 +112,17 @@ const data_processing_schema = produtividade_conferencia_schema
   .or(z.object({ per_user: z.null(), per_hour: z.null() }));
 
 export const NAME_KEYS = {
-  total_embalagens: 'Média de embalagens por hora',
-  caixas: 'N° de caixas',
-  pedidos_conferidos: 'N° de pedidos conferidos'
-} as const
+  total_embalagens: "Média de embalagens por hora",
+  caixas: "N° de caixas",
+  pedidos_conferidos: "N° de pedidos conferidos",
+} as const;
+
+export const SelectedUserContext = createContext<
+  [string | null, Dispatch<SetStateAction<string | null>>] | null
+>(null);
+export const SelectedSectionContext = createContext<
+  [string, Dispatch<SetStateAction<string>>] | null
+>(null);
 
 function Page() {
   const timezone = useMemo(() => getLocalTimeZone(), []);
@@ -268,8 +282,8 @@ function Page() {
               ([
                 hour,
                 {
-                  total_embalagens:
-                    Math.round(Object.entries(
+                  total_embalagens: Math.round(
+                    Object.entries(
                       data.reduce(
                         (obj, prod) => {
                           if (prod.produto in obj) obj[prod.produto] += prod.quantidade;
@@ -284,7 +298,8 @@ function Page() {
                           quantidade / (skus[produto as keyof typeof skus] ?? 1),
                       )
                       .reduce((a, b) => a + b, 0) /
-                    Math.max(1, new Set(data.map((cx) => cx.usuario)).size)),
+                      Math.max(1, new Set(data.map((cx) => cx.usuario)).size),
+                  ),
                   pedidos_conferidos: new Set(data.map((cx) => cx.codigoPedido)),
                   caixas: new Set(data.map((cx) => cx.caixa)),
                 },
@@ -311,169 +326,185 @@ function Page() {
   }, [per_user]);
 
   console.log(per_user);
+  const selectedUserState = useState<string | null>(null);
+  const selectedSectionState = useState<string>("overview");
 
   return (
-    <main className="min-h-screen bg-background p-6 flex flex-col items-center">
-      <div className="space-y-6">
-        <header className="space-x-8 container grid grid-flow-col grid-cols-6 place-items-center">
-          <div>
-            <Button
-              isPending={isFetching}
-              onPress={() => queryClient.invalidateQueries({ queryKey: ["relatorio_conferencia"] })}
-              className={`justify-self-end place-self-start w-48 my-12 ${isUpdated ? "bg-lime-600 text-white" : ""}`}
-              isDisabled={isUpdated}
-            >
-              {({ isPending, isDisabled }) => (
-                <>
-                  {isPending ? (
-                    <Spinner color="current" size="sm" />
-                  ) : isDisabled ? (
-                    <CheckIcon />
-                  ) : (
-                    <RefreshCwIcon />
+    <SelectedSectionContext value={selectedSectionState}>
+      <SelectedUserContext value={selectedUserState}>
+        <main className="min-h-screen bg-background p-6 flex flex-col items-center">
+          <div className="space-y-6">
+            <header className="space-x-8 container grid grid-flow-col grid-cols-6 place-items-center">
+              <div>
+                <Button
+                  isPending={isFetching}
+                  onPress={() =>
+                    queryClient.invalidateQueries({ queryKey: ["relatorio_conferencia"] })
+                  }
+                  className={`justify-self-end place-self-start w-48 my-12 ${isUpdated ? "bg-lime-600 text-white" : ""}`}
+                  isDisabled={isUpdated}
+                >
+                  {({ isPending, isDisabled }) => (
+                    <>
+                      {isPending ? (
+                        <Spinner color="current" size="sm" />
+                      ) : isDisabled ? (
+                        <CheckIcon />
+                      ) : (
+                        <RefreshCwIcon />
+                      )}
+                      {isPending
+                        ? "Atualizando dados..."
+                        : isDisabled
+                          ? "Dados atualizados!"
+                          : "Atualizar dados"}
+                    </>
                   )}
-                  {isPending
-                    ? "Atualizando dados..."
-                    : isDisabled
-                      ? "Dados atualizados!"
-                      : "Atualizar dados"}
-                </>
-              )}
-            </Button>
-          </div>
-          <div className="flex flex-col items-center mx-auto col-start-2 col-span-4">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Painel de Produtividade
-            </h1>
-            <p className="text-muted-foreground">Visualize e compare o desempenho dos usuarios</p>
-            <DatePicker
-              name="date"
-              value={date}
-              granularity="day"
-              onChange={(date) => date != null && setDate(date)}
-              className="w-64"
-            >
-              <Label>Produtividade do dia</Label>
-              <DateField.Group fullWidth>
-                <DateField.Input>
-                  {(segment) => <DateField.Segment segment={segment} />}
-                </DateField.Input>
-                <DateField.Suffix>
-                  <DatePicker.Trigger>
-                    <DatePicker.TriggerIndicator />
-                  </DatePicker.Trigger>
-                </DateField.Suffix>
-              </DateField.Group>
-              <DatePicker.Popover>
-                <Calendar aria-label="Event date" maxValue={today(timezone)}>
-                  <Calendar.Header>
-                    <Calendar.YearPickerTrigger>
-                      <Calendar.YearPickerTriggerHeading />
-                      <Calendar.YearPickerTriggerIndicator />
-                    </Calendar.YearPickerTrigger>
-                    <Calendar.NavButton slot="previous" />
-                    <Calendar.NavButton slot="next" />
-                  </Calendar.Header>
-                  <Calendar.Grid>
-                    <Calendar.GridHeader>
-                      {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
-                    </Calendar.GridHeader>
-                    <Calendar.GridBody>{(date) => <Calendar.Cell date={date} />}</Calendar.GridBody>
-                  </Calendar.Grid>
-                  <Calendar.YearPickerGrid>
-                    <Calendar.YearPickerGridBody>
-                      {({ year }) => <Calendar.YearPickerCell year={year} />}
-                    </Calendar.YearPickerGridBody>
-                  </Calendar.YearPickerGrid>
-                </Calendar>
-              </DatePicker.Popover>
-            </DatePicker>
-          </div>
-          <div className="col-start-6 flex items-center flex-col space-y-2">
-            <NumberField
-              className="w-full max-w-64"
-              defaultValue={800}
-              minValue={0}
-              value={meta}
-              onChange={setMeta}
-              step={50}
-              name="meta"
-              isDisabled={isFetching}
-            >
-              <Label>Meta por Hora</Label>
-              <NumberField.Group>
-                <NumberField.DecrementButton />
-                <NumberField.Input className="w-30" />
-                <NumberField.IncrementButton />
-              </NumberField.Group>
-            </NumberField>
-            <div className="flex flex-col gap-2">
-              <p className="text-sm text-muted">Definir para:</p>
-              <ButtonGroup variant="primary" isDisabled={isFetching} size="sm">
-                <Button onPress={() => setMeta(todays_average.mean)}>
-                  Média
-                  {isFetching
-                    ? ""
-                    : ` (${todays_average.mean.toLocaleString("pt-BR", { maximumFractionDigits: 0 })})`}
                 </Button>
-                <Button onPress={() => setMeta(todays_average.median)}>
-                  <ButtonGroup.Separator />
-                  Mediana
-                  {isFetching
-                    ? ""
-                    : ` (${todays_average.median.toLocaleString("pt-BR", { maximumFractionDigits: 0 })})`}
-                </Button>
-              </ButtonGroup>
-            </div>
-          </div>
-        </header>
+              </div>
+              <div className="flex flex-col items-center mx-auto col-start-2 col-span-4">
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                  Painel de Produtividade
+                </h1>
+                <p className="text-muted-foreground">
+                  Visualize e compare o desempenho dos usuarios
+                </p>
+                <DatePicker
+                  name="date"
+                  value={date}
+                  granularity="day"
+                  onChange={(date) => date != null && setDate(date)}
+                  className="w-64"
+                >
+                  <Label>Produtividade do dia</Label>
+                  <DateField.Group fullWidth>
+                    <DateField.Input>
+                      {(segment) => <DateField.Segment segment={segment} />}
+                    </DateField.Input>
+                    <DateField.Suffix>
+                      <DatePicker.Trigger>
+                        <DatePicker.TriggerIndicator />
+                      </DatePicker.Trigger>
+                    </DateField.Suffix>
+                  </DateField.Group>
+                  <DatePicker.Popover>
+                    <Calendar aria-label="Event date" maxValue={today(timezone)}>
+                      <Calendar.Header>
+                        <Calendar.YearPickerTrigger>
+                          <Calendar.YearPickerTriggerHeading />
+                          <Calendar.YearPickerTriggerIndicator />
+                        </Calendar.YearPickerTrigger>
+                        <Calendar.NavButton slot="previous" />
+                        <Calendar.NavButton slot="next" />
+                      </Calendar.Header>
+                      <Calendar.Grid>
+                        <Calendar.GridHeader>
+                          {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
+                        </Calendar.GridHeader>
+                        <Calendar.GridBody>
+                          {(date) => <Calendar.Cell date={date} />}
+                        </Calendar.GridBody>
+                      </Calendar.Grid>
+                      <Calendar.YearPickerGrid>
+                        <Calendar.YearPickerGridBody>
+                          {({ year }) => <Calendar.YearPickerCell year={year} />}
+                        </Calendar.YearPickerGridBody>
+                      </Calendar.YearPickerGrid>
+                    </Calendar>
+                  </DatePicker.Popover>
+                </DatePicker>
+              </div>
+              <div className="col-start-6 flex items-center flex-col space-y-2">
+                <NumberField
+                  className="w-full max-w-64"
+                  defaultValue={800}
+                  minValue={0}
+                  value={meta}
+                  onChange={setMeta}
+                  step={50}
+                  name="meta"
+                  isDisabled={isFetching}
+                >
+                  <Label>Meta por Hora</Label>
+                  <NumberField.Group>
+                    <NumberField.DecrementButton />
+                    <NumberField.Input className="w-30" />
+                    <NumberField.IncrementButton />
+                  </NumberField.Group>
+                </NumberField>
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm text-muted">Definir para:</p>
+                  <ButtonGroup variant="primary" isDisabled={isFetching} size="sm">
+                    <Button onPress={() => setMeta(todays_average.mean)}>
+                      Média
+                      {isFetching
+                        ? ""
+                        : ` (${todays_average.mean.toLocaleString("pt-BR", { maximumFractionDigits: 0 })})`}
+                    </Button>
+                    <Button onPress={() => setMeta(todays_average.median)}>
+                      <ButtonGroup.Separator />
+                      Mediana
+                      {isFetching
+                        ? ""
+                        : ` (${todays_average.median.toLocaleString("pt-BR", { maximumFractionDigits: 0 })})`}
+                    </Button>
+                  </ButtonGroup>
+                </div>
+              </div>
+            </header>
 
-        {isPending ? (
-          <div className="flex flex-col items-center pt-32">
-            <ProgressBar size="lg" isIndeterminate aria-label="Loading" className="w-64">
-              <Label className="mb-3.5 mt-5">Carregando dados</Label>
-              <ProgressBar.Track>
-                <ProgressBar.Fill />
-              </ProgressBar.Track>
-            </ProgressBar>
+            {isPending ? (
+              <div className="flex flex-col items-center pt-32">
+                <ProgressBar size="lg" isIndeterminate aria-label="Loading" className="w-64">
+                  <Label className="mb-3.5 mt-5">Carregando dados</Label>
+                  <ProgressBar.Track>
+                    <ProgressBar.Fill />
+                  </ProgressBar.Track>
+                </ProgressBar>
+              </div>
+            ) : Object.keys(per_user ?? {}).length === 0 ? (
+              <div className="flex flex-col items-center pt-32">
+                <Grid2x2XIcon />
+                <Label className="mb-3.5 mt-5">Nenhum dado encontrado</Label>
+                <Description className="mb-8">Selecione outra data no seletor acima</Description>
+              </div>
+            ) : (
+              <Tabs
+                className="min-w-full"
+                onSelectionChange={(key) => selectedSectionState[1](key as string)}
+                selectedKey={selectedSectionState[0] ?? "overview"}
+              >
+                <Tabs.ListContainer>
+                  <Tabs.List aria-label="Options">
+                    <Tabs.Tab id="overview">
+                      Tabela Geral
+                      <Tabs.Indicator />
+                    </Tabs.Tab>
+                    <Tabs.Tab id="analytics">
+                      Metricas do usuário
+                      <Tabs.Indicator />
+                    </Tabs.Tab>
+                    <Tabs.Tab id="reports">
+                      Comparação
+                      <Tabs.Indicator />
+                    </Tabs.Tab>
+                  </Tabs.List>
+                </Tabs.ListContainer>
+                <Tabs.Panel className="pt-4" id="overview">
+                  <UsersTable data={{ per_user, per_hour, meta, avg: todays_average }} />
+                </Tabs.Panel>
+                <Tabs.Panel className="pt-4" id="analytics">
+                  <UserDashboard data={per_user ?? {}} />
+                </Tabs.Panel>
+                <Tabs.Panel className="pt-4" id="reports">
+                  <UserComparison data={per_user ?? {}} />
+                </Tabs.Panel>
+              </Tabs>
+            )}
           </div>
-        ) : Object.keys(per_user ?? {}).length === 0 ? (
-          <div className="flex flex-col items-center pt-32">
-            <Grid2x2XIcon />
-            <Label className="mb-3.5 mt-5">Nenhum dado encontrado</Label>
-            <Description className="mb-8">Selecione outra data no seletor acima</Description>
-          </div>
-        ) : (
-          <Tabs className="min-w-full">
-            <Tabs.ListContainer>
-              <Tabs.List aria-label="Options">
-                <Tabs.Tab id="overview">
-                  Tabela Geral
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-                <Tabs.Tab id="analytics">
-                  Metricas do usuário
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-                <Tabs.Tab id="reports">
-                  Comparação
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-              </Tabs.List>
-            </Tabs.ListContainer>
-            <Tabs.Panel className="pt-4" id="overview">
-              <UsersTable data={{ per_user, per_hour, meta, avg: todays_average }} />
-            </Tabs.Panel>
-            <Tabs.Panel className="pt-4" id="analytics">
-              <UserDashboard data={per_user ?? {}} />
-            </Tabs.Panel>
-            <Tabs.Panel className="pt-4" id="reports">
-              <UserComparison data={per_user ?? {}} />
-            </Tabs.Panel>
-          </Tabs>
-        )}
-      </div>
-    </main>
+        </main>
+      </SelectedUserContext>
+    </SelectedSectionContext>
   );
 }
 

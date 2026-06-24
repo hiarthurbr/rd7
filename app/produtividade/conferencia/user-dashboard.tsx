@@ -11,11 +11,11 @@ import {
   Tooltip as UITooltip,
 } from "@heroui/react";
 import { TriangleAlertIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, Tooltip as ChartTooltip, XAxis, YAxis } from "recharts";
 import type z from "zod";
 import { duration } from "@/lib/utils";
-import type { per_user_schema } from "./page";
+import { type per_user_schema, SelectedUserContext } from "./page";
 
 const NAME_KEYS = {
   total_embalagens: "N° de embalagens",
@@ -26,7 +26,18 @@ const NAME_KEYS = {
 export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> }) {
   const [graphKey, setGraphKey] = useState("total_embalagens");
   const userNames = useMemo(() => Object.keys(data), [data]);
-  const [selectedUser, setSelectedUser] = useState(userNames[0]);
+  const selectedUserState = useContext(SelectedUserContext);
+
+  useEffect(() => {
+    if (selectedUserState != null && selectedUserState[0] == null) {
+      selectedUserState[1](userNames[0]);
+    }
+  }, [selectedUserState, userNames[0]]);
+
+  if (selectedUserState == null || selectedUserState[0] == null) return null;
+
+  const [selectedUser, setSelectedUser] = selectedUserState;
+
   const userData = data[selectedUser];
 
   const meta_percentage = ((userData.embalagens_por_hora / userData.meta) * 100) >> 0;
