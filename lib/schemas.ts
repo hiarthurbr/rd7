@@ -18,6 +18,8 @@ export const recebimento_schema = z.object({
   pendenteArmazenar: z.number(),
   usuarioRecebimento: z.string(),
   dataRecebimento: z.coerce.date().or(z.date()),
+  usuarioArmazenagem: z.string().optional(),
+  dataArmazenagem: z.coerce.date().or(z.date()).optional(),
   tipoPedido: z.string(),
 });
 

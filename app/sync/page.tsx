@@ -1,13 +1,12 @@
 "use client";
 
-import { Button, EmptyState, type SortDescriptor, Table } from "@heroui/react";
+import { Button, EmptyState, Table } from "@heroui/react";
 import { BookDashedIcon, RefreshCcwDotIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import z from "zod";
 import { FileUploader } from "@/components/file-uploader";
 import { getToken } from "@/lib/pda";
 import { status_pedido_pda_enum } from "@/lib/schemas";
-import { SortableColumnHeader } from "@/lib/utils";
 
 const status_pedido_schema = z.object({
   codigoPedido: z.string(),
