@@ -590,17 +590,17 @@ export function UsersTable({
         margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
       >
         <defs>
-          <linearGradient id="color04e762" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#04e762" stopOpacity={0.8} />
-            <stop offset="95%" stopColor="#04e762" stopOpacity={0} />
+          <linearGradient id="color06b6d4" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8} />
+            <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
           </linearGradient>
-          <linearGradient id="colordc0073" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#dc0073" stopOpacity={0.8} />
-            <stop offset="95%" stopColor="#dc0073" stopOpacity={0} />
+          <linearGradient id="colord946ef" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#d946ef" stopOpacity={0.8} />
+            <stop offset="95%" stopColor="#d946ef" stopOpacity={0} />
           </linearGradient>
-          <linearGradient id="colorf5b700" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#f5b700" stopOpacity={0.8} />
-            <stop offset="95%" stopColor="#f5b700" stopOpacity={0} />
+          <linearGradient id="colorfacc15" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#facc15" stopOpacity={0.8} />
+            <stop offset="95%" stopColor="#facc15" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" />
@@ -610,29 +610,29 @@ export function UsersTable({
         <ChartTooltip />
         <Area
           type="monotone"
+          yAxisId="left"
+          dataKey={NAME_KEYS.total_embalagens}
+          stroke="#06b6d4"
+          fillOpacity={1}
+          fill="url(#color06b6d4)"
+          isAnimationActive
+        />
+        <Area
+          type="monotone"
           yAxisId="right"
           dataKey={NAME_KEYS.caixas}
-          stroke="#dc0073"
+          stroke="#d946ef"
           fillOpacity={1}
-          fill="url(#colordc0073)"
+          fill="url(#colord946ef)"
           isAnimationActive
         />
         <Area
           type="monotone"
           yAxisId="right"
           dataKey={NAME_KEYS.pedidos_conferidos}
-          stroke="#f5b700"
+          stroke="#facc15"
           fillOpacity={1}
-          fill="url(#colorf5b700)"
-          isAnimationActive
-        />
-        <Area
-          type="monotone"
-          yAxisId="left"
-          dataKey={NAME_KEYS.total_embalagens}
-          stroke="04e762"
-          fillOpacity={1}
-          fill="url(#color04e762)"
+          fill="url(#colorfacc15)"
           isAnimationActive
         />
       </AreaChart>

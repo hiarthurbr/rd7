@@ -102,7 +102,7 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
             </Card.Title>
           </Card.Header>
           <Card.Content>
-            <div className="text-2xl font-bold text-teal-600">
+            <div className="text-2xl font-bold text-slate-800">
               {userData.total_embalagens.toLocaleString("pt-BR")}
             </div>
           </Card.Content>
@@ -114,7 +114,7 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
             </Card.Title>
           </Card.Header>
           <Card.Content>
-            <div className="text-2xl font-bold text-teal-600 flex flex-row items-center space-x-2">
+            <div className="text-2xl font-bold text-cyan-500 flex flex-row items-center space-x-2">
               <span className="-translate-y-0.5">
                 {userData.embalagens_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
               </span>
@@ -148,7 +148,7 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
             <Card.Title className="text-sm font-medium text-muted-foreground">Duração</Card.Title>
           </Card.Header>
           <Card.Content>
-            <div className="text-2xl font-bold text-teal-600">{duration(userData.duração)}</div>
+            <div className="text-2xl font-bold text-slate-800">{duration(userData.duração)}</div>
           </Card.Content>
         </Card>
         <Card>
@@ -158,7 +158,7 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
             </Card.Title>
           </Card.Header>
           <Card.Content>
-            <div className="text-2xl font-bold text-teal-600">
+            <div className="text-2xl font-bold text-amber-500">
               {userData.pedidos_por_hora.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
             </div>
           </Card.Content>
@@ -180,17 +180,17 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
                   margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
                 >
                   <defs>
-                    <linearGradient id="color04e762" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#04e762" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#04e762" stopOpacity={0} />
+                    <linearGradient id="colord946ef" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#d946ef" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#d946ef" stopOpacity={0} />
                     </linearGradient>
-                    <linearGradient id="colorf5b700" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f5b700" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#f5b700" stopOpacity={0} />
+                    <linearGradient id="colorfacc15" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#facc15" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#facc15" stopOpacity={0} />
                     </linearGradient>
-                    <linearGradient id="color00a1e4" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00a1e4" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#00a1e4" stopOpacity={0} />
+                    <linearGradient id="color06b6d4" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -202,29 +202,29 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
                   <ChartTooltip />
                   <Area
                     type="monotone"
+                    yAxisId="left"
+                    dataKey={NAME_KEYS.total_embalagens}
+                    stroke="#06b6d4"
+                    fillOpacity={1}
+                    fill="url(#color06b6d4)"
+                    isAnimationActive
+                  />
+                  <Area
+                    type="monotone"
                     yAxisId="right"
                     dataKey={NAME_KEYS.caixas}
-                    stroke="#04e762"
+                    stroke="#d946ef"
                     fillOpacity={1}
-                    fill="url(#color04e762)"
+                    fill="url(#colord946ef)"
                     isAnimationActive
                   />
                   <Area
                     type="monotone"
                     yAxisId="right"
                     dataKey={NAME_KEYS.pedidos_conferidos}
-                    stroke="#f5b700"
+                    stroke="#facc15"
                     fillOpacity={1}
-                    fill="url(#colorf5b700)"
-                    isAnimationActive
-                  />
-                  <Area
-                    type="monotone"
-                    yAxisId="left"
-                    dataKey={NAME_KEYS.total_embalagens}
-                    stroke="00a1e4"
-                    fillOpacity={1}
-                    fill="url(#color00a1e4)"
+                    fill="url(#colorfacc15)"
                     isAnimationActive
                   />
                 </AreaChart>
@@ -236,17 +236,17 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
                   margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
                 >
                   <defs>
-                    <linearGradient id="color04e762" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#04e762" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#04e762" stopOpacity={0} />
+                    <linearGradient id="colord946ef" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#d946ef" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#d946ef" stopOpacity={0} />
                     </linearGradient>
-                    <linearGradient id="colorf5b700" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f5b700" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#f5b700" stopOpacity={0} />
+                    <linearGradient id="colorfacc15" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#facc15" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#facc15" stopOpacity={0} />
                     </linearGradient>
-                    <linearGradient id="color00a1e4" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00a1e4" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#00a1e4" stopOpacity={0} />
+                    <linearGradient id="color06b6d4" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -259,9 +259,9 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
                         <Area
                           type="monotone"
                           dataKey={NAME_KEYS.caixas}
-                          stroke="#04e762"
+                          stroke="#d946ef"
                           fillOpacity={1}
-                          fill="url(#color04e762)"
+                          fill="url(#colord946ef)"
                           isAnimationActive
                         />
                       ),
@@ -269,9 +269,9 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
                         <Area
                           type="monotone"
                           dataKey={NAME_KEYS.pedidos_conferidos}
-                          stroke="#f5b700"
+                          stroke="#facc15"
                           fillOpacity={1}
-                          fill="url(#colorf5b700)"
+                          fill="url(#colorfacc15)"
                           isAnimationActive
                         />
                       ),
@@ -279,9 +279,9 @@ export function UserDashboard({ data }: { data: z.infer<typeof per_user_schema> 
                         <Area
                           type="monotone"
                           dataKey={NAME_KEYS.total_embalagens}
-                          stroke="#00a1e4"
+                          stroke="#06b6d4"
                           fillOpacity={1}
-                          fill="url(#color00a1e4)"
+                          fill="url(#color06b6d4)"
                           isAnimationActive
                         />
                       ),
