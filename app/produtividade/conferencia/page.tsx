@@ -325,20 +325,6 @@ function Page() {
     };
   }, [per_user]);
 
-  const todays_average = useMemo(() => {
-    const values = Object.values(per_user)
-      .filter((v) => Number.isFinite(v.embalagens_por_hora))
-      .map((x) => x.embalagens_por_hora);
-
-    const sorted = values.sort((a, b) => a - b);
-    const mid = Math.floor(sorted.length / 2);
-
-    return {
-      mean: values.reduce((a, b) => a + b, 0) / values.length,
-      median: sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2,
-    };
-  }, [per_user]);
-
   console.log(per_user);
   const selectedUserState = useState<string | null>(null);
   const selectedSectionState = useState<string>("overview");
