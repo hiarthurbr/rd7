@@ -14,7 +14,7 @@ import {
   Tabs,
 } from "@heroui/react";
 import { type DateValue, fromDate, getLocalTimeZone, now, today } from "@internationalized/date";
-import { QueryClient, useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckIcon, Grid2x2XIcon, RefreshCwIcon } from "lucide-react";
 import {
   createContext,
@@ -113,7 +113,7 @@ function Page() {
   );
   const [meta, setMeta] = useState(800);
 
-  const queryClient = useMemo(() => new QueryClient(), []);
+  const queryClient = useQueryClient();
   const hours_filter = useMemo(
     () =>
       horas_trabalhadas.map(
@@ -129,7 +129,7 @@ function Page() {
   const { data, isFetching, dataUpdatedAt, isPending } = useQuery(
     {
       queryKey: ["relatorio_conferencia", date],
-      queryFn: async () =>
+      queryFn: () =>
         BYPASS_DEV_CACHE
           ? get_relatorio_conferencia(date.toDate(timezone))
           : montagem_caixa_schema.array().parseAsync(data_cache),
@@ -137,13 +137,13 @@ function Page() {
       refetchOnReconnect: true,
       refetchOnWindowFocus: true,
       staleTime: 1000 * 60 * 15,
+      // placeholderData: (previousData, _) => previousData,
       throwOnError(error, query) {
         console.log({ error, query });
         return false;
       },
       // enabled: false,
     },
-    queryClient,
   );
   const [isUpdated, setIsUpdated] = useState(false);
 

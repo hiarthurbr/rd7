@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@heroui/react";
-import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
 import {
   AlertTriangle,
@@ -154,27 +154,8 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-export default function Page() {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 60 * 1000, // 1 minuto
-            refetchOnWindowFocus: false,
-          },
-        },
-      }),
-  );
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Dashboard />
-    </QueryClientProvider>
-  );
-}
-
-function Dashboard() {
+export default function Dashboard() {
   const queryClient = useQueryClient();
 
   const { data, error, isLoading } = useQuery({

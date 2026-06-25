@@ -16,7 +16,7 @@ import {
   type TimeValue,
 } from "@heroui/react";
 import { fromDate } from "@internationalized/date";
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createColumnHelper,
   flexRender,
@@ -111,7 +111,7 @@ function LogArmazenagem({
   const { data, isFetching } = useQuery({
     queryKey: ["LOG_ARMAZENAGEM", produto, data_armazenagem],
     queryFn: () => get_log_armazenagem(data_armazenagem, produto),
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
   });
 
   const PAGE_SIZE = useMemo(() => 15, []);
@@ -425,52 +425,49 @@ const columns = [
 const PAGE_SIZE = 13;
 
 export default function Page() {
-  const queryClient = useMemo(() => new QueryClient(), []);
+  const queryClient = useQueryClient()
   const [timeRange, setTimeRange] = useState<z.infer<typeof timeRangeEnum>>(timeRangeEnum.enum.Day);
 
-  const { data, isLoading, isFetching } = useQuery(
-    {
-      queryKey: [QUERY_KEY],
-      queryFn: async () =>
-        fetch("https://api.pdahub.com.br/api/Relatorio/RecebimentoAnalitico", {
-          headers: {
-            accept: "application/json, text/plain, */*",
-            "content-type": "application/json",
-            authorization: await getToken(),
-          },
-          referrer: "https://wms.pdahub.com.br/",
-          body: JSON.stringify({
-            notafiscal: null,
-            codigoPedido: null,
-            palete: null,
-            caixa: null,
-            lote: null,
-            produto: null,
-            tipoPedido: null,
-            usuarioRecebimento: null,
-            usuarioArmazenagem: null,
-            dataInicio: fmt_date(new Date(Date.now() - 1000 * 60 * 60 * 24 * timeRange)),
-            dataFim: fmt_date(new Date()),
-          }),
-          method: "PATCH",
-        })
-          .then((r) => r.json())
-          .then(z.array(recebimento_schema).parseAsync)
-          .then((r) =>
-            r
-              .filter((op) => op.pendenteArmazenar > 0)
-              .map((nf) => ({ ...nf, id: Object.values(nf).sort().join("-") })),
-          ),
-      initialData: [],
-      refetchOnWindowFocus: true,
-      refetchOnReconnect: true,
-    },
-    queryClient,
-  );
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: [QUERY_KEY],
+    queryFn: async () =>
+      fetch("https://api.pdahub.com.br/api/Relatorio/RecebimentoAnalitico", {
+        headers: {
+          accept: "application/json, text/plain, */*",
+          "content-type": "application/json",
+          authorization: await getToken(),
+        },
+        referrer: "https://wms.pdahub.com.br/",
+        body: JSON.stringify({
+          notafiscal: null,
+          codigoPedido: null,
+          palete: null,
+          caixa: null,
+          lote: null,
+          produto: null,
+          tipoPedido: null,
+          usuarioRecebimento: null,
+          usuarioArmazenagem: null,
+          dataInicio: fmt_date(new Date(Date.now() - 1000 * 60 * 60 * 24 * timeRange)),
+          dataFim: fmt_date(new Date()),
+        }),
+        method: "PATCH",
+      })
+        .then((r) => r.json())
+        .then(z.array(recebimento_schema).parseAsync)
+        .then((r) =>
+          r
+            .filter((op) => op.pendenteArmazenar > 0)
+            .map((nf) => ({ ...nf, id: Object.values(nf).sort().join("-") })),
+        ),
+    initialData: [],
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  });
 
   const refresh = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-  }, [queryClient]);
+  }, []);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: Atualizar query quando mudarmos o `timeRange`
   useEffect(() => {
@@ -548,147 +545,143 @@ export default function Page() {
   );
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <main className="min-h-screen bg-background">
-        <div className="mx-auto container px-4 py-8 grid grid-flow-col grid-cols-3 items-center">
-          {/* Header */}
-          <Tabs
-            className="w-md justify-self-start place-self-start pt-4"
-            selectedKey={timeRange === 1 ? "Day" : timeRange === 7 ? "Week" : "Month"}
-            onSelectionChange={(key) =>
-              setTimeRange(
-                timeRangeEnum.parse(
-                  timeRangeEnum.enum[key as unknown as keyof typeof timeRangeEnum.enum],
-                ),
-              )
-            }
-          >
-            <Tabs.ListContainer>
-              <Tabs.List aria-label="Options">
-                <Tabs.Tab id="Day">
-                  1 dia
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-                <Tabs.Tab id="Week">
-                  1 semana
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-                <Tabs.Tab id="Month">
-                  1 mes
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-              </Tabs.List>
-            </Tabs.ListContainer>
-          </Tabs>
-          <div className="mb-8 text-center flex flex-col">
-            <h1 className="text-3xl font-bold tracking-tight text-balance">
-              Armazenagens pendentes
-            </h1>
-            <p className="mt-2 text-muted-foreground text-pretty">
-              Lista de notas com pendencias/divergências na armazenagem
-            </p>
-          </div>
-          <Button
-            isPending={isLoading || isFetching}
-            onPress={() => refresh()}
-            className="justify-self-end place-self-start mt-4"
-          >
-            {({ isPending }) => (
-              <>
-                {isPending ? <Spinner color="current" size="sm" /> : <RefreshCwIcon />}
-                {isPending ? "Atualizando..." : "Atualizar"}
-              </>
-            )}
-          </Button>
+    <main className="min-h-screen bg-background">
+      <div className="mx-auto container px-4 py-8 grid grid-flow-col grid-cols-3 items-center">
+        {/* Header */}
+        <Tabs
+          className="w-md justify-self-start place-self-start pt-4"
+          selectedKey={timeRange === 1 ? "Day" : timeRange === 7 ? "Week" : "Month"}
+          onSelectionChange={(key) =>
+            setTimeRange(
+              timeRangeEnum.parse(
+                timeRangeEnum.enum[key as unknown as keyof typeof timeRangeEnum.enum],
+              ),
+            )
+          }
+        >
+          <Tabs.ListContainer>
+            <Tabs.List aria-label="Options">
+              <Tabs.Tab id="Day">
+                1 dia
+                <Tabs.Indicator />
+              </Tabs.Tab>
+              <Tabs.Tab id="Week">
+                1 semana
+                <Tabs.Indicator />
+              </Tabs.Tab>
+              <Tabs.Tab id="Month">
+                1 mes
+                <Tabs.Indicator />
+              </Tabs.Tab>
+            </Tabs.List>
+          </Tabs.ListContainer>
+        </Tabs>
+        <div className="mb-8 text-center flex flex-col">
+          <h1 className="text-3xl font-bold tracking-tight text-balance">Armazenagens pendentes</h1>
+          <p className="mt-2 text-muted-foreground text-pretty">
+            Lista de notas com pendencias/divergências na armazenagem
+          </p>
         </div>
-        <div className="container mx-auto">
-          <Table>
-            <Table.ScrollContainer className="h-[75vh]">
-              <Table.Content
-                aria-label="Virtualized table with 1000 rows"
-                className="h-full min-w-175 overflow-auto"
-                sortDescriptor={sortDescriptor}
-                onSortChange={(d) => setSorting(toSortingState(d))}
+        <Button
+          isPending={isLoading || isFetching}
+          onPress={() => refresh()}
+          className="justify-self-end place-self-start mt-4"
+        >
+          {({ isPending }) => (
+            <>
+              {isPending ? <Spinner color="current" size="sm" /> : <RefreshCwIcon />}
+              {isPending ? "Atualizando..." : "Atualizar"}
+            </>
+          )}
+        </Button>
+      </div>
+      <div className="container mx-auto">
+        <Table>
+          <Table.ScrollContainer className="h-[75vh]">
+            <Table.Content
+              aria-label="Virtualized table with 1000 rows"
+              className="h-full min-w-175 overflow-auto"
+              sortDescriptor={sortDescriptor}
+              onSortChange={(d) => setSorting(toSortingState(d))}
+            >
+              <Table.Header className="h-fit w-full">
+                {table.getHeaderGroups()[0]?.headers.map((header) => (
+                  <Table.Column
+                    key={header.id}
+                    className="h-fit"
+                    allowsSorting={header.column.getCanSort()}
+                    id={header.id}
+                    isRowHeader
+                  >
+                    {({ sortDirection }) => (
+                      <SortableColumnHeader sortDirection={sortDirection}>
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                      </SortableColumnHeader>
+                    )}
+                  </Table.Column>
+                ))}
+              </Table.Header>
+              <Table.Body
+                items={data}
+                renderEmptyState={() => (
+                  <EmptyState className="flex h-full w-full flex-col items-center justify-center gap-4 text-center">
+                    <InboxIcon className="size-6 stroke-muted" />
+                    <span className="text-sm text-muted">Nenhum resultado encontrado</span>
+                  </EmptyState>
+                )}
               >
-                <Table.Header className="h-fit w-full">
-                  {table.getHeaderGroups()[0]?.headers.map((header) => (
-                    <Table.Column
-                      key={header.id}
-                      className="h-fit"
-                      allowsSorting={header.column.getCanSort()}
-                      id={header.id}
-                      isRowHeader
-                    >
-                      {({ sortDirection }) => (
-                        <SortableColumnHeader sortDirection={sortDirection}>
-                          {flexRender(header.column.columnDef.header, header.getContext())}
-                        </SortableColumnHeader>
-                      )}
-                    </Table.Column>
-                  ))}
-                </Table.Header>
-                <Table.Body
-                  items={data}
-                  renderEmptyState={() => (
-                    <EmptyState className="flex h-full w-full flex-col items-center justify-center gap-4 text-center">
-                      <InboxIcon className="size-6 stroke-muted" />
-                      <span className="text-sm text-muted">Nenhum resultado encontrado</span>
-                    </EmptyState>
-                  )}
-                >
-                  {table.getRowModel().rows.map((row) => (
-                    <Table.Row key={row.id} id={row.id} className="*:h-10 h-10">
-                      {row.getVisibleCells().map((cell) => (
-                        <Table.Cell key={cell.id}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </Table.Cell>
-                      ))}
-                    </Table.Row>
-                  ))}
-                </Table.Body>
-              </Table.Content>
-            </Table.ScrollContainer>
-            <Table.Footer className="flex items-center justify-between px-4 space-x-8">
-              <ProgressBar
-                aria-label="Atualizando dados"
-                className="w-32"
-                value={0}
-                isIndeterminate={isFetching || isLoading}
-              >
-                <ProgressBar.Track>
-                  <ProgressBar.Fill />
-                </ProgressBar.Track>
-              </ProgressBar>
-              <Pagination size="sm">
-                <Pagination.Summary>
-                  {start} to {end} of {data.length} results
-                </Pagination.Summary>
-                <Pagination.Content>
-                  <Pagination.Item>
-                    <Pagination.Previous
-                      isDisabled={!table.getCanPreviousPage()}
-                      onPress={() => table.previousPage()}
-                    >
-                      <Pagination.PreviousIcon />
-                      Prev
-                    </Pagination.Previous>
-                  </Pagination.Item>
-                  {pages}
-                  <Pagination.Item>
-                    <Pagination.Next
-                      isDisabled={!table.getCanNextPage()}
-                      onPress={() => table.nextPage()}
-                    >
-                      Next
-                      <Pagination.NextIcon />
-                    </Pagination.Next>
-                  </Pagination.Item>
-                </Pagination.Content>
-              </Pagination>
-            </Table.Footer>
-          </Table>
-        </div>
-      </main>
-    </QueryClientProvider>
+                {table.getRowModel().rows.map((row) => (
+                  <Table.Row key={row.id} id={row.id} className="*:h-10 h-10">
+                    {row.getVisibleCells().map((cell) => (
+                      <Table.Cell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </Table.Cell>
+                    ))}
+                  </Table.Row>
+                ))}
+              </Table.Body>
+            </Table.Content>
+          </Table.ScrollContainer>
+          <Table.Footer className="flex items-center justify-between px-4 space-x-8">
+            <ProgressBar
+              aria-label="Atualizando dados"
+              className="w-32"
+              value={0}
+              isIndeterminate={isFetching || isLoading}
+            >
+              <ProgressBar.Track>
+                <ProgressBar.Fill />
+              </ProgressBar.Track>
+            </ProgressBar>
+            <Pagination size="sm">
+              <Pagination.Summary>
+                {start} to {end} of {data.length} results
+              </Pagination.Summary>
+              <Pagination.Content>
+                <Pagination.Item>
+                  <Pagination.Previous
+                    isDisabled={!table.getCanPreviousPage()}
+                    onPress={() => table.previousPage()}
+                  >
+                    <Pagination.PreviousIcon />
+                    Prev
+                  </Pagination.Previous>
+                </Pagination.Item>
+                {pages}
+                <Pagination.Item>
+                  <Pagination.Next
+                    isDisabled={!table.getCanNextPage()}
+                    onPress={() => table.nextPage()}
+                  >
+                    Next
+                    <Pagination.NextIcon />
+                  </Pagination.Next>
+                </Pagination.Item>
+              </Pagination.Content>
+            </Pagination>
+          </Table.Footer>
+        </Table>
+      </div>
+    </main>
   );
 }
