@@ -26,10 +26,9 @@ import {
 } from "react";
 import { z } from "zod";
 import { Auth } from "@/components/auth";
-import { getToken } from "@/lib/pda";
 import { montagem_caixa_schema, produtividade_conferencia_schema } from "@/lib/schemas";
-import { fmt_date } from "@/lib/utils";
 import data_cache from "./2026-06-15.json";
+import { get_relatorio_conferencia } from "./get_data";
 import skus_pre from "./skus.json";
 import { UserComparison } from "./user-comparison";
 import { UserDashboard } from "./user-dashboard";
@@ -68,32 +67,6 @@ export const per_user_schema = z.record(
   }),
 );
 
-async function get_relatorio_conferencia(date: Date) {
-  return fetch("https://api.pdahub.com.br/api/Armazenagem/MontagemCaixa", {
-    headers: {
-      accept: "application/json, text/plain, */*",
-      authorization: await getToken(),
-      "content-type": "application/json",
-    },
-    referrer: "https://wms.pdahub.com.br/",
-    body: JSON.stringify({
-      CodigoCliente: 30,
-      User: 1297,
-      Caixa: null,
-      Produto: null,
-      Ean: null,
-      Usuario: null,
-      TipoCaixa: null,
-      codigoPedido: null,
-      dataInicio: fmt_date(date),
-      dataFim: fmt_date(date),
-    }),
-    method: "PATCH",
-  })
-    .then((r) => r.json())
-    .then(montagem_caixa_schema.array().parseAsync);
-}
-
 export const horas_trabalhadas = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
 export const marcadores: Array<{
   label: string;
@@ -125,11 +98,18 @@ export const SelectedSectionContext = createContext<
 >(null);
 
 function Page() {
+  const BYPASS_DEV_CACHE = useMemo(
+    () =>
+      process.env.NODE_ENV !== "development" ||
+      new URLSearchParams(globalThis?.location?.search ?? '').get("bypass_dev_cache") === "true",
+    [],
+  );
+
   const timezone = useMemo(() => getLocalTimeZone(), []);
   const [date, setDate] = useState<DateValue>(
-    process.env.NODE_ENV === "development"
-      ? fromDate(new Date("2026-06-15T00:00:00.000"), timezone)
-      : today(timezone),
+    BYPASS_DEV_CACHE
+      ? today(timezone)
+      : fromDate(new Date("2026-06-15T00:00:00.000"), timezone),
   );
   const [meta, setMeta] = useState(800);
 
@@ -150,13 +130,17 @@ function Page() {
     {
       queryKey: ["relatorio_conferencia", date],
       queryFn: async () =>
-        process.env.NODE_ENV === "development"
-          ? montagem_caixa_schema.array().parseAsync(data_cache)
-          : get_relatorio_conferencia(date.toDate(timezone)),
+        BYPASS_DEV_CACHE
+          ? get_relatorio_conferencia(date.toDate(timezone))
+          : montagem_caixa_schema.array().parseAsync(data_cache),
       refetchInterval: 1000 * 60 * 60,
       refetchOnReconnect: true,
       refetchOnWindowFocus: true,
       staleTime: 1000 * 60 * 15,
+      throwOnError(error, query) {
+        console.log({ error, query });
+        return false;
+      },
       // enabled: false,
     },
     queryClient,
