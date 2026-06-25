@@ -130,6 +130,10 @@ function Page() {
       refetchOnReconnect: true,
       refetchOnWindowFocus: true,
       staleTime: 1000 * 60 * 15,
+      throwOnError(error, query) {
+        console.log({ error, query });
+        return false;
+      },
       // enabled: false,
     },
     queryClient,
