@@ -12,10 +12,19 @@ import {
   ProgressBar,
   Spinner,
   Tabs,
+  Tooltip,
 } from "@heroui/react";
 import { type DateValue, fromDate, getLocalTimeZone, now, today } from "@internationalized/date";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckIcon, Grid2x2XIcon, RefreshCwIcon } from "lucide-react";
+import {
+  CheckIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronsLeftIcon,
+  ChevronsRightIcon,
+  Grid2x2XIcon,
+  RefreshCwIcon,
+} from "lucide-react";
 import {
   createContext,
   type Dispatch,
@@ -149,10 +158,10 @@ function Page() {
     setTimeout(() => setIsUpdated(false), 5000);
   }, [dataUpdatedAt]);
 
+  const now_ = now(timezone);
   // biome-ignore lint/correctness/useExhaustiveDependencies: usar o dataUpdatedAt é necessario, porque o data pode não atualizar no momento do refetch, se o resultado anterior for o mesmo
   const { per_user, per_hour }: z.infer<typeof data_processing_schema> = useMemo(() => {
     if (data == null) return { per_hour: null, per_user: null };
-    const now_ = now(timezone).toDate();
 
     return {
       per_user: Object.fromEntries(
@@ -186,7 +195,7 @@ function Page() {
             const horas_conferidas = Math.abs(hora_fim - hora_inicio) / 3_600_000;
 
             const por_hora = hours_filter
-              .filter(([, start]) => start <= now_)
+              .filter(([, start]) => start <= now_.toDate())
               .map(
                 ([hour, start, end]) =>
                   [
@@ -251,7 +260,7 @@ function Page() {
       ),
       per_hour: Object.fromEntries(
         hours_filter
-          .filter(([, start]) => start <= now_)
+          .filter(([, start]) => start <= now_.toDate())
           .map(
             ([hour, start, end]) =>
               [hour, data.filter((cx) => cx.montagem >= start && cx.montagem < end)] as const,
@@ -342,57 +351,122 @@ function Page() {
                   )}
                 </Button>
               </div>
-              <div className="flex flex-col items-center mx-auto col-start-2 col-span-4">
+              <div className="flex flex-col items-center mx-auto col-start-2 col-span-4 space-y-4">
                 <h1 className="text-3xl font-bold tracking-tight text-foreground">
                   Painel de Produtividade
                 </h1>
-                <p className="text-muted-foreground">
-                  Visualize e compare o desempenho dos usuarios
-                </p>
-                <DatePicker
-                  name="date"
-                  value={date}
-                  granularity="day"
-                  onChange={(date) => date != null && setDate(date)}
-                  className="w-64"
-                >
-                  <Label>Produtividade do dia</Label>
-                  <DateField.Group fullWidth>
-                    <DateField.Input>
-                      {(segment) => <DateField.Segment segment={segment} />}
-                    </DateField.Input>
-                    <DateField.Suffix>
-                      <DatePicker.Trigger>
-                        <DatePicker.TriggerIndicator />
-                      </DatePicker.Trigger>
-                    </DateField.Suffix>
-                  </DateField.Group>
-                  <DatePicker.Popover>
-                    <Calendar aria-label="Event date" maxValue={today(timezone)}>
-                      <Calendar.Header>
-                        <Calendar.YearPickerTrigger>
-                          <Calendar.YearPickerTriggerHeading />
-                          <Calendar.YearPickerTriggerIndicator />
-                        </Calendar.YearPickerTrigger>
-                        <Calendar.NavButton slot="previous" />
-                        <Calendar.NavButton slot="next" />
-                      </Calendar.Header>
-                      <Calendar.Grid>
-                        <Calendar.GridHeader>
-                          {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
-                        </Calendar.GridHeader>
-                        <Calendar.GridBody>
-                          {(date) => <Calendar.Cell date={date} />}
-                        </Calendar.GridBody>
-                      </Calendar.Grid>
-                      <Calendar.YearPickerGrid>
-                        <Calendar.YearPickerGridBody>
-                          {({ year }) => <Calendar.YearPickerCell year={year} />}
-                        </Calendar.YearPickerGridBody>
-                      </Calendar.YearPickerGrid>
-                    </Calendar>
-                  </DatePicker.Popover>
-                </DatePicker>
+                <div className="flex flex-row space-x-4 justify-center">
+                  <Tooltip delay={0}>
+                    <Button
+                      isIconOnly
+                      variant="secondary"
+                      onPress={() => setDate((curr_date) => curr_date.subtract({ weeks: 1 }))}
+                    >
+                      <ChevronsLeftIcon />
+                    </Button>
+                    <Tooltip.Content>
+                      <p className="break-normal">Voltar 1 semana</p>
+                    </Tooltip.Content>
+                  </Tooltip>
+                  <Tooltip delay={0}>
+                    <Button
+                      isIconOnly
+                      variant="secondary"
+                      onPress={() => setDate((curr_date) => curr_date.subtract({ days: 1 }))}
+                    >
+                      <ChevronLeftIcon />
+                    </Button>
+                    <Tooltip.Content>
+                      <p className="break-normal">Voltar 1 dia</p>
+                    </Tooltip.Content>
+                  </Tooltip>
+                  <DatePicker
+                    aria-label="Produtividade do dia"
+                    name="date"
+                    value={date}
+                    granularity="day"
+                    onChange={(date) => date != null && setDate(date)}
+                    className="w-64"
+                  >
+                    <DateField.Group fullWidth>
+                      <DateField.Input>
+                        {(segment) => <DateField.Segment segment={segment} />}
+                      </DateField.Input>
+                      <DateField.Suffix>
+                        <DatePicker.Trigger>
+                          <DatePicker.TriggerIndicator />
+                        </DatePicker.Trigger>
+                      </DateField.Suffix>
+                    </DateField.Group>
+                    <DatePicker.Popover>
+                      <Calendar aria-label="Event date" maxValue={today(timezone)}>
+                        <Calendar.Header>
+                          <Calendar.YearPickerTrigger>
+                            <Calendar.YearPickerTriggerHeading />
+                            <Calendar.YearPickerTriggerIndicator />
+                          </Calendar.YearPickerTrigger>
+                          <Calendar.NavButton slot="previous" />
+                          <Calendar.NavButton slot="next" />
+                        </Calendar.Header>
+                        <Calendar.Grid>
+                          <Calendar.GridHeader>
+                            {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
+                          </Calendar.GridHeader>
+                          <Calendar.GridBody>
+                            {(date) => <Calendar.Cell date={date} />}
+                          </Calendar.GridBody>
+                        </Calendar.Grid>
+                        <Calendar.YearPickerGrid>
+                          <Calendar.YearPickerGridBody>
+                            {({ year }) => <Calendar.YearPickerCell year={year} />}
+                          </Calendar.YearPickerGridBody>
+                        </Calendar.YearPickerGrid>
+                      </Calendar>
+                    </DatePicker.Popover>
+                  </DatePicker>
+
+                  <Tooltip delay={0}>
+                    <Button
+                      isIconOnly
+                      variant="secondary"
+                      isDisabled={now_.compare(date.add({ days: 1 })) < 0}
+                      onPress={() =>
+                        setDate((curr_date) => {
+                          const new_date = curr_date.add({ days: 1 });
+
+                          if (now_.compare(new_date) >= 0) return new_date;
+                          return curr_date;
+                        })
+                      }
+                    >
+                      <ChevronRightIcon />
+                    </Button>
+                    <Tooltip.Content>
+                      <p className="break-normal">Avançar 1 dia</p>
+                    </Tooltip.Content>
+                  </Tooltip>
+
+                  <Tooltip delay={0}>
+                    <Button
+                      isIconOnly
+                      isDisabled={now_.compare(date.add({ weeks: 1 })) < 0}
+                      variant="secondary"
+                      onPress={() =>
+                        setDate((curr_date) => {
+                          const new_date = curr_date.add({ weeks: 1 });
+
+                          if (now_.compare(new_date) >= 0) return new_date;
+                          return curr_date;
+                        })
+                      }
+                    >
+                      <ChevronsRightIcon />
+                    </Button>
+                    <Tooltip.Content>
+                      <p className="break-normal">Avançar 1 semana</p>
+                    </Tooltip.Content>
+                  </Tooltip>
+                </div>
               </div>
               <div className="col-start-6 flex items-center flex-col space-y-2">
                 <NumberField
