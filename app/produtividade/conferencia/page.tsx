@@ -26,10 +26,9 @@ import {
 } from "react";
 import { z } from "zod";
 import { Auth } from "@/components/auth";
-import { getToken } from "@/lib/pda";
 import { montagem_caixa_schema, produtividade_conferencia_schema } from "@/lib/schemas";
-import { fmt_date } from "@/lib/utils";
 import data_cache from "./2026-06-15.json";
+import { get_relatorio_conferencia } from "./get_data";
 import skus_pre from "./skus.json";
 import { UserComparison } from "./user-comparison";
 import { UserDashboard } from "./user-dashboard";
@@ -67,32 +66,6 @@ export const per_user_schema = z.record(
     meta: z.number(),
   }),
 );
-
-async function get_relatorio_conferencia(date: Date) {
-  return fetch("https://api.pdahub.com.br/api/Armazenagem/MontagemCaixa", {
-    headers: {
-      accept: "application/json, text/plain, */*",
-      authorization: await getToken(),
-      "content-type": "application/json",
-    },
-    referrer: "https://wms.pdahub.com.br/",
-    body: JSON.stringify({
-      CodigoCliente: 30,
-      User: 1297,
-      Caixa: null,
-      Produto: null,
-      Ean: null,
-      Usuario: null,
-      TipoCaixa: null,
-      codigoPedido: null,
-      dataInicio: fmt_date(date),
-      dataFim: fmt_date(date),
-    }),
-    method: "PATCH",
-  })
-    .then((r) => r.json())
-    .then(montagem_caixa_schema.array().parseAsync);
-}
 
 export const horas_trabalhadas = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
 export const marcadores: Array<{
