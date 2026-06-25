@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, EmptyState, Table } from "@heroui/react";
+import { NumberParser } from "@internationalized/number";
 import { BookDashedIcon, RefreshCcwDotIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import z from "zod";
@@ -60,6 +61,8 @@ const produto_pedido_schema = z.object({
   usuario: z.string(),
 });
 
+const number_parser = new NumberParser("pt-BR", { style: "decimal" });
+
 export default function Page() {
   const [reservasFile, setReservasFile] = useState<File | null>(null);
   const [reservas, setReservas] = useState<Array<{
@@ -71,23 +74,47 @@ export default function Page() {
 
   useEffect(() => {
     reservasFile
-      ?.text()
-      .then((str) =>
-        str
+      ?.arrayBuffer()
+      .then((str) => {
+
+        const text = Buffer.from(str).toString("latin1");
+
+        console.log({ text });
+
+        return text
           .split("\n")
           .filter((str) => !!str.trim())
           .slice(1)
           .map((str) => str.split("|"))
-          .map(([, , quantidade, tipo, produto, documento]) => ({
-            quantidade: Number(quantidade),
-            tipo,
-            produto,
-            documento:
-              tipo === "Venda" ? (documento.match(/proposta N\S (\d+)/)?.[1] ?? null) : null,
-          })),
-      )
+          .map((tuple) =>
+            z
+              .tuple([
+                z.string(),
+                z.string(),
+                z.coerce
+                  .number()
+                  .or(
+                    z.preprocess(
+                      (str) => (typeof str === "string" ? number_parser.parse(str) : null),
+                      z.number(),
+                    ),
+                  ),
+                z.string(),
+                z.string(),
+                z.string(),
+              ])
+              .transform(([, , quantidade, tipo, produto, documento]) => ({
+                quantidade,
+                tipo,
+                produto,
+                documento:
+                  tipo === "Venda" ? (documento.match(/proposta N\S (\d+)/)?.[1] ?? null) : null,
+              }))
+              .parse(tuple),
+          );
+      })
       .then(setReservas);
-  });
+  }, [reservasFile]);
 
   return (
     <main className="min-h-screen bg-background">
@@ -112,7 +139,7 @@ export default function Page() {
           />
           {reservasFile != null && (
             <Button
-            className="mt-8"
+              className="mt-8"
               onPress={async () => {
                 const a = await reservasFile.text().then((str) =>
                   str
