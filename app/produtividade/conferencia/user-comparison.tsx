@@ -31,10 +31,10 @@ const EmbalagemPorHora = ({ user }: { user: z.infer<typeof per_user_schema>[stri
 };
 
 const NAME_KEYS = {
-  total_embalagens: 'N° de embalagens',
-  caixas: 'N° de caixas',
-  pedidos_conferidos: 'N° de pedidos'
-} as const
+  total_embalagens: "N° de embalagens",
+  caixas: "N° de caixas",
+  pedidos_conferidos: "N° de pedidos",
+} as const;
 
 export function UserComparison({ data }: { data: z.infer<typeof per_user_schema> }) {
   const [graphKey, setGraphKey] = useState("total_embalagens");

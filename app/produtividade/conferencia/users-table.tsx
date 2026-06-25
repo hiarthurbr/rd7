@@ -226,9 +226,7 @@ const columns = [
                 <SearchIcon />
               </Button>
               <Tooltip.Content>
-                <p className="break-normal">
-                  Ver métricas do usuário
-                </p>
+                <p className="break-normal">Ver métricas do usuário</p>
               </Tooltip.Content>
             </Tooltip>
           )}

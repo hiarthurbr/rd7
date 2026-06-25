@@ -425,11 +425,11 @@ const columns = [
 const PAGE_SIZE = 13;
 
 export default function Page() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState<z.infer<typeof timeRangeEnum>>(timeRangeEnum.enum.Day);
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: [QUERY_KEY],
+    queryKey: [QUERY_KEY, timeRange],
     queryFn: async () =>
       fetch("https://api.pdahub.com.br/api/Relatorio/RecebimentoAnalitico", {
         headers: {
@@ -467,7 +467,7 @@ export default function Page() {
 
   const refresh = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-  }, []);
+  }, [queryClient]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: Atualizar query quando mudarmos o `timeRange`
   useEffect(() => {

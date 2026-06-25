@@ -154,7 +154,6 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-
 export default function Dashboard() {
   const queryClient = useQueryClient();
 

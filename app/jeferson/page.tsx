@@ -119,7 +119,11 @@ function compareWithStoredData(
   console.log({ xlsxData, storedData });
 
   const NFStore = storedData.nfs.filter(
-    (nfe) => nfe.PrevisaoSaida && nfe.PrevisaoSaida >= xlsxData.startDate && nfe.PrevisaoSaida && nfe.PrevisaoSaida <= xlsxData.endDate,
+    (nfe) =>
+      nfe.PrevisaoSaida &&
+      nfe.PrevisaoSaida >= xlsxData.startDate &&
+      nfe.PrevisaoSaida &&
+      nfe.PrevisaoSaida <= xlsxData.endDate,
   );
   const NFStoreJeferson = NFStore.filter((nfe) => nfe.Transportador?.trim() === "Jeferson");
   const NFStoreJefersonSet = new Set(NFStoreJeferson.map((nf) => nf.NumeroNotaFiscal));

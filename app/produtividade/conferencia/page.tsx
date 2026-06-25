@@ -101,15 +101,13 @@ function Page() {
   const BYPASS_DEV_CACHE = useMemo(
     () =>
       process.env.NODE_ENV !== "development" ||
-      new URLSearchParams(globalThis?.location?.search ?? '').get("bypass_dev_cache") === "true",
+      new URLSearchParams(globalThis?.location?.search ?? "").get("bypass_dev_cache") === "true",
     [],
   );
 
   const timezone = useMemo(() => getLocalTimeZone(), []);
   const [date, setDate] = useState<DateValue>(
-    BYPASS_DEV_CACHE
-      ? today(timezone)
-      : fromDate(new Date("2026-06-15T00:00:00.000"), timezone),
+    BYPASS_DEV_CACHE ? today(timezone) : fromDate(new Date("2026-06-15T00:00:00.000"), timezone),
   );
   const [meta, setMeta] = useState(800);
 
@@ -126,25 +124,23 @@ function Page() {
       ),
     [date, timezone],
   );
-  const { data, isFetching, dataUpdatedAt, isPending } = useQuery(
-    {
-      queryKey: ["relatorio_conferencia", date],
-      queryFn: () =>
-        BYPASS_DEV_CACHE
-          ? get_relatorio_conferencia(date.toDate(timezone))
-          : montagem_caixa_schema.array().parseAsync(data_cache),
-      refetchInterval: 1000 * 60 * 60,
-      refetchOnReconnect: true,
-      refetchOnWindowFocus: true,
-      staleTime: 1000 * 60 * 15,
-      // placeholderData: (previousData, _) => previousData,
-      throwOnError(error, query) {
-        console.log({ error, query });
-        return false;
-      },
-      // enabled: false,
+  const { data, isFetching, dataUpdatedAt, isPending } = useQuery({
+    queryKey: ["relatorio_conferencia", date],
+    queryFn: () =>
+      BYPASS_DEV_CACHE
+        ? get_relatorio_conferencia(date.toDate(timezone))
+        : montagem_caixa_schema.array().parseAsync(data_cache),
+    refetchInterval: 1000 * 60 * 60,
+    refetchOnReconnect: true,
+    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60 * 15,
+    // placeholderData: (previousData, _) => previousData,
+    throwOnError(error, query) {
+      console.log({ error, query });
+      return false;
     },
-  );
+    // enabled: false,
+  });
   const [isUpdated, setIsUpdated] = useState(false);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: precisamos atualizar o estado do botão de refresh toda vez que atualizamos os dados, por isso usamos o dataUpdatedAt

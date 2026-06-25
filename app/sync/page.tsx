@@ -76,7 +76,6 @@ export default function Page() {
     reservasFile
       ?.arrayBuffer()
       .then((str) => {
-
         const text = Buffer.from(str).toString("latin1");
 
         console.log({ text });
