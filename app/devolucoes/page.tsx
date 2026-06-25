@@ -125,7 +125,7 @@ export async function parseXlsx(file: File) {
 }
 
 export default function Page() {
-  const db = useMemo(() => new Devoluções(), []);
+  const _db = useMemo(() => new Devoluções(), []);
   const [xlsxFile, setXlsxFile] = useState<File | null>(null);
 
   return (

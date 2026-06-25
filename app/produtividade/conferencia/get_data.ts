@@ -1,5 +1,4 @@
 import Dexie, { type Table } from "dexie";
-import { v7 as uuidv7 } from "uuid";
 import type z from "zod";
 import { getToken } from "@/lib/pda";
 import { montagem_caixa_schema } from "@/lib/schemas";

@@ -76,7 +76,7 @@ export function UserComparison({ data }: { data: z.infer<typeof per_user_schema>
   const maxCaixasHora = Math.max(userData1.caixas_por_hora, userData2.caixas_por_hora);
   const maxPedidosHora = Math.max(userData1.pedidos_por_hora, userData2.pedidos_por_hora);
 
-  const radarData = [
+  const _radarData = [
     {
       metric: "Total Embalagens",
       [user1]: (userData1.total_embalagens / maxEmbalagens) * 100,
