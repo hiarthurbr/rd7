@@ -1,4 +1,5 @@
 import Dexie, { type Table } from "dexie";
+import { v7 as uuidv7 } from "uuid";
 import type z from "zod";
 import { getToken } from "@/lib/pda";
 import { montagem_caixa_schema } from "@/lib/schemas";
@@ -6,7 +7,7 @@ import { fmt_date } from "@/lib/utils";
 
 // --- CLASSE DO BANCO DE DADOS ---
 export class ProdutividadeConferencia extends Dexie {
-  caixas!: Table<z.infer<typeof montagem_caixa_schema> & { id?: number }>;
+  caixas!: Table<z.infer<typeof montagem_caixa_schema>>;
 
   constructor() {
     super("ProdutividadeConferenciaDB");
@@ -15,7 +16,7 @@ export class ProdutividadeConferencia extends Dexie {
       // O primeiro campo é a chave primária (++ significa autoincremento)
       // Os campos seguintes são os índices para busca
       caixas:
-        "++id, endereco, codigoCaixa, caixa, produto, descricaoProduto, quantidade, usuario, montagem, codigoPedido, descTipoCaixa",
+        "id, endereco, codigoCaixa, caixa, produto, descricaoProduto, quantidade, usuario, montagem, codigoPedido, descTipoCaixa",
     });
   }
 }
@@ -32,47 +33,42 @@ export async function get_relatorio_conferencia(date: Date) {
   const db_query = db.caixas
     .where("montagem")
     .between(
-      new Date(
-        `${date.getFullYear()}-${date.getMonth()}-${date.getDay()}T00:00:00.000`,
-      ),
-      new Date(
-        `${date.getFullYear()}-${date.getMonth()}-${date.getDay()}T23:59:59.999`,
-      ),
+      new Date(`${fmt_date(date)}T00:00:00.000`),
+      new Date(`${fmt_date(date)}T23:59:59.999`),
       true,
       true,
     );
 
   const has_data = (await db_query.count()) > 0;
 
+  console.log({ is_today, has_data })
+
   if (is_today || !has_data) {
-    const res = await fetch(
-      "https://api.pdahub.com.br/api/Armazenagem/MontagemCaixa",
-      {
-        headers: {
-          accept: "application/json, text/plain, */*",
-          authorization: await getToken(),
-          "content-type": "application/json",
-        },
-        referrer: "https://wms.pdahub.com.br/",
-        body: JSON.stringify({
-          CodigoCliente: 30,
-          User: 1297,
-          Caixa: null,
-          Produto: null,
-          Ean: null,
-          Usuario: null,
-          TipoCaixa: null,
-          codigoPedido: null,
-          dataInicio: fmt_date(date),
-          dataFim: fmt_date(date),
-        }),
-        method: "PATCH",
+    const res = await fetch("https://api.pdahub.com.br/api/Armazenagem/MontagemCaixa", {
+      headers: {
+        accept: "application/json, text/plain, */*",
+        authorization: await getToken(),
+        "content-type": "application/json",
       },
-    )
+      referrer: "https://wms.pdahub.com.br/",
+      body: JSON.stringify({
+        CodigoCliente: 30,
+        User: 1297,
+        Caixa: null,
+        Produto: null,
+        Ean: null,
+        Usuario: null,
+        TipoCaixa: null,
+        codigoPedido: null,
+        dataInicio: fmt_date(date),
+        dataFim: fmt_date(date),
+      }),
+      method: "PATCH",
+    })
       .then((r) => r.json())
       .then(montagem_caixa_schema.array().parseAsync);
 
-    if (!has_data) {
+    if (!has_data && !is_today) {
       await db.caixas.bulkAdd(res);
     }
 

@@ -1,4 +1,5 @@
 import { NumberParser } from "@internationalized/number";
+import { uuidv7 } from "uuidv7";
 import z from "zod";
 
 export const recebimento_schema = z.object({
@@ -313,6 +314,7 @@ export const produto_titanium_schema = z.object({
 });
 
 export const montagem_caixa_schema = z.object({
+  id: z.uuidv7().default(() => uuidv7()),
   endereco: z.string(),
   codigoCaixa: z.number(),
   caixa: z.string(),

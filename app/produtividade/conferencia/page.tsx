@@ -98,11 +98,18 @@ export const SelectedSectionContext = createContext<
 >(null);
 
 function Page() {
+  const BYPASS_DEV_CACHE = useMemo(
+    () =>
+      process.env.NODE_ENV !== "development" ||
+      new URLSearchParams(globalThis?.location?.search ?? '').get("bypass_dev_cache") === "true",
+    [],
+  );
+
   const timezone = useMemo(() => getLocalTimeZone(), []);
   const [date, setDate] = useState<DateValue>(
-    process.env.NODE_ENV === "development"
-      ? fromDate(new Date("2026-06-15T00:00:00.000"), timezone)
-      : today(timezone),
+    BYPASS_DEV_CACHE
+      ? today(timezone)
+      : fromDate(new Date("2026-06-15T00:00:00.000"), timezone),
   );
   const [meta, setMeta] = useState(800);
 
@@ -123,9 +130,9 @@ function Page() {
     {
       queryKey: ["relatorio_conferencia", date],
       queryFn: async () =>
-        process.env.NODE_ENV === "development"
-          ? montagem_caixa_schema.array().parseAsync(data_cache)
-          : get_relatorio_conferencia(date.toDate(timezone)),
+        BYPASS_DEV_CACHE
+          ? get_relatorio_conferencia(date.toDate(timezone))
+          : montagem_caixa_schema.array().parseAsync(data_cache),
       refetchInterval: 1000 * 60 * 60,
       refetchOnReconnect: true,
       refetchOnWindowFocus: true,
