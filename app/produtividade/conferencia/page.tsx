@@ -15,6 +15,7 @@ import {
   Tooltip,
 } from "@heroui/react";
 import { type DateValue, fromDate, getLocalTimeZone, now, today } from "@internationalized/date";
+import { useNow } from "@shined/react-use";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CheckIcon,
@@ -36,6 +37,7 @@ import {
 import { z } from "zod";
 import { Auth } from "@/components/auth";
 import { montagem_caixa_schema, produtividade_conferencia_schema } from "@/lib/schemas";
+import { relative_locale } from "@/lib/utils";
 import data_cache from "./2026-06-15.json";
 import { get_relatorio_conferencia } from "./get_data";
 import skus_pre from "./skus.json";
@@ -143,7 +145,7 @@ function Page() {
     refetchOnReconnect: true,
     refetchOnWindowFocus: true,
     staleTime: 1000 * 60 * 15,
-    // placeholderData: (previousData, _) => previousData,
+    placeholderData: (previousData, _) => previousData,
     throwOnError(error, query) {
       console.log({ error, query });
       return false;
@@ -158,6 +160,7 @@ function Page() {
     setTimeout(() => setIsUpdated(false), 5000);
   }, [dataUpdatedAt]);
 
+  const curr_now = useNow({ interval: 1000 });
   const now_ = now(timezone);
   // biome-ignore lint/correctness/useExhaustiveDependencies: usar o dataUpdatedAt é necessario, porque o data pode não atualizar no momento do refetch, se o resultado anterior for o mesmo
   const { per_user, per_hour }: z.infer<typeof data_processing_schema> = useMemo(() => {
@@ -296,7 +299,7 @@ function Page() {
           ),
       ),
     };
-  }, [data, dataUpdatedAt, hours_filter, meta, timezone]);
+  }, [data, hours_filter, meta, timezone]);
 
   console.log({ per_user, per_hour });
 
@@ -318,19 +321,25 @@ function Page() {
   const selectedUserState = useState<string | null>(null);
   const selectedSectionState = useState<string>("overview");
 
+  const last_updated_seconds_raw = Math.floor((curr_now.getTime() - dataUpdatedAt) / 1000);
+  const last_updated_seconds = last_updated_seconds_raw % 60;
+  const last_updated_minutes = (last_updated_seconds_raw - last_updated_seconds) / 60;
+
+  console.log({ last_updated_seconds, last_updated_minutes });
+
   return (
     <SelectedSectionContext value={selectedSectionState}>
       <SelectedUserContext value={selectedUserState}>
         <main className="min-h-screen bg-background p-6 flex flex-col items-center">
           <div className="space-y-6">
             <header className="space-x-8 container grid grid-flow-col grid-cols-6 place-items-center">
-              <div>
+              <div className="flex flex-col justify-self-end place-self-start my-12 space-y-2">
                 <Button
                   isPending={isFetching}
                   onPress={() =>
                     queryClient.invalidateQueries({ queryKey: ["relatorio_conferencia"] })
                   }
-                  className={`justify-self-end place-self-start w-48 my-12 ${isUpdated ? "bg-lime-600 text-white" : ""}`}
+                  className={`w-48 ${isUpdated ? "bg-lime-600 text-white" : ""}`}
                   isDisabled={isUpdated}
                 >
                   {({ isPending, isDisabled }) => (
@@ -350,6 +359,18 @@ function Page() {
                     </>
                   )}
                 </Button>
+                {!isPending && (
+                  <Description className="text-center">
+                    Atualizado{" "}
+                    {last_updated_minutes > 0 &&
+                      relative_locale.format(-last_updated_minutes, "minute")}
+                    {last_updated_minutes > 0 && last_updated_seconds > 0 && " e "}
+                    {last_updated_seconds > 0 &&
+                      relative_locale
+                        .format(-last_updated_seconds, "second")
+                        .replace(last_updated_minutes > 0 ? "há " : "", "")}
+                  </Description>
+                )}
               </div>
               <div className="flex flex-col items-center mx-auto col-start-2 col-span-4 space-y-4">
                 <h1 className="text-3xl font-bold tracking-tight text-foreground">
@@ -381,13 +402,13 @@ function Page() {
                     </Tooltip.Content>
                   </Tooltip>
                   <DatePicker
-                    aria-label="Produtividade do dia"
                     name="date"
                     value={date}
                     granularity="day"
                     onChange={(date) => date != null && setDate(date)}
                     className="w-64"
                   >
+                    <Label>Produtividade do dia</Label>
                     <DateField.Group fullWidth>
                       <DateField.Input>
                         {(segment) => <DateField.Segment segment={segment} />}
@@ -423,6 +444,14 @@ function Page() {
                         </Calendar.YearPickerGrid>
                       </Calendar>
                     </DatePicker.Popover>
+                    <Description className="capitalize text-center">
+                      {date.toDate(timezone).toLocaleString("pt-BR", {
+                        year: "numeric",
+                        month: "long",
+                        weekday: "long",
+                        day: "numeric",
+                      })}
+                    </Description>
                   </DatePicker>
 
                   <Tooltip delay={0}>
@@ -545,7 +574,10 @@ function Page() {
                   </Tabs.List>
                 </Tabs.ListContainer>
                 <Tabs.Panel className="pt-4" id="overview">
-                  <UsersTable data={{ per_user, per_hour, meta, avg: todays_average }} />
+                  <UsersTable
+                    data={{ per_user, per_hour, meta, avg: todays_average }}
+                    isFetching={isFetching}
+                  />
                 </Tabs.Panel>
                 <Tabs.Panel className="pt-4" id="analytics">
                   <UserDashboard data={per_user ?? {}} />

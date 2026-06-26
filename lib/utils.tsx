@@ -12,7 +12,7 @@ export const fmt_date = (date: Date) =>
   `${date.getFullYear()}-${(date.getMonth() + 1).toFixed(0).padStart(2, "0")}-${date.getDate().toFixed(0).padStart(2, "0")}`;
 
 
-const duration_locale = new Intl.DurationFormat("pt-BR", {
+export const duration_locale = new Intl.DurationFormat("pt-BR", {
   style: "long",
 });
 
@@ -28,6 +28,10 @@ export function duration(minutes_raw: number) {
     minutes,
   });
 }
+
+export const relative_locale = new Intl.RelativeTimeFormat("pt-BR", {
+  style: "long"
+})
 
 export function toSortDescriptor(sorting: SortingState): SortDescriptor | undefined {
   const first = sorting[0];
