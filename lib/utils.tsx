@@ -30,7 +30,8 @@ export function duration(minutes_raw: number) {
 }
 
 export const relative_locale = new Intl.RelativeTimeFormat("pt-BR", {
-  style: "long"
+  style: "long",
+  numeric: "auto"
 })
 
 export function toSortDescriptor(sorting: SortingState): SortDescriptor | undefined {

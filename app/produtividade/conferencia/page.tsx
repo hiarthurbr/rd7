@@ -464,16 +464,12 @@ function Page() {
                         ))}{" "}
                       (
                       <span className="capitalize">
-                        {now_
-                          .set({ hour: 0, minute: 0, second: 0, millisecond: 0 })
-                          .compare(date) === 0
-                          ? "hoje"
-                          : relative_locale.format(
-                              -Math.floor(
-                                (curr_now.getTime() - date.toDate(timezone).getTime()) / 86_400_000,
-                              ),
-                              "day",
-                            )}
+                        {relative_locale.format(
+                          -Math.floor(
+                            (curr_now.getTime() - date.toDate(timezone).getTime()) / 86_400_000,
+                          ),
+                          "day",
+                        )}
                       </span>
                       )
                     </Description>
