@@ -52,6 +52,7 @@ export async function get_relatorio_conferencia(date: Date) {
               authorization,
               "content-type": "application/json",
             },
+            signal: AbortSignal.timeout(5000),
             referrer: "https://wms.pdahub.com.br/",
             body: JSON.stringify({
               CodigoCliente: 30,

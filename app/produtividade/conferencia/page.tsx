@@ -36,9 +36,8 @@ import {
 } from "react";
 import { z } from "zod";
 import { Auth } from "@/components/auth";
-import { montagem_caixa_schema, produtividade_conferencia_schema } from "@/lib/schemas";
+import { produtividade_conferencia_schema } from "@/lib/schemas";
 import { relative_locale } from "@/lib/utils";
-import data_cache from "./2026-06-15.json";
 import { get_relatorio_conferencia } from "./get_data";
 import skus_pre from "./skus.json";
 import { UserComparison } from "./user-comparison";
@@ -109,18 +108,16 @@ export const SelectedSectionContext = createContext<
 >(null);
 
 function Page() {
-  const BYPASS_DEV_CACHE = useMemo(
-    () =>
-      process.env.NODE_ENV !== "development" ||
-      new URLSearchParams(globalThis?.location?.search ?? "").get("bypass_dev_cache") === "true",
-    [],
-  );
-
   const timezone = useMemo(() => getLocalTimeZone(), []);
   const [date, setDate] = useState<DateValue>(
-    BYPASS_DEV_CACHE ? today(timezone) : fromDate(new Date("2026-06-15T00:00:00.000"), timezone),
+    process.env.NODE_ENV !== "development"
+      ? today(timezone)
+      : today(timezone).subtract({ days: 1 }),
   );
   const [meta, setMeta] = useState(800);
+
+  const curr_now = useNow({ interval: 1000 });
+  const now_ = now(timezone);
 
   const queryClient = useQueryClient();
   const hours_filter = useMemo(
@@ -136,20 +133,21 @@ function Page() {
     [date, timezone],
   );
   const { data, isFetching, dataUpdatedAt, isPending } = useQuery({
-    queryKey: ["relatorio_conferencia", date],
-    queryFn: () =>
-      BYPASS_DEV_CACHE
-        ? get_relatorio_conferencia(date.toDate(timezone))
-        : montagem_caixa_schema.array().parseAsync(data_cache),
+    queryKey: ["relatorio_conferencia", date] as const,
+    queryFn: () => get_relatorio_conferencia(date.toDate(timezone)),
     refetchInterval: 1000 * 60 * 60,
     refetchOnReconnect: true,
     refetchOnWindowFocus: true,
-    staleTime: 1000 * 60 * 15,
+    staleTime: (query) =>
+      now_.set({ hour: 0, minute: 0, second: 0, millisecond: 0 }).compare(query.queryKey[1]) < 0
+        ? "static"
+        : 1000 * 60 * 15,
     placeholderData: (previousData, _) => previousData,
     throwOnError(error, query) {
       console.log({ error, query });
       return false;
     },
+    networkMode: "offlineFirst",
     // enabled: false,
   });
   const [isUpdated, setIsUpdated] = useState(false);
@@ -160,8 +158,6 @@ function Page() {
     setTimeout(() => setIsUpdated(false), 5000);
   }, [dataUpdatedAt]);
 
-  const curr_now = useNow({ interval: 1000 });
-  const now_ = now(timezone);
   // biome-ignore lint/correctness/useExhaustiveDependencies: usar o dataUpdatedAt é necessario, porque o data pode não atualizar no momento do refetch, se o resultado anterior for o mesmo
   const { per_user, per_hour }: z.infer<typeof data_processing_schema> = useMemo(() => {
     if (data == null) return { per_hour: null, per_user: null };
@@ -333,7 +329,7 @@ function Page() {
         <main className="min-h-screen bg-background p-6 flex flex-col items-center">
           <div className="space-y-6">
             <header className="space-x-8 container grid grid-flow-col grid-cols-6 place-items-center">
-              <div className="flex flex-col justify-self-end place-self-start my-12 space-y-2">
+              <div className="flex flex-col justify-self-end place-self-start my-12 space-y-2 w-53 items-center">
                 <Button
                   isPending={isFetching}
                   onPress={() =>
@@ -406,7 +402,7 @@ function Page() {
                     value={date}
                     granularity="day"
                     onChange={(date) => date != null && setDate(date)}
-                    className="w-64"
+                    className="w-72"
                   >
                     <Label>Produtividade do dia</Label>
                     <DateField.Group fullWidth>
@@ -444,13 +440,42 @@ function Page() {
                         </Calendar.YearPickerGrid>
                       </Calendar>
                     </DatePicker.Popover>
-                    <Description className="capitalize text-center">
-                      {date.toDate(timezone).toLocaleString("pt-BR", {
-                        year: "numeric",
-                        month: "long",
-                        weekday: "long",
-                        day: "numeric",
-                      })}
+                    <Description className="text-center">
+                      {date
+                        .toDate(timezone)
+                        .toLocaleString("pt-BR", {
+                          year: "numeric",
+                          month: "long",
+                          weekday: "long",
+                          day: "numeric",
+                        })
+                        .split(" ")
+                        .map((text, i) => (
+                          <span
+                            key={`${text}-${date.toString()}-${
+                              // biome-ignore lint/suspicious/noArrayIndexKey: o index é a unica informação adicional que temos para impedir duas keys iguais
+                              i
+                            }`}
+                            className={[0, 3].includes(i) ? "capitalize" : ""}
+                          >
+                            {" "}
+                            {text}
+                          </span>
+                        ))}{" "}
+                      (
+                      <span className="capitalize">
+                        {now_
+                          .set({ hour: 0, minute: 0, second: 0, millisecond: 0 })
+                          .compare(date) === 0
+                          ? "hoje"
+                          : relative_locale.format(
+                              -Math.floor(
+                                (curr_now.getTime() - date.toDate(timezone).getTime()) / 86_400_000,
+                              ),
+                              "day",
+                            )}
+                      </span>
+                      )
                     </Description>
                   </DatePicker>
 
