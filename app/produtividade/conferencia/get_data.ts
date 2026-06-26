@@ -1,5 +1,4 @@
 import Dexie, { type Table } from "dexie";
-import { v7 as uuidv7 } from "uuid";
 import type z from "zod";
 import { getToken } from "@/lib/pda";
 import { montagem_caixa_schema } from "@/lib/schemas";
@@ -39,41 +38,50 @@ export async function get_relatorio_conferencia(date: Date) {
       true,
     );
 
-  const has_data = (await db_query.count()) > 0;
+  return db_query.count().then((count) => {
+    const has_data = count > 0;
 
-  console.log({ is_today, has_data })
+    console.log({ is_today, has_data });
 
-  if (is_today || !has_data) {
-    const res = await fetch("https://api.pdahub.com.br/api/Armazenagem/MontagemCaixa", {
-      headers: {
-        accept: "application/json, text/plain, */*",
-        authorization: await getToken(),
-        "content-type": "application/json",
-      },
-      referrer: "https://wms.pdahub.com.br/",
-      body: JSON.stringify({
-        CodigoCliente: 30,
-        User: 1297,
-        Caixa: null,
-        Produto: null,
-        Ean: null,
-        Usuario: null,
-        TipoCaixa: null,
-        codigoPedido: null,
-        dataInicio: fmt_date(date),
-        dataFim: fmt_date(date),
-      }),
-      method: "PATCH",
-    })
-      .then((r) => r.json())
-      .then(montagem_caixa_schema.array().parseAsync);
+    if (is_today || !has_data) {
+      const res = getToken()
+        .then((authorization) =>
+          fetch("https://api.pdahub.com.br/api/Armazenagem/MontagemCaixa", {
+            headers: {
+              accept: "application/json, text/plain, */*",
+              authorization,
+              "content-type": "application/json",
+            },
+            signal: AbortSignal.timeout(5000),
+            referrer: "https://wms.pdahub.com.br/",
+            body: JSON.stringify({
+              CodigoCliente: 30,
+              User: 1297,
+              Caixa: null,
+              Produto: null,
+              Ean: null,
+              Usuario: null,
+              TipoCaixa: null,
+              codigoPedido: null,
+              dataInicio: fmt_date(date),
+              dataFim: fmt_date(date),
+            }),
+            method: "PATCH",
+          }),
+        )
+        .then((r) => r.json())
+        .then(montagem_caixa_schema.array().parseAsync)
+        .then(
+          (res) =>
+            new Promise<typeof res>((resolve) =>
+              !has_data && !is_today
+                ? db.caixas.bulkAdd(res).then(() => resolve(res))
+                : resolve(res),
+            ),
+        );
 
-    if (!has_data && !is_today) {
-      await db.caixas.bulkAdd(res);
+      return res;
     }
-
-    return res;
-  }
-
-  return db_query.toArray();
+    return db_query.toArray();
+  });
 }

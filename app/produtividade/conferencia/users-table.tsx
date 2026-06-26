@@ -8,6 +8,7 @@ import {
   Pagination,
   Separator,
   Skeleton,
+  Spinner,
   Table,
   Tooltip,
 } from "@heroui/react";
@@ -226,9 +227,7 @@ const columns = [
                 <SearchIcon />
               </Button>
               <Tooltip.Content>
-                <p className="break-normal">
-                  Ver métricas do usuário
-                </p>
+                <p className="break-normal">Ver métricas do usuário</p>
               </Tooltip.Content>
             </Tooltip>
           )}
@@ -372,8 +371,10 @@ const columns = [
 const PAGE_SIZE = 14;
 export function UsersTable({
   data: { avg, ...data },
+  isFetching,
 }: {
   data: z.infer<typeof produtividade_conferencia_schema>;
+  isFetching: boolean;
 }) {
   const [sorting, setSorting] = useState<SortingState>([
     {
@@ -660,16 +661,25 @@ export function UsersTable({
                 </Table.Column>
               ))}
             </Table.Header>
-            <Table.Body items={table.getRowModel().rows}>
-              {(row) => (
-                <Table.Row key={row.id} id={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <Table.Cell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </Table.Cell>
-                  ))}
-                </Table.Row>
+            <Table.Body>
+              {isFetching && (
+                <Table.LoadMore isLoading={isFetching} scrollOffset={0}>
+                  <Table.LoadMoreContent>
+                    <Spinner size="md" />
+                  </Table.LoadMoreContent>
+                </Table.LoadMore>
               )}
+              <Table.Collection items={table.getRowModel().rows}>
+                {(row) => (
+                  <Table.Row key={row.id} id={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                      <Table.Cell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </Table.Cell>
+                    ))}
+                  </Table.Row>
+                )}
+              </Table.Collection>
             </Table.Body>
           </Table.Content>
           <Table.Footer className="relative h-10">{footer}</Table.Footer>

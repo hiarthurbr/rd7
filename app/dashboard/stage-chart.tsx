@@ -21,7 +21,7 @@ export function StageChart({ data, color }: StageChartProps) {
   const chartColor = colorMap[color] || "oklch(.708 0 0)";
 
   const chartData = data.map((item) => ({
-    name: item.nome.length > 12 ? item.nome.substring(0, 12) + "..." : item.nome,
+    name: item.nome.length > 12 ? `${item.nome.substring(0, 12)}...` : item.nome,
     fullName: item.nome,
     value: item.valor,
     progress: item.progresso,
