@@ -359,7 +359,7 @@ function Page() {
                     </>
                   )}
                 </Button>
-                {!isPending && (
+                {(!isPending || isFetching) && (
                   <Description className="text-center">
                     Atualizado{" "}
                     {last_updated_minutes > 0 &&
