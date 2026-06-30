@@ -266,7 +266,6 @@ function Page() {
           )
           .map(
             ([hour, data]) =>
-              (console.log({ hour }, new Set(data.map((cx) => cx.usuario)).size) as undefined) ||
               ([
                 hour,
                 {
@@ -313,7 +312,6 @@ function Page() {
     };
   }, [per_user]);
 
-  console.log(per_user);
   const selectedUserState = useState<string | null>(null);
   const selectedSectionState = useState<string>("overview");
 
@@ -321,14 +319,12 @@ function Page() {
   const last_updated_seconds = last_updated_seconds_raw % 60;
   const last_updated_minutes = (last_updated_seconds_raw - last_updated_seconds) / 60;
 
-  console.log({ last_updated_seconds, last_updated_minutes });
-
   return (
     <SelectedSectionContext value={selectedSectionState}>
       <SelectedUserContext value={selectedUserState}>
         <main className="min-h-screen bg-background p-6 flex flex-col items-center">
           <div className="space-y-6">
-            <header className="space-x-8 container grid grid-flow-col grid-cols-6 place-items-center">
+            <header className="space-x-8 container grid grid-flow-col grid-cols-6 content-start">
               <div className="flex flex-col justify-self-end place-self-start my-12 space-y-2 w-53 items-center">
                 <Button
                   isPending={isFetching}
@@ -372,151 +368,177 @@ function Page() {
                 <h1 className="text-3xl font-bold tracking-tight text-foreground">
                   Painel de Produtividade
                 </h1>
-                <div className="flex flex-row space-x-4 justify-center">
-                  <Tooltip delay={0}>
-                    <Button
-                      isIconOnly
-                      variant="secondary"
-                      onPress={() => setDate((curr_date) => curr_date.subtract({ weeks: 1 }))}
-                    >
-                      <ChevronsLeftIcon />
-                    </Button>
-                    <Tooltip.Content>
-                      <p className="break-normal">Voltar 1 semana</p>
-                    </Tooltip.Content>
-                  </Tooltip>
-                  <Tooltip delay={0}>
-                    <Button
-                      isIconOnly
-                      variant="secondary"
-                      onPress={() => setDate((curr_date) => curr_date.subtract({ days: 1 }))}
-                    >
-                      <ChevronLeftIcon />
-                    </Button>
-                    <Tooltip.Content>
-                      <p className="break-normal">Voltar 1 dia</p>
-                    </Tooltip.Content>
-                  </Tooltip>
-                  <DatePicker
-                    name="date"
-                    value={date}
-                    granularity="day"
-                    onChange={(date) => date != null && setDate(date)}
-                    className="w-72"
-                  >
-                    <Label>Produtividade do dia</Label>
-                    <DateField.Group fullWidth>
-                      <DateField.Input>
-                        {(segment) => <DateField.Segment segment={segment} />}
-                      </DateField.Input>
-                      <DateField.Suffix>
-                        <DatePicker.Trigger>
-                          <DatePicker.TriggerIndicator />
-                        </DatePicker.Trigger>
-                      </DateField.Suffix>
-                    </DateField.Group>
-                    <DatePicker.Popover>
-                      <Calendar aria-label="Event date" maxValue={today(timezone)}>
-                        <Calendar.Header>
-                          <Calendar.YearPickerTrigger>
-                            <Calendar.YearPickerTriggerHeading />
-                            <Calendar.YearPickerTriggerIndicator />
-                          </Calendar.YearPickerTrigger>
-                          <Calendar.NavButton slot="previous" />
-                          <Calendar.NavButton slot="next" />
-                        </Calendar.Header>
-                        <Calendar.Grid>
-                          <Calendar.GridHeader>
-                            {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
-                          </Calendar.GridHeader>
-                          <Calendar.GridBody>
-                            {(date) => <Calendar.Cell date={date} />}
-                          </Calendar.GridBody>
-                        </Calendar.Grid>
-                        <Calendar.YearPickerGrid>
-                          <Calendar.YearPickerGridBody>
-                            {({ year }) => <Calendar.YearPickerCell year={year} />}
-                          </Calendar.YearPickerGridBody>
-                        </Calendar.YearPickerGrid>
-                      </Calendar>
-                    </DatePicker.Popover>
-                    <Description className="text-center">
-                      {date
-                        .toDate(timezone)
-                        .toLocaleString("pt-BR", {
-                          year: "numeric",
-                          month: "long",
-                          weekday: "long",
-                          day: "numeric",
-                        })
-                        .split(" ")
-                        .map((text, i) => (
-                          <span
-                            key={`${text}-${date.toString()}-${
-                              // biome-ignore lint/suspicious/noArrayIndexKey: o index é a unica informação adicional que temos para impedir duas keys iguais
-                              i
-                            }`}
-                            className={[0, 3].includes(i) ? "capitalize" : ""}
-                          >
-                            {" "}
-                            {text}
+                <Tabs variant="secondary" className="w-lg">
+                  <Tabs.ListContainer>
+                    <Tabs.List aria-label="Options">
+                      <Tabs.Tab id="day">
+                        do dia
+                        <Tabs.Indicator />
+                      </Tabs.Tab>
+                      <Tabs.Tab id="range" isDisabled>
+                        de periodo
+                        <Tabs.Indicator />
+                      </Tabs.Tab>
+                    </Tabs.List>
+                  </Tabs.ListContainer>
+                  <Tabs.Panel className="pt-4" id="day">
+                    <div className="flex flex-row space-x-4 justify-center">
+                      <Tooltip delay={0}>
+                        <Button
+                          isIconOnly
+                          className="place-self-start"
+                          variant="secondary"
+                          onPress={() => setDate((curr_date) => curr_date.subtract({ weeks: 1 }))}
+                        >
+                          <ChevronsLeftIcon />
+                        </Button>
+                        <Tooltip.Content>
+                          <p className="break-normal">Voltar 1 semana</p>
+                        </Tooltip.Content>
+                      </Tooltip>
+                      <Tooltip delay={0}>
+                        <Button
+                          isIconOnly
+                          className="place-self-start"
+                          variant="secondary"
+                          onPress={() => setDate((curr_date) => curr_date.subtract({ days: 1 }))}
+                        >
+                          <ChevronLeftIcon />
+                        </Button>
+                        <Tooltip.Content>
+                          <p className="break-normal">Voltar 1 dia</p>
+                        </Tooltip.Content>
+                      </Tooltip>
+                      <div className="flex flex-col">
+
+                      <DatePicker
+                        name="date"
+                        aria-label="produtividade do dia"
+                        value={date}
+                        granularity="day"
+                        onChange={(date) => date != null && setDate(date)}
+                        className="w-72"
+                      >
+                        <DateField.Group fullWidth>
+                          <DateField.Input>
+                            {(segment) => <DateField.Segment segment={segment} />}
+                          </DateField.Input>
+                          <DateField.Suffix>
+                            <DatePicker.Trigger>
+                              <DatePicker.TriggerIndicator />
+                            </DatePicker.Trigger>
+                          </DateField.Suffix>
+                        </DateField.Group>
+                        <DatePicker.Popover>
+                          <Calendar aria-label="Event date" maxValue={today(timezone)}>
+                            <Calendar.Header>
+                              <Calendar.YearPickerTrigger>
+                                <Calendar.YearPickerTriggerHeading />
+                                <Calendar.YearPickerTriggerIndicator />
+                              </Calendar.YearPickerTrigger>
+                              <Calendar.NavButton slot="previous" />
+                              <Calendar.NavButton slot="next" />
+                            </Calendar.Header>
+                            <Calendar.Grid>
+                              <Calendar.GridHeader>
+                                {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
+                              </Calendar.GridHeader>
+                              <Calendar.GridBody>
+                                {(date) => <Calendar.Cell date={date} />}
+                              </Calendar.GridBody>
+                            </Calendar.Grid>
+                            <Calendar.YearPickerGrid>
+                              <Calendar.YearPickerGridBody>
+                                {({ year }) => <Calendar.YearPickerCell year={year} />}
+                              </Calendar.YearPickerGridBody>
+                            </Calendar.YearPickerGrid>
+                          </Calendar>
+                        </DatePicker.Popover>
+                        <Description className="text-center">
+                          {date
+                            .toDate(timezone)
+                            .toLocaleString("pt-BR", {
+                              year: "numeric",
+                              month: "long",
+                              weekday: "long",
+                              day: "numeric",
+                            })
+                            .split(" ")
+                            .map((text, i) => (
+                              <span
+                                key={`${text}-${date.toString()}-${
+                                  // biome-ignore lint/suspicious/noArrayIndexKey: o index é a unica informação adicional que temos para impedir duas keys iguais
+                                  i
+                                }`}
+                                className={[0, 3].includes(i) ? "capitalize" : ""}
+                              >
+                                {" "}
+                                {text}
+                              </span>
+                            ))}{" "}
+                          (
+                          <span className="capitalize">
+                            {relative_locale.format(
+                              -Math.floor(
+                                (curr_now.getTime() - date.toDate(timezone).getTime()) / 86_400_000,
+                              ),
+                              "day",
+                            )}
                           </span>
-                        ))}{" "}
-                      (
-                      <span className="capitalize">
-                        {relative_locale.format(
-                          -Math.floor(
-                            (curr_now.getTime() - date.toDate(timezone).getTime()) / 86_400_000,
-                          ),
-                          "day",
-                        )}
-                      </span>
-                      )
-                    </Description>
-                  </DatePicker>
+                          )
+                        </Description>
+                      </DatePicker>
+                      </div>
 
-                  <Tooltip delay={0}>
-                    <Button
-                      isIconOnly
-                      variant="secondary"
-                      isDisabled={now_.compare(date.add({ days: 1 })) < 0}
-                      onPress={() =>
-                        setDate((curr_date) => {
-                          const new_date = curr_date.add({ days: 1 });
+                      <Tooltip delay={0}>
+                        <Button
+                          isIconOnly
+                          className="place-self-start"
+                          variant="secondary"
+                          isDisabled={now_.compare(date.add({ days: 1 })) < 0}
+                          onPress={() =>
+                            setDate((curr_date) => {
+                              const new_date = curr_date.add({ days: 1 });
 
-                          if (now_.compare(new_date) >= 0) return new_date;
-                          return curr_date;
-                        })
-                      }
-                    >
-                      <ChevronRightIcon />
-                    </Button>
-                    <Tooltip.Content>
-                      <p className="break-normal">Avançar 1 dia</p>
-                    </Tooltip.Content>
-                  </Tooltip>
+                              if (now_.compare(new_date) >= 0) return new_date;
+                              return curr_date;
+                            })
+                          }
+                        >
+                          <ChevronRightIcon />
+                        </Button>
+                        <Tooltip.Content>
+                          <p className="break-normal">Avançar 1 dia</p>
+                        </Tooltip.Content>
+                      </Tooltip>
 
-                  <Tooltip delay={0}>
-                    <Button
-                      isIconOnly
-                      isDisabled={now_.compare(date.add({ weeks: 1 })) < 0}
-                      variant="secondary"
-                      onPress={() =>
-                        setDate((curr_date) => {
-                          const new_date = curr_date.add({ weeks: 1 });
+                      <Tooltip delay={0}>
+                        <Button
+                          isIconOnly
+                          className="place-self-start"
+                          isDisabled={now_.compare(date.add({ weeks: 1 })) < 0}
+                          variant="secondary"
+                          onPress={() =>
+                            setDate((curr_date) => {
+                              const new_date = curr_date.add({ weeks: 1 });
 
-                          if (now_.compare(new_date) >= 0) return new_date;
-                          return curr_date;
-                        })
-                      }
-                    >
-                      <ChevronsRightIcon />
-                    </Button>
-                    <Tooltip.Content>
-                      <p className="break-normal">Avançar 1 semana</p>
-                    </Tooltip.Content>
-                  </Tooltip>
-                </div>
+                              if (now_.compare(new_date) >= 0) return new_date;
+                              return curr_date;
+                            })
+                          }
+                        >
+                          <ChevronsRightIcon />
+                        </Button>
+                        <Tooltip.Content>
+                          <p className="break-normal">Avançar 1 semana</p>
+                        </Tooltip.Content>
+                      </Tooltip>
+                    </div>
+                  </Tabs.Panel>
+                  <Tabs.Panel className="pt-4" id="range">
+                    <p>Em desenvolvimento</p>
+                  </Tabs.Panel>
+                </Tabs>
               </div>
               <div className="col-start-6 flex items-center flex-col space-y-2">
                 <NumberField

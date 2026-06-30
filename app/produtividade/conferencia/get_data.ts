@@ -3,6 +3,7 @@ import type z from "zod";
 import { getToken } from "@/lib/pda";
 import { montagem_caixa_schema } from "@/lib/schemas";
 import { fmt_date } from "@/lib/utils";
+import { queue } from "@tanstack/react-pacer/queuer";
 
 // --- CLASSE DO BANCO DE DADOS ---
 export class ProdutividadeConferencia extends Dexie {
@@ -21,6 +22,47 @@ export class ProdutividadeConferencia extends Dexie {
 }
 
 const db = new ProdutividadeConferencia();
+
+const request_queue = queue(
+  ([date, callback]: [
+    Date,
+    (_: Array<z.infer<typeof montagem_caixa_schema>>) => void,
+  ]) =>
+    getToken()
+      .then((authorization) =>
+        fetch("https://api.pdahub.com.br/api/Armazenagem/MontagemCaixa", {
+          headers: {
+            accept: "application/json, text/plain, */*",
+            authorization,
+            "content-type": "application/json",
+          },
+          signal: AbortSignal.timeout(5000),
+          referrer: "https://wms.pdahub.com.br/",
+          body: JSON.stringify({
+            CodigoCliente: 30,
+            User: 1297,
+            Caixa: null,
+            Produto: null,
+            Ean: null,
+            Usuario: null,
+            TipoCaixa: null,
+            codigoPedido: null,
+            dataInicio: fmt_date(date),
+            dataFim: fmt_date(date),
+          }),
+          method: "PATCH",
+        }),
+      )
+      .then((r) => r.json())
+      .then(montagem_caixa_schema.array().parseAsync)
+      .then(callback),
+  {
+    wait: 1000, // Or after 2 seconds
+    onItemsChange: (queuer) => {
+      console.log("Current request queue:", queuer.peekAllItems().map(([date, _]) => fmt_date(date)));
+    },
+  },
+);
 
 export async function get_relatorio_conferencia(date: Date) {
   const today = new Date();
@@ -41,44 +83,17 @@ export async function get_relatorio_conferencia(date: Date) {
   return db_query.count().then((count) => {
     const has_data = count > 0;
 
-    console.log({ is_today, has_data });
-
     if (is_today || !has_data) {
-      const res = getToken()
-        .then((authorization) =>
-          fetch("https://api.pdahub.com.br/api/Armazenagem/MontagemCaixa", {
-            headers: {
-              accept: "application/json, text/plain, */*",
-              authorization,
-              "content-type": "application/json",
-            },
-            signal: AbortSignal.timeout(5000),
-            referrer: "https://wms.pdahub.com.br/",
-            body: JSON.stringify({
-              CodigoCliente: 30,
-              User: 1297,
-              Caixa: null,
-              Produto: null,
-              Ean: null,
-              Usuario: null,
-              TipoCaixa: null,
-              codigoPedido: null,
-              dataInicio: fmt_date(date),
-              dataFim: fmt_date(date),
-            }),
-            method: "PATCH",
-          }),
-        )
-        .then((r) => r.json())
-        .then(montagem_caixa_schema.array().parseAsync)
-        .then(
-          (res) =>
-            new Promise<typeof res>((resolve) =>
-              !has_data && !is_today
-                ? db.caixas.bulkAdd(res).then(() => resolve(res))
-                : resolve(res),
-            ),
-        );
+      const res = new Promise<Array<z.infer<typeof montagem_caixa_schema>>>(
+        (r) => request_queue([date, r]),
+      ).then(
+        (res) =>
+          new Promise<typeof res>((resolve) =>
+            !has_data && !is_today
+              ? db.caixas.bulkAdd(res).then(() => resolve(res))
+              : resolve(res),
+          ),
+      );
 
       return res;
     }
