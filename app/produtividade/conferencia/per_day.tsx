@@ -19,7 +19,7 @@ import skus_pre from "./skus.json";
 import { UserComparison } from "./user-comparison";
 import { UserDashboard } from "./user-dashboard";
 import { UsersTable } from "./users-table";
-import { QUERY_KEY } from "./page";
+import { QUERY_KEY, SelectedSectionContext } from "./page";
 
 const skus = z
   .record(z.string(), z.number().positive().catch(1))
@@ -80,13 +80,6 @@ export const NAME_KEYS = {
   caixas: "N° de caixas",
   pedidos_conferidos: "N° de pedidos conferidos",
 } as const;
-
-export const SelectedUserContext = createContext<
-  [string | null, Dispatch<SetStateAction<string | null>>] | null
->(null);
-export const SelectedSectionContext = createContext<
-  [string, Dispatch<SetStateAction<string>>] | null
->(null);
 
 export default function PerDay({
   date,

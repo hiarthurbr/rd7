@@ -250,8 +250,8 @@ function Page() {
                             second: 0,
                             millisecond: 0,
                           });
-                        
-                        const max = now_.subtract({ days: 1 })
+
+                        const max = now_.subtract({ days: 1 });
 
                         return {
                           type: "range",
