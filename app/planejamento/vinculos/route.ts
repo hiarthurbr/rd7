@@ -48,6 +48,17 @@ const considerar_status = [
   "Aguardando Faturamento",
 ];
 
+const map_status = {
+  Andamento: "A",
+  Criado: "N",
+  "Estoque Insuficiente": "I",
+  Ressuprimento: "R",
+  Planejado: "P",
+  "Aguardando Conferência": "C",
+  "Finalizado c/divergência": "C",
+  "Aguardando Faturamento": "F",
+};
+
 export async function GET() {
   const propostas = await fetch(
     "https://api-erp.rainhadassete.com.br/api/expedicao/propostas-status-pda",
@@ -128,17 +139,23 @@ export async function GET() {
     const propostasFinalizadas = new Set(
       propostas_principais[pedido]
         .filter((proposta) => considerar_status.includes(proposta.descricaoStatusPda))
-        .map((proposta) => proposta.codigoProposta),
+        .map(
+          (proposta) =>
+            `${proposta.codigoProposta} (${proposta.numeroProposta.split("-")[1]}) (${map_status[proposta.descricaoStatusPda as keyof typeof map_status]})`,
+        ),
     );
     const aguardandoPropostas = new Set(
-      propostas_principais[pedido].map((proposta) => proposta.codigoProposta),
+      propostas_principais[pedido].map(
+        (proposta) =>
+          `${proposta.codigoProposta} (${proposta.numeroProposta.split("-")[1]}) (${map_status[proposta.descricaoStatusPda as keyof typeof map_status]})`,
+      ),
     ).symmetricDifference(propostasFinalizadas);
 
     propostas_principais[pedido] = propostas_principais[pedido].map((proposta) => ({
       ...proposta,
       liquidoPedido,
-      propostasFinalizadas: Array.from(propostasFinalizadas).join(","),
-      aguardandoPropostas: Array.from(aguardandoPropostas).join(","),
+      propostasFinalizadas: Array.from(propostasFinalizadas).join(", "),
+      aguardandoPropostas: Array.from(aguardandoPropostas).join(", "),
     }));
   }
 
