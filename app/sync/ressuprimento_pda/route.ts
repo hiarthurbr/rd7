@@ -113,40 +113,40 @@ export async function GET() {
             .then((r) => r.json())
             .then(RessuprimentoSchema.array().parseAsync)
             .then((itens) => ({ ...pedido, itens }))
-            .then((pedido) =>
-              fetch(
-                `https://api-erp.rainhadassete.com.br/api/expedicao/itens-proposta/${pedido.codigoPedido}`,
-                {
-                  headers: {
-                    accept: "application/json, text/plain, */*",
-                    "accept-language": "pt-BR,pt;q=0.9",
-                    "cache-control": "no-cache",
-                    pragma: "no-cache",
-                    priority: "u=1, i",
-                  },
-                  referrer: "https://rainhaerp.rainhadassete.com.br/",
-                  body: null,
-                  method: "GET",
-                },
-              )
-                .then((r) => r.json())
-                .then(ItensPropostaSchema.array().parseAsync)
-                .then((itens) => ({
-                  ...pedido,
-                  itens: pedido.itens.map((item) => ({
-                    ...item,
-                    quantidadeTotal: itens
-                      .filter(
-                        (item_) =>
-                          item_.itemVendaPerdida == null &&
-                          item_.partNumberProduto === item.produto,
-                      )
-                      .reduce((cum, a) => cum + a.quantidadeItemProposta, 0),
-                  })),
-                })),
-            ),
+            // .then((pedido) =>
+            //   fetch(
+            //     `https://api-erp.rainhadassete.com.br/api/expedicao/itens-proposta/${pedido.codigoPedido}`,
+            //     {
+            //       headers: {
+            //         accept: "application/json, text/plain, */*",
+            //         "accept-language": "pt-BR,pt;q=0.9",
+            //         "cache-control": "no-cache",
+            //         pragma: "no-cache",
+            //         priority: "u=1, i",
+            //       },
+            //       referrer: "https://rainhaerp.rainhadassete.com.br/",
+            //       body: null,
+            //       method: "GET",
+            //     },
+            //   )
+            //     .then((r) => r.json())
+            //     .then(ItensPropostaSchema.array().parseAsync)
+            //     .then((itens) => ({
+            //       ...pedido,
+            //       itens: pedido.itens.map((item) => ({
+            //         ...item,
+            //         quantidadeTotal: itens
+            //           .filter(
+            //             (item_) =>
+            //               item_.itemVendaPerdida == null &&
+            //               item_.partNumberProduto === item.produto,
+            //           )
+            //           .reduce((cum, a) => cum + a.quantidadeItemProposta, 0),
+            //       })),
+            //     })),
+            // ),
         ),
       ),
     )
-    .then(Response.json);
+    .then(Response.json).catch(console.log);
 }
