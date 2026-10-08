@@ -3,6 +3,75 @@ import z from "zod";
 import { produto_titanium_schema, status_proposta_pda_schema } from "./schemas";
 import { fmt_date } from "./utils";
 
+import { webcrypto } from "node:crypto";
+
+const { subtle, getRandomValues } = webcrypto;
+
+function base64url(bytes: Uint8Array) {
+  return Buffer.from(bytes)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+function randomBase64url(length: number) {
+  return base64url(getRandomValues(new Uint8Array(length)));
+}
+
+async function sha256Base64url(value: string) {
+  const data = new TextEncoder().encode(value);
+  const hash = await subtle.digest("SHA-256", data);
+  return base64url(new Uint8Array(hash));
+}
+
+async function generateDpopJkt() {
+  // Gera uma nova chave DPoP a cada execução
+  const { publicKey } = await subtle.generateKey(
+    {
+      name: "ECDSA",
+      namedCurve: "P-256",
+    },
+    false,
+    ["sign", "verify"],
+  );
+
+  const jwk = await subtle.exportKey("jwk", publicKey);
+
+  const { kty, crv, x, y } = jwk;
+
+  if (!kty || !crv || !x || !y) {
+    throw new Error("Chave DPoP sem os campos EC esperados.");
+  }
+
+  // Mantém exatamente a representação usada pela função original
+  const publicJwk = JSON.stringify({
+    crv,
+    kty,
+    x,
+    y,
+  });
+
+  return sha256Base64url(publicJwk);
+}
+
+export async function auth() {
+  const verifier = randomBase64url(32);
+
+  const challenge = await sha256Base64url(verifier);
+
+  const state = randomBase64url(16);
+
+  const dpop_jkt = await generateDpopJkt();
+
+  return {
+    verifier,
+    challenge,
+    state,
+    dpop_jkt,
+  };
+}
+
 export async function getDisponivel(item: string) {
   const schema = z.object({
     data: z.array(produto_titanium_schema),
@@ -34,14 +103,17 @@ export async function getDisponivel(item: string) {
 }
 
 export async function getPropostas() {
-  return fetch("https://api-erp.rainhadassete.com.br/api/expedicao/propostas-status-pda", {
-    headers: {
-      accept: "application/json, text/plain, */*",
+  return fetch(
+    "https://api-erp.rainhadassete.com.br/api/expedicao/propostas-status-pda",
+    {
+      headers: {
+        accept: "application/json, text/plain, */*",
+      },
+      referrer: "https://rainhaerp.rainhadassete.com.br/",
+      body: null,
+      method: "GET",
     },
-    referrer: "https://rainhaerp.rainhadassete.com.br/",
-    body: null,
-    method: "GET",
-  })
+  )
     .then((r) => r.json())
     .then(status_proposta_pda_schema.array().parseAsync);
 }
